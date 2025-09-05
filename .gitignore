@@ -1,6 +1,8 @@
 # Coverage reports
 htmlcov/
 .coverage
+coverage.xml
+*.coverage
 *.cover
 *.py,cover
 
