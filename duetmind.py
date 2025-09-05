@@ -7,7 +7,7 @@ import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Callable, Union
+from typing import Dict, Any, List, Optional, Callable, Union, Tuple
 from pathlib import Path
 import psutil
 import redis
