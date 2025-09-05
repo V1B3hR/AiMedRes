@@ -121,6 +121,8 @@ class NetworkMetrics:
         self.agent_statuses = []
 
     def update(self, agents: List["UnifiedAdaptiveAgent"]):
+        if not agents:  # Handle empty agent list edge case
+            return
         total_energy = sum(a.alive_node.energy for a in agents)
         avg_confusion = np.mean([a.confusion_level for a in agents])
         self.energy_history.append(total_energy)
