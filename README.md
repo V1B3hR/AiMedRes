@@ -76,23 +76,48 @@ The architecture is composed of two major components:
 
 ### Running Training
 
-To load and work with Alzheimer's disease datasets for training AI models:
+To run training for the duetmind_adaptive AI system, you have several options:
 
 ```bash
-# Basic training script (matches problem statement format)
-python3 run_training.py
+# Quick start - comprehensive training (recommended)
+python3 train.py
 
-# Modern API version (no deprecation warnings)  
-python3 run_training_modern.py
+# Or explicitly specify comprehensive mode
+python3 train.py comprehensive
+
+# Basic training - dataset loading only
+python3 train.py basic
+
+# Simulation training - adaptive agents only  
+python3 train.py simulation
 ```
 
-Both scripts load Alzheimer's disease datasets from Kaggle and display the first 5 records.
+**Training Modes:**
+
+1. **Comprehensive** (default): Loads Alzheimer's dataset, analyzes it, and runs adaptive agent simulation with dataset insights
+2. **Basic**: Simple dataset loading and display - useful for data validation
+3. **Simulation**: Runs the adaptive labyrinth simulation without dataset integration
+
+### Individual Training Scripts
+
+You can also run individual training components:
+
+```bash
+# Modern dataset loading (no deprecation warnings)
+python3 run_training_modern.py
+
+# Legacy dataset loading (fixed from original)
+python3 run_training.py
+
+# Full comprehensive pipeline
+python3 train_adaptive_model.py
+```
 
 ### Prerequisites
 
 1. Install required dependencies:
 ```bash
-pip install kagglehub pandas
+pip install kagglehub pandas psutil redis flask numpy
 ```
 
 2. Set up Kaggle API credentials:
