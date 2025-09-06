@@ -74,7 +74,37 @@ The architecture is composed of two major components:
 
 ## Getting Started
 
-*Coming soon: Installation and usage instructions.*
+### Running Training
+
+To load and work with Alzheimer's disease datasets for training AI models:
+
+```bash
+# Basic training script (matches problem statement format)
+python3 run_training.py
+
+# Modern API version (no deprecation warnings)  
+python3 run_training_modern.py
+```
+
+Both scripts load Alzheimer's disease datasets from Kaggle and display the first 5 records.
+
+### Prerequisites
+
+1. Install required dependencies:
+```bash
+pip install kagglehub pandas
+```
+
+2. Set up Kaggle API credentials:
+   - Create a Kaggle account and generate API credentials
+   - Place your `kaggle.json` file in `~/.kaggle/` directory
+   - Set permissions: `chmod 600 ~/.kaggle/kaggle.json`
+
+### Additional Dataset Loaders
+
+See `files/dataset/` directory for more dataset loading options and examples.
+
+*More installation and usage instructions coming soon.*
 
 ---
 

@@ -8,6 +8,8 @@ This directory contains scripts to load the Alzheimer features dataset from Kagg
 - `simple_kaggle_loader.py` - Modern API version with updated kagglehub calls  
 - `load_kaggle_dataset.py` - Robust script with automatic file detection and error handling
 - `create_test_data.py` - Creates test data for validation purposes
+- `problem_statement_corrected.py` - Corrected version of the exact problem statement with syntax fixes
+- `problem_statement_modern_api.py` - Modern API version addressing the problem statement
 
 ## Prerequisites
 
