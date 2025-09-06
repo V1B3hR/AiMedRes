@@ -189,23 +189,21 @@ python3 main.py --mode both --verbose
 pip install kagglehub pandas psutil redis flask numpy
 ```
 
-### Prerequisites
+No additional setup required - the system uses synthetic training data and works out of the box.
 
-1. Install required dependencies:
+### Legacy Training Scripts
+
+The original training scripts are still available:
+
 ```bash
-pip install kagglehub pandas psutil redis flask numpy
+# Basic training script (requires kagglehub setup)
+python3 run_training.py
+
+# Modern API version (requires kagglehub setup)
+python3 run_training_modern.py
 ```
 
-2. Set up Kaggle API credentials:
-   - Create a Kaggle account and generate API credentials
-   - Place your `kaggle.json` file in `~/.kaggle/` directory
-   - Set permissions: `chmod 600 ~/.kaggle/kaggle.json`
-
-### Additional Dataset Loaders
-
-See `files/dataset/` directory for more dataset loading options and examples.
-
-*More installation and usage instructions coming soon.*
+These require Kaggle API setup but only load datasets without actual training.
 
 ---
 
