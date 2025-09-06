@@ -36,3 +36,9 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Training artifacts
+trained_models/
+*.pkl
+*.h5
+*.model

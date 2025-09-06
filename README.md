@@ -74,37 +74,72 @@ The architecture is composed of two major components:
 
 ## Getting Started
 
-### Running Training
+### Quick Start Commands
 
-To load and work with Alzheimer's disease datasets for training AI models:
+For the problem statement requirements:
 
 ```bash
-# Basic training script (matches problem statement format)
-python3 run_training.py
+# Run comprehensive training
+python3 run_training_comprehensive.py
 
-# Modern API version (no deprecation warnings)  
-python3 run_training_modern.py
+# Run simulation  
+python3 run_simulation.py
 ```
 
-Both scripts load Alzheimer's disease datasets from Kaggle and display the first 5 records.
+### Advanced Usage
+
+Use the main entry point for more options:
+
+```bash
+# Interactive mode (default)
+python3 main.py
+
+# Run comprehensive training only
+python3 main.py --mode training
+
+# Run simulation only
+python3 main.py --mode simulation
+
+# Run both training and simulation
+python3 main.py --mode both
+
+# Enable verbose logging
+python3 main.py --mode both --verbose
+```
+
+### What's Included
+
+- **Comprehensive Training**: Multi-phase neural network training with:
+  - Neural foundation training
+  - Adaptive behavior training
+  - Multi-agent coordination training
+  - Biological cycle integration training
+- **Adaptive Simulation**: 20-step labyrinth simulation with 3 adaptive agents
+- **Training Reports**: Detailed training metrics and model artifacts
+- **Multiple Entry Points**: Direct scripts and configurable main entry point
 
 ### Prerequisites
 
-1. Install required dependencies:
 ```bash
-pip install kagglehub pandas
+# Install required dependency
+pip install numpy
 ```
 
-2. Set up Kaggle API credentials:
-   - Create a Kaggle account and generate API credentials
-   - Place your `kaggle.json` file in `~/.kaggle/` directory
-   - Set permissions: `chmod 600 ~/.kaggle/kaggle.json`
+No additional setup required - the system uses synthetic training data and works out of the box.
 
-### Additional Dataset Loaders
+### Legacy Training Scripts
 
-See `files/dataset/` directory for more dataset loading options and examples.
+The original training scripts are still available:
 
-*More installation and usage instructions coming soon.*
+```bash
+# Basic training script (requires kagglehub setup)
+python3 run_training.py
+
+# Modern API version (requires kagglehub setup)
+python3 run_training_modern.py
+```
+
+These require Kaggle API setup but only load datasets without actual training.
 
 ---
 
