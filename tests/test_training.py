@@ -121,5 +121,32 @@ class TestTraining(unittest.TestCase):
         self.assertNotIn("DeprecationWarning", result.stderr)
         self.assertNotIn("deprecated", result.stderr.lower())
 
+    def test_problem_statement_implementation(self):
+        """Test that the exact problem statement implementation works"""
+        result = subprocess.run(
+            [self.python, "run_training_problem_statement.py"],
+            cwd=self.repo_root,
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+        self.assertEqual(result.returncode, 0, f"Problem statement implementation failed: {result.stderr}")
+        self.assertIn("First 5 records:", result.stdout)
+        self.assertIn("Problem statement implementation successful", result.stdout)
+
+    def test_complete_training_implementation(self):
+        """Test that the complete training implementation works"""
+        result = subprocess.run(
+            [self.python, "run_training_complete.py"],
+            cwd=self.repo_root,
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        self.assertEqual(result.returncode, 0, f"Complete training implementation failed: {result.stderr}")
+        self.assertIn("Problem statement implementation successful", result.stdout)
+        self.assertIn("Training completed successfully", result.stdout)
+        self.assertIn("Model saved", result.stdout)
+
 if __name__ == '__main__':
     unittest.main()
