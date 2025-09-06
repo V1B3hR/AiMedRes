@@ -72,45 +72,54 @@ The architecture is composed of two major components:
 
 ---
 
-## Getting Started
+### Quick Start Commands
 
-### Running Training
-
-To run training for the duetmind_adaptive AI system, you have several options:
+For the problem statement requirements:
 
 ```bash
-# Quick start - comprehensive training (recommended)
-python3 train.py
+# Run comprehensive training
+python3 run_training_comprehensive.py
 
-# Or explicitly specify comprehensive mode
-python3 train.py comprehensive
-
-# Basic training - dataset loading only
-python3 train.py basic
-
-# Simulation training - adaptive agents only  
-python3 train.py simulation
+# Run simulation  
+python3 run_simulation.py
 ```
 
-**Training Modes:**
+### Advanced Usage
 
-1. **Comprehensive** (default): Loads Alzheimer's dataset, analyzes it, and runs adaptive agent simulation with dataset insights
-2. **Basic**: Simple dataset loading and display - useful for data validation
-3. **Simulation**: Runs the adaptive labyrinth simulation without dataset integration
-
-### Individual Training Scripts
-
-You can also run individual training components:
+Use the main entry point for more options:
 
 ```bash
-# Modern dataset loading (no deprecation warnings)
-python3 run_training_modern.py
+# Interactive mode (default)
+python3 main.py
 
-# Legacy dataset loading (fixed from original)
-python3 run_training.py
+# Run comprehensive training only
+python3 main.py --mode training
 
-# Full comprehensive pipeline
-python3 train_adaptive_model.py
+# Run simulation only
+python3 main.py --mode simulation
+
+# Run both training and simulation
+python3 main.py --mode both
+
+# Enable verbose logging
+python3 main.py --mode both --verbose
+```
+
+### What's Included
+
+- **Comprehensive Training**: Multi-phase neural network training with:
+  - Neural foundation training
+  - Adaptive behavior training
+  - Multi-agent coordination training
+  - Biological cycle integration training
+- **Adaptive Simulation**: 20-step labyrinth simulation with 3 adaptive agents
+- **Training Reports**: Detailed training metrics and model artifacts
+- **Multiple Entry Points**: Direct scripts and configurable main entry point
+
+### Prerequisites
+
+```bash
+pip install kagglehub pandas psutil redis flask numpy
 ```
 
 ### Prerequisites
