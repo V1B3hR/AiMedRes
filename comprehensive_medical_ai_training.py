@@ -1,20 +1,31 @@
 #!/usr/bin/env python3
 """
-Comprehensive Medical AI Training System
-Train on real medical data and deployed in realistic collaborative scenarios,
-creating a foundation for advanced medical AI research and applications.
+Comprehensive Medical AI Training System with Enhanced Security
+Train on real medical data with HIPAA/GDPR compliance and deploy in realistic 
+collaborative scenarios, creating a foundation for advanced medical AI research.
+
+Security Features:
+- HIPAA/GDPR compliant data handling
+- Secure data isolation between training and inference
+- Automatic anonymization and audit trails
+- Privacy-preserving ML training
+- Secure model storage and retrieval
 
 This system integrates:
-1. Real medical data loading (exact problem statement implementation)
-2. Enhanced machine learning training
-3. Adaptive agent collaboration
-4. Realistic medical simulation scenarios
+1. Secure medical data loading (HIPAA/GDPR compliant)
+2. Privacy-preserving machine learning training
+3. Secure adaptive agent collaboration
+4. Audited medical simulation scenarios
 """
 
 import os
 import sys
 import warnings
-from typing import Dict, List, Any
+import logging
+from typing import Dict, List, Any, Optional
+
+# Import secure medical processing
+from secure_medical_processor import SecureMedicalDataProcessor
 
 # Import our enhanced training system
 from training.enhanced_alzheimer_training_system import (
@@ -29,82 +40,289 @@ from labyrinth_adaptive import (
     run_labyrinth_simulation, NetworkMetrics
 )
 
+# Import security modules
+from security import PrivacyManager, SecurityMonitor, DataEncryption
+
 import pandas as pd
 import numpy as np
 import pickle
 
-class MedicalAICollaborativeSystem:
+# Configure medical logging
+medical_logger = logging.getLogger('duetmind.medical_training')
+medical_logger.setLevel(logging.INFO)
+
+class SecureMedicalAICollaborativeSystem:
     """
-    Advanced Medical AI system that trains on real data and deploys
-    collaborative agents for realistic medical scenarios.
+    Advanced Medical AI system with comprehensive security and privacy protection.
+    
+    Features:
+    - HIPAA/GDPR compliant data processing
+    - Secure training and inference isolation
+    - Privacy-preserving collaborative agents
+    - Comprehensive audit trails
+    - Automatic data retention management
     """
     
-    def __init__(self):
+    def __init__(self, security_config: Optional[Dict[str, Any]] = None):
+        # Security configuration
+        self.security_config = security_config or {
+            'enable_security': True,
+            'secure_workspace': './secure_medical_workspace',
+            'privacy_compliance': True,
+            'audit_logging': True
+        }
+        
+        # Initialize security systems
+        self.secure_processor = SecureMedicalDataProcessor(self.security_config)
+        self.privacy_manager = PrivacyManager(self.security_config)
+        self.security_monitor = SecurityMonitor(self.security_config)
+        
+        # System components
         self.models = {}
         self.datasets = {}
         self.agents = []
         self.resource_room = ResourceRoom()
         self.metrics = NetworkMetrics()
         
-    def load_real_medical_data(self):
-        """
-        Load real medical data as specified in the problem statement.
-        """
-        print("=== Loading Real Medical Data ===")
+        # User context for security
+        self.current_user_id = "medical_researcher_001"  # In production, get from auth
         
-        # Load the comprehensive dataset (problem statement implementation)
-        print("1. Loading comprehensive Alzheimer's dataset...")
-        self.datasets['comprehensive'] = load_alzheimer_data_new()
-        
-        # Load the original dataset for comparison
-        print("\n2. Loading original features dataset for validation...")
-        self.datasets['original'] = load_alzheimer_data_original()
-        
-        print(f"\nDatasets loaded:")
-        print(f"- Comprehensive: {self.datasets['comprehensive'].shape}")
-        print(f"- Original: {self.datasets['original'].shape}")
-        
-        return self.datasets
+        medical_logger.info("Secure Medical AI system initialized with privacy protection")
     
-    def train_medical_models(self):
+    def load_real_medical_data_secure(self, user_id: Optional[str] = None) -> Dict[str, str]:
         """
-        Train machine learning models on the real medical data.
+        Securely load real medical data with HIPAA/GDPR compliance.
+        
+        Args:
+            user_id: User requesting data access (for audit trails)
+            
+        Returns:
+            Dictionary of secure dataset IDs
         """
-        print("\n=== Training Medical AI Models ===")
+        user_id = user_id or self.current_user_id
+        print("🔒 === Loading Real Medical Data (SECURE) ===")
         
-        # Train on comprehensive dataset
-        print("Training enhanced model on comprehensive dataset...")
-        X_comp, y_comp = preprocess_new_dataset(self.datasets['comprehensive'])
-        clf_enhanced, X_test_comp, y_test_comp = train_enhanced_model(X_comp, y_comp)
-        evaluate_enhanced_model(clf_enhanced, X_test_comp, y_test_comp)
-        save_enhanced_model(clf_enhanced, "models/comprehensive_medical_model.pkl")
-        
-        self.models['comprehensive'] = {
-            'model': clf_enhanced,
-            'test_data': (X_test_comp, y_test_comp),
-            'features': X_comp.columns.tolist()
-        }
-        
-        print("\n✓ Comprehensive medical model training complete")
-        return self.models
+        try:
+            # Log data loading request
+            self.privacy_manager.log_data_access(
+                user_id=user_id,
+                data_type='medical_dataset_loading',
+                action='load_multiple',
+                purpose='medical_ai_training',
+                legal_basis='healthcare_research'
+            )
+            
+            # Load and secure the comprehensive dataset
+            print("1. 🔐 Loading and securing comprehensive Alzheimer's dataset...")
+            comprehensive_params = {
+                'dataset_name': 'rabieelkharoua/alzheimers-disease-dataset',
+                'file_path': 'alzheimers_disease_data.csv'
+            }
+            
+            comprehensive_id = self.secure_processor.load_and_secure_dataset(
+                dataset_source='kaggle',
+                dataset_params=comprehensive_params,
+                user_id=user_id,
+                purpose='training'
+            )
+            
+            # Load and secure the original dataset
+            print("2. 🔐 Loading and securing original features dataset...")
+            original_params = {
+                'dataset_name': 'brsdincer/alzheimer-features',
+                'file_path': 'alzheimer.csv'
+            }
+            
+            original_id = self.secure_processor.load_and_secure_dataset(
+                dataset_source='kaggle',
+                dataset_params=original_params,
+                user_id=user_id,
+                purpose='validation'
+            )
+            
+            # Store secure dataset IDs
+            self.datasets = {
+                'comprehensive_id': comprehensive_id,
+                'original_id': original_id
+            }
+            
+            print(f"\n✅ Secure datasets loaded:")
+            print(f"- Comprehensive dataset ID: {comprehensive_id}")
+            print(f"- Original dataset ID: {original_id}")
+            print("🔒 All data encrypted and anonymized")
+            print("📋 Audit trails created for compliance")
+            
+            return self.datasets
+            
+        except Exception as e:
+            medical_logger.error(f"Secure data loading failed: {e}")
+            self.security_monitor.log_security_event(
+                'medical_data_load_failure',
+                {'error': str(e), 'user_id': user_id},
+                severity='critical',
+                user_id=user_id
+            )
+            raise
     
-    def create_medical_agents(self):
+    def train_medical_models_secure(self, user_id: Optional[str] = None) -> Dict[str, str]:
         """
-        Create adaptive agents specialized for medical collaboration.
-        """
-        print("\n=== Creating Medical Collaborative Agents ===")
+        Securely train machine learning models with privacy protection.
         
-        # Store medical knowledge in resource room
-        medical_knowledge = {
-            'dataset_info': {
-                'comprehensive_size': len(self.datasets['comprehensive']),
-                'comprehensive_features': len(self.datasets['comprehensive'].columns),
-                'model_accuracy': 0.947,  # From training results
-            },
-            'medical_expertise': {
-                'top_risk_factors': ['FunctionalAssessment', 'ADL', 'MMSE', 'MemoryComplaints'],
-                'patient_demographics': {
-                    'age_range': [60, 95],
+        Args:
+            user_id: User performing training
+            
+        Returns:
+            Dictionary of secure model IDs
+        """
+        user_id = user_id or self.current_user_id
+        print("\n🔒 === Training Medical AI Models (SECURE) ===")
+        
+        try:
+            # Train on comprehensive dataset with security
+            print("🧠 Training enhanced model on secure comprehensive dataset...")
+            
+            model_config = {
+                'model_type': 'random_forest',
+                'n_estimators': 100,
+                'max_depth': None,
+                'min_samples_split': 2,
+                'privacy_preserving': True,
+                'secure_training': True
+            }
+            
+            comprehensive_model_id = self.secure_processor.secure_model_training(
+                dataset_id=self.datasets['comprehensive_id'],
+                model_config=model_config,
+                user_id=user_id
+            )
+            
+            # Store secure model IDs
+            self.models = {
+                'comprehensive_model_id': comprehensive_model_id
+            }
+            
+            print(f"\n✅ Secure model training complete:")
+            print(f"- Comprehensive model ID: {comprehensive_model_id}")
+            print("🔒 Model parameters encrypted and stored securely")
+            print("📋 Training audit trail created")
+            
+            return self.models
+            
+        except Exception as e:
+            medical_logger.error(f"Secure model training failed: {e}")
+            self.security_monitor.log_security_event(
+                'medical_training_failure',
+                {'error': str(e), 'user_id': user_id},
+                severity='critical',
+                user_id=user_id
+            )
+            raise
+    
+    def create_secure_medical_agents(self, user_id: Optional[str] = None) -> List[Any]:
+        """
+        Create privacy-aware adaptive agents specialized for medical collaboration.
+        
+        Args:
+            user_id: User creating agents
+            
+        Returns:
+            List of secure medical agents
+        """
+        user_id = user_id or self.current_user_id
+        print("\n🔒 === Creating Secure Medical Collaborative Agents ===")
+        
+        try:
+            # Store anonymized medical knowledge in resource room
+            medical_knowledge = {
+                'dataset_info': {
+                    'total_patients_anonymized': '2149*',  # Anonymized count
+                    'features_available': 35,
+                    'model_performance': '94.7% accuracy*',
+                    'privacy_level': 'high',
+                    'anonymization_applied': True
+                },
+                'medical_expertise': {
+                    'top_risk_factors_anonymized': ['FunctionalAssessment*', 'ADL*', 'MMSE*', 'MemoryComplaints*'],
+                    'patient_demographics_ranges': {
+                        'age_range': [60, 95],  # General ranges only
+                        'data_source': 'anonymized'
+                    },
+                    'privacy_note': 'All specific patient data has been anonymized and de-identified'
+                },
+                'security_metadata': {
+                    'data_isolation': 'training_inference_separated',
+                    'encryption': 'AES-256',
+                    'audit_logging': 'enabled',
+                    'compliance': ['HIPAA', 'GDPR']
+                }
+            }
+            
+            # Store knowledge securely
+            self.resource_room.deposit("secure_medical_ai_system", medical_knowledge)
+            
+            # Create specialized medical agents with privacy awareness
+            self.agents = [
+                UnifiedAdaptiveAgent(
+                    "DrAliceAI_Secure", 
+                    {
+                        "analytical": 0.9, 
+                        "medical_expertise": 0.85, 
+                        "collaboration": 0.8,
+                        "privacy_awareness": 0.95,
+                        "security_compliance": 0.9
+                    }, 
+                    AliveLoopNode((0,0), (0.5,0), 15.0, node_id=1), 
+                    self.resource_room
+                ),
+                UnifiedAdaptiveAgent(
+                    "DrBobML_Secure", 
+                    {
+                        "pattern_recognition": 0.9, 
+                        "data_analysis": 0.85, 
+                        "innovation": 0.7,
+                        "privacy_awareness": 0.9,
+                        "security_compliance": 0.85
+                    }, 
+                    AliveLoopNode((2,0), (0,0.5), 12.0, node_id=2), 
+                    self.resource_room
+                ),
+                UnifiedAdaptiveAgent(
+                    "DrCarolCognitive_Secure", 
+                    {
+                        "cognitive_assessment": 0.9, 
+                        "patient_care": 0.85, 
+                        "communication": 0.8,
+                        "privacy_awareness": 0.95,
+                        "security_compliance": 0.9
+                    }, 
+                    AliveLoopNode((0,2), (0.3,-0.2), 10.0, node_id=3), 
+                    self.resource_room
+                ),
+            ]
+            
+            # Log agent creation
+            self.privacy_manager.log_data_access(
+                user_id=user_id,
+                data_type='medical_agents',
+                action='create',
+                purpose='collaborative_medical_ai',
+                legal_basis='healthcare_research'
+            )
+            
+            print(f"✅ Created {len(self.agents)} secure medical AI agents")
+            print("🔒 All agents configured with privacy awareness")
+            print("📋 Agent creation logged for compliance")
+            return self.agents
+            
+        except Exception as e:
+            medical_logger.error(f"Secure agent creation failed: {e}")
+            self.security_monitor.log_security_event(
+                'agent_creation_failure',
+                {'error': str(e), 'user_id': user_id},
+                severity='warning',
+                user_id=user_id
+            )
+            raise
                     'total_patients': len(self.datasets['comprehensive'])
                 }
             },
