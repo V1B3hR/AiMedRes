@@ -1,6 +1,6 @@
 # duetmind_adaptive
 
-**duetmind_adaptive** is a hybrid AI framework that combines Adaptive Neural Networks (AdaptiveNN) with DuetMind cognitive agents. AdaptiveNN provides the "brain"—dynamic, learning, biologically inspired neural networks—while DuetMind supplies the "mind"—reasoning, safety, and social interaction. Together they create truly adaptive, safe, multi-agent systems with emergent intelligence.
+**duetmind_adaptive** is a hybrid AI framework that combines Adaptive Neural Networks (AdaptiveNN) with DuetMind cognitive agents. AdaptiveNN provides the "brain"—dynamic, learning, biologically inspired neural networks—while DuetMind agents drive reasoning, memory, and social interaction.
 
 ---
 
@@ -11,6 +11,7 @@ All training and test files are organized in the following structure:
 - **Training Files**: All training scripts are located in `files/training/`
 - **Test Files**: All test scripts are located in `files/tests/`
 - **Dataset Files**: Dataset utilities are located in `files/dataset/`
+- **Neural Network Core**: The foundational neural network logic is implemented in `neuralnet.py`
 
 This organization ensures a clean separation of concerns and makes it easy to locate specific functionality.
 
@@ -37,6 +38,7 @@ The architecture is composed of two major components:
     - Dynamic neural nodes with energy, sleep, and mood states
     - Learning and adaptation over time
     - Biological process monitoring
+    - **Core implementation in [`neuralnet.py`](./neuralnet.py)**
 
 2. **DuetMind ("Mind")**
     - Reasoning engine and dialogue management
@@ -63,7 +65,7 @@ The architecture is composed of two major components:
 
 ## Features
 
-- **Biological Neural Simulation:** Agents have neural networks mimicking real biological cycles.
+- **Biological Neural Simulation:** Agents have neural networks mimicking real biological cycles. See [`neuralnet.py`](./neuralnet.py) for core implementation.
 - **Emergent Intelligence:** Reasoning changes based on neural state.
 - **Safe Multi-Agent Operation:** Built-in safety checks for biological and cognitive processes.
 - **Social Interaction:** Agents participate in dialogues and collaborative tasks.
@@ -112,6 +114,9 @@ python3 labyrinth_adaptive.py
 
 # See usage examples
 python3 usage_examples.py
+
+# Run standalone neural network simulation
+python3 neuralnet.py
 ```
 
 ### Real Data Integration
@@ -216,6 +221,19 @@ python3 files/training/run_training_modern.py
 ```
 
 These require Kaggle API setup but only load datasets without actual training.
+
+---
+
+## neuralnet.py: Neural Network Core
+
+[`neuralnet.py`](./neuralnet.py) implements the foundational neural network logic powering agent cognition and adaptation.  
+It includes:
+- Biological state simulation (energy, sleep, mood)
+- Memory and social signal processing
+- Resource management and neural node dynamics
+
+**Usage:**  
+Most system scripts import and use `neuralnet.py` as the core adaptive neural network engine, but you can also run or extend it directly for custom neural network experiments.
 
 ---
 
