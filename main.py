@@ -53,13 +53,14 @@ def run_simulation() -> bool:
     logger.info("=== Starting Adaptive Labyrinth Simulation ===")
     
     try:
-        # Import simulation from existing neuralnet module
-        from neuralnet import run_labyrinth_simulation
+        # Import simulation from new authoritative module
+        from labyrinth_simulation import run_labyrinth_simulation
         
         # Run the simulation
-        run_labyrinth_simulation()
+        result = run_labyrinth_simulation()
         
         logger.info("=== Simulation Complete ===")
+        logger.info(f"Simulation completed {result['total_steps']} steps with {result['maze_master_interventions']} interventions")
         return True
         
     except Exception as e:

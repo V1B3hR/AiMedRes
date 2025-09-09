@@ -52,7 +52,7 @@ def run_simulation_only():
         parent_dir = Path(__file__).parent.parent.parent
         sys.path.insert(0, str(parent_dir))
         
-        from labyrinth_adaptive import run_labyrinth_simulation
+        from labyrinth_simulation import run_labyrinth_simulation
         run_labyrinth_simulation()
         return True
     except ImportError as e:

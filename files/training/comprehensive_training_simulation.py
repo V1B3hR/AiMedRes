@@ -22,7 +22,7 @@ from training.alzheimer_training_system import (
 # Import simulation system
 from labyrinth_adaptive import (
     UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, 
-    MazeMaster, NetworkMetrics, CapacitorInSpace, run_labyrinth_simulation
+    MazeMaster, NetworkMetrics, CapacitorInSpace
 )
 
 # Configure logging
