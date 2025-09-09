@@ -12,7 +12,7 @@ Provides comprehensive input sanitization and validation for:
 import re
 import json
 import html
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib.parse import quote
 import logging
 
