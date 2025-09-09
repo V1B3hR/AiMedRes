@@ -42,3 +42,8 @@ trained_models/
 *.pkl
 *.h5
 *.model
+
+# Security and privacy files (generated during runtime)
+secure_medical_workspace/
+privacy_audit.db
+*.encrypted
