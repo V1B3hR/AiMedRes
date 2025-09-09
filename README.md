@@ -4,6 +4,18 @@
 
 ---
 
+## File Organization
+
+All training and test files are organized in the following structure:
+
+- **Training Files**: All training scripts are located in `files/training/`
+- **Test Files**: All test scripts are located in `files/tests/`
+- **Dataset Files**: Dataset utilities are located in `files/dataset/`
+
+This organization ensures a clean separation of concerns and makes it easy to locate specific functionality.
+
+---
+
 ## Project Description
 
 This project aims to develop living AI agents that possess:
@@ -74,10 +86,10 @@ Run the complete system that trains on real data and simulates medical consultat
 
 ```bash
 # New enhanced system with comprehensive dataset
-python3 comprehensive_medical_ai_training.py
+python3 files/training/comprehensive_medical_ai_training.py
 
 # Original system
-python3 comprehensive_training_simulation.py
+python3 files/training/comprehensive_training_simulation.py
 
 # Problem statement exact implementation
 python3 problem_statement_implementation.py
@@ -87,10 +99,10 @@ python3 problem_statement_implementation.py
 
 ```bash
 # Train enhanced medical model on comprehensive data
-python3 training/enhanced_alzheimer_training_system.py
+python3 files/training/enhanced_alzheimer_training_system.py
 
 # Train original medical model
-python3 training/alzheimer_training_system.py
+python3 files/training/alzheimer_training_system.py
 
 # Validate data quality
 python3 data_quality_monitor.py
@@ -145,7 +157,7 @@ For the problem statement requirements:
 
 ```bash
 # Run comprehensive training
-python3 run_training_comprehensive.py
+python3 files/training/run_training_comprehensive.py
 
 # Run simulation  
 python3 run_simulation.py
@@ -197,10 +209,10 @@ The original training scripts are still available:
 
 ```bash
 # Basic training script (requires kagglehub setup)
-python3 run_training.py
+python3 files/training/run_training.py
 
 # Modern API version (requires kagglehub setup)
-python3 run_training_modern.py
+python3 files/training/run_training_modern.py
 ```
 
 These require Kaggle API setup but only load datasets without actual training.
