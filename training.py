@@ -81,7 +81,7 @@ class AlzheimerTrainer:
         
         return X_scaled, y_encoded
     
-    def train_model(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
+    def train_model(self, X: np.ndarray, y: np.ndarray) -> Tuple[RandomForestClassifier, Dict[str, Any]]:
         """Train the Alzheimer prediction model"""
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
@@ -115,7 +115,8 @@ class AlzheimerTrainer:
             self.model.feature_importances_
         ))
         
-        results = {
+        metrics = {
+            'accuracy': test_accuracy,  # Use test accuracy as primary metric
             'train_accuracy': train_accuracy,
             'test_accuracy': test_accuracy,
             'feature_importance': feature_importance,
@@ -126,7 +127,7 @@ class AlzheimerTrainer:
             )
         }
         
-        return results
+        return self.model, metrics
     
     def save_model(self, model_path: str = "alzheimer_model.pkl"):
         """Save the trained model and preprocessors"""
@@ -181,6 +182,29 @@ class AlzheimerTrainer:
         prediction = self.label_encoder.inverse_transform([prediction_encoded])[0]
         
         return prediction
+    
+    def get_model_parameters(self) -> Dict[str, Any]:
+        """Get model parameters for secure transmission"""
+        if self.model is None:
+            raise ValueError("Model not trained or loaded")
+        
+        return {
+            'model_state': {
+                'n_estimators': self.model.n_estimators,
+                'max_depth': self.model.max_depth,
+                'min_samples_split': self.model.min_samples_split,
+                'random_state': self.model.random_state
+            },
+            'feature_columns': self.feature_columns,
+            'model_type': 'RandomForestClassifier',
+            'preprocessing': {
+                'scaler_params': {
+                    'mean_': self.feature_scaler.mean_.tolist() if hasattr(self.feature_scaler, 'mean_') else None,
+                    'scale_': self.feature_scaler.scale_.tolist() if hasattr(self.feature_scaler, 'scale_') else None
+                },
+                'label_classes': self.label_encoder.classes_.tolist() if hasattr(self.label_encoder, 'classes_') else None
+            }
+        }
 
 
 class TrainingIntegratedAgent(UnifiedAdaptiveAgent):
