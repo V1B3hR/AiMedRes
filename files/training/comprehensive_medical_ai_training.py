@@ -323,38 +323,6 @@ class SecureMedicalAICollaborativeSystem:
                 user_id=user_id
             )
             raise
-                    'total_patients': len(self.datasets['comprehensive'])
-                }
-            },
-            'models': self.models
-        }
-        
-        self.resource_room.deposit("medical_ai_system", medical_knowledge)
-        
-        # Create specialized medical agents
-        self.agents = [
-            UnifiedAdaptiveAgent(
-                "DrAliceAI", 
-                {"analytical": 0.9, "medical_expertise": 0.85, "collaboration": 0.8}, 
-                AliveLoopNode((0,0), (0.5,0), 15.0, node_id=1), 
-                self.resource_room
-            ),
-            UnifiedAdaptiveAgent(
-                "DrBobML", 
-                {"pattern_recognition": 0.9, "data_analysis": 0.85, "innovation": 0.7}, 
-                AliveLoopNode((2,0), (0,0.5), 12.0, node_id=2), 
-                self.resource_room
-            ),
-            UnifiedAdaptiveAgent(
-                "DrCarolCognitive", 
-                {"cognitive_assessment": 0.9, "patient_care": 0.85, "communication": 0.8}, 
-                AliveLoopNode((0,2), (0.3,-0.2), 10.0, node_id=3), 
-                self.resource_room
-            ),
-        ]
-        
-        print(f"✓ Created {len(self.agents)} specialized medical AI agents")
-        return self.agents
     
     def generate_medical_cases(self, num_cases=10):
         """
