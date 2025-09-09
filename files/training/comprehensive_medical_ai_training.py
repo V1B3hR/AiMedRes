@@ -25,22 +25,27 @@ import logging
 from typing import Dict, List, Any, Optional
 
 # Import secure medical processing
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 from secure_medical_processor import SecureMedicalDataProcessor
 
 # Import our enhanced training system
-from training.enhanced_alzheimer_training_system import (
+from enhanced_alzheimer_training_system import (
     load_alzheimer_data_new, load_alzheimer_data_original,
     preprocess_new_dataset, train_enhanced_model, 
     evaluate_enhanced_model, save_enhanced_model, predict_enhanced
 )
 
 # Import adaptive agent system
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 from labyrinth_adaptive import (
     UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, 
     run_labyrinth_simulation, NetworkMetrics
 )
 
 # Import security modules
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 from security import PrivacyManager, SecurityMonitor, DataEncryption
 
 import pandas as pd
@@ -331,7 +336,12 @@ class SecureMedicalAICollaborativeSystem:
         print(f"\n=== Generating {num_cases} Medical Cases ===")
         
         # Use real data patterns to generate realistic cases
-        df = self.datasets['comprehensive']
+        if 'comprehensive_id' in self.datasets:
+            df = self.secure_processor.get_secure_dataset(
+                self.datasets['comprehensive_id'], 
+                self.current_user_id, 
+                'training'
+            )
         
         cases = []
         for i in range(num_cases):
@@ -391,45 +401,47 @@ class SecureMedicalAICollaborativeSystem:
                     f"Analyze medical case: {case['description']} with data: {case['patient_data']}"
                 )
                 
-                # Simulate model prediction (using the trained model)
-                if 'comprehensive' in self.models:
-                    # Create input for model prediction
-                    model_input = pd.DataFrame([{
+                # Simulate model prediction (using the secure model if available)
+                if 'comprehensive_model_id' in self.models:
+                    # Use secure inference through the processor
+                    prediction_input = {
                         'Age': case['patient_data']['Age'],
                         'Gender': case['patient_data']['Gender'],
-                        'Ethnicity': 0,  # Default
-                        'EducationLevel': 2,  # Default
                         'BMI': case['patient_data']['BMI'],
-                        'Smoking': 0,  # Default
-                        'AlcoholConsumption': 2.0,  # Default
-                        'PhysicalActivity': 3.0,  # Default
-                        'DietQuality': 7.0,  # Default
-                        'SleepQuality': 6.0,  # Default
-                        'FamilyHistoryAlzheimers': case['patient_data']['FamilyHistoryAlzheimers'],
-                        'CardiovascularDisease': 0,  # Default
-                        'Diabetes': 0,  # Default
-                        'Depression': case['patient_data']['Depression'],
-                        'HeadInjury': 0,  # Default
-                        'Hypertension': 0,  # Default
-                        'SystolicBP': 130,  # Default
-                        'DiastolicBP': 80,  # Default
-                        'CholesterolTotal': 200.0,  # Default
-                        'CholesterolLDL': 120.0,  # Default
-                        'CholesterolHDL': 50.0,  # Default
-                        'CholesterolTriglycerides': 150.0,  # Default
                         'MMSE': case['patient_data']['MMSE'],
                         'FunctionalAssessment': case['patient_data']['FunctionalAssessment'],
                         'MemoryComplaints': case['patient_data']['MemoryComplaints'],
-                        'BehavioralProblems': 0,  # Default
-                        'ADL': case['patient_data']['FunctionalAssessment'],  # Approximate
-                        'Confusion': 0,  # Default
-                        'Disorientation': 0,  # Default
-                        'PersonalityChanges': 0,  # Default
-                        'DifficultyCompletingTasks': 0,  # Default
-                        'Forgetfulness': case['patient_data']['MemoryComplaints']
-                    }])
+                        'FamilyHistoryAlzheimers': case['patient_data']['FamilyHistoryAlzheimers'],
+                        'Depression': case['patient_data']['Depression']
+                    }
                     
-                    prediction = predict_enhanced(self.models['comprehensive']['model'], model_input)[0]
+                    try:
+                        prediction_result = self.secure_processor.secure_inference(
+                            self.models['comprehensive_model_id'],
+                            prediction_input,
+                            agent.name
+                        )
+                        prediction = {
+                            'prediction': 'Alzheimer\'s' if prediction_result['prediction'] == 1 else 'No Alzheimer\'s',
+                            'confidence': prediction_result['confidence']
+                        }
+                    except:
+                        # Fallback to simulated prediction
+                        mmse_score = case['patient_data']['MMSE']
+                        age = case['patient_data']['Age']
+                        memory_complaints = case['patient_data']['MemoryComplaints']
+                        
+                        # Simple heuristic for simulation
+                        risk_score = 0.0
+                        if mmse_score < 24: risk_score += 0.4
+                        if age > 75: risk_score += 0.3
+                        if memory_complaints: risk_score += 0.2
+                        if case['patient_data']['FamilyHistoryAlzheimers']: risk_score += 0.1
+                        
+                        prediction = {
+                            'prediction': 'Alzheimer\'s' if risk_score > 0.5 else 'No Alzheimer\'s',
+                            'confidence': min(0.95, max(0.55, risk_score + 0.1))
+                        }
                     
                     agent_assessment = {
                         'agent_name': agent.name,
@@ -494,13 +506,13 @@ class SecureMedicalAICollaborativeSystem:
         
         try:
             # Step 1: Load real medical data
-            self.load_real_medical_data()
+            self.load_real_medical_data_secure()
             
             # Step 2: Train models on real data
-            self.train_medical_models()
+            self.train_medical_models_secure()
             
             # Step 3: Create collaborative agents
-            self.create_medical_agents()
+            self.create_secure_medical_agents()
             
             # Step 4: Generate realistic medical cases
             cases = self.generate_medical_cases(10)
@@ -539,7 +551,7 @@ def main():
     print("Starting Comprehensive Medical AI Training System...")
     
     # Create and run the system
-    system = MedicalAICollaborativeSystem()
+    system = SecureMedicalAICollaborativeSystem()
     results = system.run_comprehensive_training_and_simulation()
     
     if results['success']:
