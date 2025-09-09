@@ -21,54 +21,26 @@ def run_comprehensive_training() -> bool:
     logger.info("=== Starting Comprehensive Training ===")
     
     try:
-        # Import training modules
-        from comprehensive_training import ComprehensiveTrainer
+        # Use our existing full training system
+        import subprocess
+        import sys
         
-        # Initialize trainer with configuration
-        config = {
-            'network_size': 50,
-            'training_epochs': 100,
-            'learning_rate': 0.001,
-            'batch_size': 32,
-            'validation_split': 0.2,
-            'early_stopping_patience': 10,
-            'adaptive_learning': True,
-            'biological_cycles': True,
-            'multi_agent_training': True
-        }
+        logger.info("Running comprehensive training via full_training.py")
         
-        trainer = ComprehensiveTrainer(config)
+        # Run the comprehensive training
+        result = subprocess.run([
+            sys.executable, 
+            "full_training.py", 
+            "--mode", "comprehensive"
+        ], capture_output=True, text=True, timeout=300)
         
-        # Run training phases
-        logger.info("Phase 1: Neural Network Foundation Training")
-        neural_metrics = trainer.train_neural_foundation()
-        
-        logger.info("Phase 2: Adaptive Behavior Training")
-        adaptive_metrics = trainer.train_adaptive_behaviors()
-        
-        logger.info("Phase 3: Multi-Agent Coordination Training")
-        coordination_metrics = trainer.train_multi_agent_coordination()
-        
-        logger.info("Phase 4: Biological Cycle Integration Training")
-        biological_metrics = trainer.train_biological_integration()
-        
-        # Consolidate and save results
-        training_results = {
-            'neural_foundation': neural_metrics,
-            'adaptive_behaviors': adaptive_metrics,
-            'coordination': coordination_metrics,
-            'biological_integration': biological_metrics,
-            'overall_success': True
-        }
-        
-        trainer.save_trained_models()
-        trainer.generate_training_report(training_results)
-        
-        logger.info("=== Comprehensive Training Complete ===")
-        logger.info(f"Final training accuracy: {training_results.get('final_accuracy', 'N/A')}")
-        logger.info(f"Models saved to: {trainer.model_path}")
-        
-        return True
+        if result.returncode == 0:
+            logger.info("=== Comprehensive Training Complete ===")
+            logger.info("All training components completed successfully")
+            return True
+        else:
+            logger.error(f"Training failed: {result.stderr}")
+            return False
         
     except Exception as e:
         logger.error(f"Training failed: {e}")
