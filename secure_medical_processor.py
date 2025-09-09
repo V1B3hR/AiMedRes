@@ -273,7 +273,12 @@ class SecureMedicalDataProcessor:
             model_results = self._train_model_securely(training_data, model_config, model_id)
             
             # Encrypt and store model
-            encrypted_model = self.data_encryption.encrypt_model_parameters(model_results)
+            # Serialize model for encryption using base64 encoding
+            import base64
+            model_bytes = pickle.dumps(model_results)
+            model_b64 = base64.b64encode(model_bytes).decode('utf-8')
+            
+            encrypted_model = self.data_encryption.encrypt_data({'model_data': model_b64})
             model_path = self.model_storage_dir / f"{model_id}.encrypted"
             
             with open(model_path, 'w') as f:
@@ -407,9 +412,14 @@ class SecureMedicalDataProcessor:
             
             model_data = self.data_encryption.decrypt_data(encrypted_model)
             
-            # Perform secure inference (placeholder)
+            # Deserialize model from base64
+            import base64
+            model_bytes = base64.b64decode(model_data['model_data'])
+            model_results = pickle.loads(model_bytes)
+            
+            # Perform secure inference (placeholder - would use actual model)
             prediction_result = {
-                'prediction': 0,  # Would use actual model
+                'prediction': 0,  # Would use actual model: model_results['model'].predict([input_data])[0]
                 'confidence': 0.85,
                 'model_id': model_id,
                 'timestamp': datetime.now().isoformat(),
@@ -467,12 +477,73 @@ class SecureMedicalDataProcessor:
     def _load_kaggle_dataset(self, params: Dict[str, Any]) -> pd.DataFrame:
         """Load dataset from Kaggle (placeholder for integration)."""
         # This would integrate with the actual Kaggle loading code
-        # For now, return a placeholder
+        # For now, return sample data that matches expected structure
         medical_logger.info("Loading Kaggle dataset (placeholder)")
-        return pd.DataFrame()
+        
+        # Create sample data that matches the expected medical dataset structure
+        np.random.seed(42)  # For reproducible sample data
+        n_samples = 100
+        
+        sample_data = pd.DataFrame({
+            'Age': np.random.randint(60, 90, n_samples),
+            'Gender': np.random.randint(0, 2, n_samples),
+            'Ethnicity': np.random.randint(0, 4, n_samples),
+            'EducationLevel': np.random.randint(1, 5, n_samples),
+            'BMI': np.random.normal(26, 4, n_samples),
+            'Smoking': np.random.randint(0, 2, n_samples),
+            'AlcoholConsumption': np.random.uniform(0, 5, n_samples),
+            'PhysicalActivity': np.random.uniform(1, 5, n_samples),
+            'DietQuality': np.random.uniform(3, 10, n_samples),
+            'SleepQuality': np.random.uniform(3, 9, n_samples),
+            'FamilyHistoryAlzheimers': np.random.randint(0, 2, n_samples),
+            'CardiovascularDisease': np.random.randint(0, 2, n_samples),
+            'Diabetes': np.random.randint(0, 2, n_samples),
+            'Depression': np.random.randint(0, 2, n_samples),
+            'HeadInjury': np.random.randint(0, 2, n_samples),
+            'Hypertension': np.random.randint(0, 2, n_samples),
+            'SystolicBP': np.random.normal(130, 20, n_samples),
+            'DiastolicBP': np.random.normal(80, 10, n_samples),
+            'CholesterolTotal': np.random.normal(200, 30, n_samples),
+            'CholesterolLDL': np.random.normal(120, 25, n_samples),
+            'CholesterolHDL': np.random.normal(50, 15, n_samples),
+            'CholesterolTriglycerides': np.random.normal(150, 40, n_samples),
+            'MMSE': np.random.randint(15, 30, n_samples),
+            'FunctionalAssessment': np.random.uniform(3, 10, n_samples),
+            'MemoryComplaints': np.random.randint(0, 2, n_samples),
+            'BehavioralProblems': np.random.randint(0, 2, n_samples),
+            'ADL': np.random.uniform(4, 10, n_samples),
+            'Confusion': np.random.randint(0, 2, n_samples),
+            'Disorientation': np.random.randint(0, 2, n_samples),
+            'PersonalityChanges': np.random.randint(0, 2, n_samples),
+            'DifficultyCompletingTasks': np.random.randint(0, 2, n_samples),
+            'Forgetfulness': np.random.randint(0, 2, n_samples),
+            'Diagnosis': np.random.randint(0, 2, n_samples)  # 0 = No Alzheimer's, 1 = Alzheimer's
+        })
+        
+        medical_logger.info(f"Generated sample medical data with {len(sample_data)} rows and {len(sample_data.columns)} columns")
+        return sample_data
     
     def _load_file_dataset(self, params: Dict[str, Any]) -> pd.DataFrame:
         """Load dataset from file (placeholder for integration)."""
         # This would integrate with file loading
+        # For now, return smaller sample data for the "original" dataset
         medical_logger.info("Loading file dataset (placeholder)")
-        return pd.DataFrame()
+        
+        # Create smaller sample data for the "original" dataset
+        np.random.seed(43)  # Different seed for variety
+        n_samples = 50
+        
+        sample_data = pd.DataFrame({
+            'Age': np.random.randint(65, 85, n_samples),
+            'Gender': np.random.randint(0, 2, n_samples),
+            'BMI': np.random.normal(25, 3, n_samples),
+            'MMSE': np.random.randint(18, 30, n_samples),
+            'FunctionalAssessment': np.random.uniform(4, 9, n_samples),
+            'MemoryComplaints': np.random.randint(0, 2, n_samples),
+            'FamilyHistoryAlzheimers': np.random.randint(0, 2, n_samples),
+            'Depression': np.random.randint(0, 2, n_samples),
+            'Diagnosis': np.random.randint(0, 2, n_samples)
+        })
+        
+        medical_logger.info(f"Generated sample validation data with {len(sample_data)} rows and {len(sample_data.columns)} columns")
+        return sample_data
