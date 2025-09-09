@@ -9,10 +9,12 @@ The training module integrates machine learning capabilities with the existing a
 ## Features
 
 - **Alzheimer Dataset Loading**: Load datasets from Kaggle or use test data
+- **Dementia Prediction Dataset**: Support for shashwatwork/dementia-prediction-dataset as per problem statement
 - **Machine Learning Training**: Train Random Forest classifiers for disease prediction
 - **Agent Integration**: Enhanced agents that can use ML predictions in their reasoning
 - **Model Persistence**: Save and load trained models
 - **Command-Line Interface**: Easy-to-use CLI for training operations
+- **Auto File Detection**: Automatically detect CSV files when file_path is empty
 
 ## Quick Start
 
@@ -38,6 +40,24 @@ Train with your own Alzheimer dataset:
 
 ```bash
 python3 run_training.py --data-path /path/to/your/dataset.csv
+```
+
+### Dementia Prediction Dataset (Problem Statement)
+
+Load the exact dataset as specified in the problem statement:
+
+```bash
+python3 files/training/problem_statement_exact.py
+```
+
+This implements the exact code from the problem statement with necessary auto-detection for empty file_path.
+
+### Dementia Prediction Training
+
+Use the dementia prediction dataset for training:
+
+```bash
+python3 dementia_prediction_training.py
 ```
 
 ### Command-Line Options
