@@ -77,6 +77,7 @@ The architecture is composed of two major components:
 - **Data Quality Monitoring:** Comprehensive validation and quality assurance.
 - **Collaborative Decision Making:** Multi-agent medical consultation simulation.
 - **Problem Statement Compliance:** Exact implementation of kagglehub.load_dataset requirements.
+- **Comprehensive Training Test:** Full system validation with detailed reporting.
 
 ---
 
@@ -161,8 +162,11 @@ Both datasets provide **seamless connection between training and simulation** fo
 For the problem statement requirements:
 
 ```bash
-# Run comprehensive training
-python3 files/training/run_training_comprehensive.py
+# Run comprehensive training test and report
+python3 run_comprehensive_training_test.py
+
+# Run comprehensive training only
+python3 full_training.py --mode comprehensive
 
 # Run simulation  
 python3 run_simulation.py
@@ -196,6 +200,14 @@ python3 main.py --mode both --verbose
   - Adaptive behavior training
   - Multi-agent coordination training
   - Biological cycle integration training
+- **Comprehensive Training Test**: Full system validation and reporting with:
+  - Module import validation
+  - Model persistence testing
+  - Basic training validation
+  - Kaggle dataset training validation
+  - Agent simulation validation
+  - End-to-end comprehensive training test
+  - Detailed text and JSON reports
 - **Adaptive Simulation**: 20-step labyrinth simulation with 3 adaptive agents
 - **Training Reports**: Detailed training metrics and model artifacts
 - **Multiple Entry Points**: Direct scripts and configurable main entry point

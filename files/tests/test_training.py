@@ -12,7 +12,7 @@ import sys
 from typing import Dict, Any
 
 # Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from training import AlzheimerTrainer, TrainingIntegratedAgent
 from labyrinth_adaptive import AliveLoopNode, ResourceRoom
