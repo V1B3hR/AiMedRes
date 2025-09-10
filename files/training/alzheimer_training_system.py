@@ -28,9 +28,13 @@ def load_alzheimer_data(file_path="alzheimer.csv"):
     print(f"Columns: {df.columns.tolist()}")
     return df
 
-def preprocess_data(df):
+def preprocess_data(df, apply_upsampling=True):
     """
-    Basic preprocessing: handle missing values, encode categorical variables, feature selection.
+    Basic preprocessing: handle missing values, encode categorical variables, feature selection, and upsampling.
+    
+    Args:
+        df: Input dataframe
+        apply_upsampling: Whether to apply upsampling to handle data imbalance
     """
     print(f"Initial dataset shape: {df.shape}")
     
@@ -43,8 +47,12 @@ def preprocess_data(df):
 
     # Encode categorical columns
     if 'Group' in df.columns:
-        # Map different group values to numbers
-        group_mapping = {'Demented': 1, 'Nondemented': 0}
+        # Check original distribution before encoding
+        print("Original class distribution:")
+        print(df['Group'].value_counts())
+        
+        # Handle multiple classes including 'Converted'
+        group_mapping = {'Demented': 1, 'Nondemented': 0, 'Converted': 2}
         df['Group'] = df['Group'].map(group_mapping)
         
     # Encode M/F column
@@ -55,6 +63,11 @@ def preprocess_data(df):
     df = df.dropna(subset=['Group'])
     
     print(f"After preprocessing shape: {df.shape}")
+    
+    # Apply upsampling if requested
+    if apply_upsampling:
+        print("\nPerforming upsampling to handle data imbalance...")
+        df = perform_upsampling(df)
 
     # Select features that are available in the dataset
     # Based on the columns: ['Group', 'M/F', 'Age', 'EDUC', 'SES', 'MMSE', 'CDR', 'eTIV', 'nWBV', 'ASF']
@@ -74,6 +87,47 @@ def preprocess_data(df):
     print(f"Any NaN in y: {y.isnull().any()}")
 
     return X, y
+
+def perform_upsampling(df):
+    """
+    Perform upsampling to handle data imbalance.
+    Uses random oversampling to balance the classes.
+    """
+    from sklearn.utils import resample
+    
+    # Separate classes
+    class_counts = df['Group'].value_counts()
+    print(f"Class counts before upsampling: {class_counts.to_dict()}")
+    
+    # Find the majority class count
+    majority_count = class_counts.max()
+    
+    # Separate dataframes by class
+    df_majority = df[df['Group'] == class_counts.idxmax()]
+    
+    upsampled_dfs = [df_majority]
+    
+    # Upsample minority classes
+    for class_value in class_counts.index:
+        if class_value != class_counts.idxmax():  # Skip majority class
+            df_class = df[df['Group'] == class_value]
+            
+            # Upsample minority class
+            df_upsampled = resample(df_class,
+                                  replace=True,  # Sample with replacement
+                                  n_samples=majority_count,  # Match majority class
+                                  random_state=42)  # Reproducible results
+            upsampled_dfs.append(df_upsampled)
+    
+    # Combine upsampled dataframes
+    df_balanced = pd.concat(upsampled_dfs, ignore_index=True)
+    
+    # Shuffle the dataset
+    df_balanced = df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+    
+    print(f"Class counts after upsampling: {df_balanced['Group'].value_counts().to_dict()}")
+    
+    return df_balanced
 
 def train_model(X, y):
     """
@@ -102,8 +156,14 @@ def evaluate_model(clf, X_test, y_test):
     """
     y_pred = clf.predict(X_test)
     print("\n=== Model Evaluation ===")
+    
+    # Create target names based on unique values
+    unique_labels = sorted(list(set(y_test) | set(y_pred)))
+    label_map = {0: 'Nondemented', 1: 'Demented', 2: 'Converted'}
+    target_names = [label_map.get(label, f'Class_{label}') for label in unique_labels]
+    
     print("Classification Report:")
-    print(classification_report(y_test, y_pred, target_names=['Nondemented', 'Demented']))
+    print(classification_report(y_test, y_pred, target_names=target_names, zero_division=0))
     print(f"Accuracy: {accuracy_score(y_test, y_pred):.3f}")
     
     print("\nConfusion Matrix:")
@@ -124,8 +184,8 @@ def evaluate_model(clf, X_test, y_test):
     # Optionally create visualization (commented out to avoid display issues in headless environment)
     # plt.figure(figsize=(8,6))
     # sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", 
-    #             xticklabels=['Nondemented', 'Demented'],
-    #             yticklabels=['Nondemented', 'Demented'])
+    #             xticklabels=target_names,
+    #             yticklabels=target_names)
     # plt.xlabel("Predicted")
     # plt.ylabel("Actual")
     # plt.title("Confusion Matrix")
@@ -163,26 +223,42 @@ def predict(clf, new_data):
     y_pred = clf.predict(new_data)
     probabilities = clf.predict_proba(new_data)
     
+    # Map numeric predictions back to labels
+    label_map = {0: 'Nondemented', 1: 'Demented', 2: 'Converted'}
+    
     results = []
     for i, (pred, prob) in enumerate(zip(y_pred, probabilities)):
         result = {
-            'prediction': 'Demented' if pred == 1 else 'Nondemented',
+            'prediction': label_map.get(pred, f'Class_{pred}'),
             'confidence': max(prob),
-            'probabilities': {
-                'Nondemented': prob[0],
-                'Demented': prob[1] if len(prob) > 1 else 0.0
-            }
+            'probabilities': {}
         }
+        
+        # Map probabilities back to class names
+        for j, prob_val in enumerate(prob):
+            class_name = label_map.get(j, f'Class_{j}')
+            result['probabilities'][class_name] = prob_val
+        
         results.append(result)
     
     return results
 
 if __name__ == "__main__":
-    print("=== Comprehensive Alzheimer's Training System ===")
+    print("=== Comprehensive Alzheimer's Training System with Upsampling ===")
+    
+    import sys
+    
+    # Check if upsampling should be applied (default: True)
+    apply_upsampling = True
+    if len(sys.argv) > 1 and sys.argv[1] == "--no-upsampling":
+        apply_upsampling = False
+        print("Note: Upsampling disabled by command line argument")
+    else:
+        print("Note: Upsampling enabled to handle data imbalance")
     
     # Load and preprocess data
     df = load_alzheimer_data(file_path="alzheimer.csv")
-    X, y = preprocess_data(df)
+    X, y = preprocess_data(df, apply_upsampling=apply_upsampling)
 
     # Train the model
     clf, X_test, y_test = train_model(X, y)
@@ -191,7 +267,7 @@ if __name__ == "__main__":
     y_pred = evaluate_model(clf, X_test, y_test)
     
     # Save the model
-    save_model(clf, "models/alzheimer_model.pkl")
+    save_model(clf, "models/alzheimer_model_upsampled.pkl")
     
     # Test model loading and prediction
     print("\n=== Testing Model Prediction ===")
@@ -213,10 +289,15 @@ if __name__ == "__main__":
     print("Example predictions:")
     for i, result in enumerate(results):
         print(f"Patient {i+1}: {result['prediction']} (confidence: {result['confidence']:.3f})")
-        print(f"  Probabilities: Nondemented={result['probabilities']['Nondemented']:.3f}, "
-              f"Demented={result['probabilities']['Demented']:.3f}")
+        if len(result['probabilities']) == 2:
+            print(f"  Probabilities: Nondemented={result['probabilities']['Nondemented']:.3f}, "
+                  f"Demented={result['probabilities']['Demented']:.3f}")
+        else:
+            print(f"  Probabilities: {result['probabilities']}")
     
     print("\n=== Training Complete ===")
     print(f"Model trained on {len(X)} samples with {len(X.columns)} features")
     print(f"Test accuracy: {accuracy_score(y_test, y_pred):.3f}")
+    if apply_upsampling:
+        print("Data imbalance was addressed through upsampling")
     print("Model saved and ready for use in simulations")
