@@ -22,15 +22,23 @@ python full_training.py --mode comprehensive
 
 This will run all training components:
 1. Basic training with test data
-2. Kaggle dataset training with real MRI data
-3. Agent simulation training
-4. Complete evaluation and summary
+2. Extended training with hyperparameter optimization and cross-validation
+3. Advanced training with multiple models and ensemble methods
+4. Kaggle dataset training with real MRI data
+5. Agent simulation training
+6. Complete evaluation and summary
 
 ### Training Modes
 
 ```bash
 # Basic training only (test data)
 python full_training.py --mode basic
+
+# Extended training with enhanced ML (hyperparameter tuning, cross-validation)
+python full_training.py --mode extended
+
+# Advanced training with multiple models and ensemble methods
+python full_training.py --mode advanced
 
 # Kaggle dataset training only
 python full_training.py --mode kaggle
@@ -47,6 +55,20 @@ python full_training.py --mode medical
 # Verbose output
 python full_training.py --mode comprehensive --verbose
 ```
+
+### Enhanced Training Features
+
+#### Extended Training Mode
+- **Hyperparameter Optimization**: Grid search with cross-validation
+- **Cross-Validation**: 5-fold cross-validation for robust evaluation
+- **Enhanced Metrics**: Comprehensive performance analysis
+- **Model Selection**: Automatic selection of best parameters
+
+#### Advanced Training Mode
+- **Multiple Models**: Random Forest, Gradient Boosting, Logistic Regression, SVM, Neural Networks
+- **Ensemble Methods**: Voting classifier combining best models
+- **Model Comparison**: Side-by-side performance comparison
+- **Best Model Selection**: Automatic selection of top-performing model
 
 ### Original Training Interface
 

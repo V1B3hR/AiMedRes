@@ -86,17 +86,25 @@ def run_comprehensive_training():
     print("\n" + "="*50)
     results['basic'] = run_basic_training()
     
-    # 2. Kaggle dataset training
+    # 2. Extended training with enhanced ML
+    print("\n" + "="*50)
+    results['extended'] = run_extended_training()
+    
+    # 3. Advanced training with multiple models
+    print("\n" + "="*50)
+    results['advanced'] = run_advanced_training()
+    
+    # 4. Kaggle dataset training
     print("\n" + "="*50)
     results['kaggle'] = run_kaggle_training()
     
-    # 3. Agent simulation training
+    # 5. Agent simulation training
     print("\n" + "="*50)
     results['simulation'] = run_simulation_training()
     
-    # 4. Summary
+    # 6. Summary
     print("\n" + "="*50)
-    print("🏁 FULL TRAINING SUMMARY")
+    print("🏁 COMPREHENSIVE TRAINING SUMMARY")
     print("="*50)
     
     total_success = 0
@@ -108,16 +116,61 @@ def run_comprehensive_training():
     
     success_rate = total_success / len(results)
     if success_rate == 1.0:
-        print(f"\n🎉 FULL TRAINING COMPLETED SUCCESSFULLY!")
+        print(f"\n🎉 COMPREHENSIVE TRAINING COMPLETED SUCCESSFULLY!")
         print(f"📊 Success Rate: {success_rate*100:.0f}% ({total_success}/{len(results)} components)")
-    elif success_rate >= 0.5:
+    elif success_rate >= 0.6:
         print(f"\n⚠️  PARTIAL SUCCESS - Some components failed")
         print(f"📊 Success Rate: {success_rate*100:.0f}% ({total_success}/{len(results)} components)")
     else:
         print(f"\n💥 TRAINING FAILED - Most components failed")
         print(f"📊 Success Rate: {success_rate*100:.0f}% ({total_success}/{len(results)} components)")
     
-    return success_rate >= 0.5
+    return success_rate >= 0.6
+
+def run_extended_training():
+    """Run extended training with enhanced ML capabilities"""
+    print("🔬 Running Extended Training with Enhanced ML...")
+    try:
+        from training import AlzheimerTrainer, ExtendedTrainingRunner
+        
+        # Initialize extended trainer
+        trainer = AlzheimerTrainer()
+        extended_runner = ExtendedTrainingRunner(trainer)
+        
+        # Run extended training with cross-validation and hyperparameter tuning
+        results = extended_runner.run_extended_training()
+        
+        print("✅ Extended Training Completed!")
+        print(f"📊 Best Cross-Val Score: {results['best_cv_score']:.3f}")
+        print(f"📊 Best Parameters: {results['best_params']}")
+        print(f"📊 Model Performance: {results['final_accuracy']:.3f}")
+        return True
+    except Exception as e:
+        print(f"❌ Extended training failed: {e}")
+        return False
+
+def run_advanced_training():
+    """Run advanced training with multiple models and ensemble methods"""
+    print("🚀 Running Advanced Training with Multiple Models...")
+    try:
+        from training import AlzheimerTrainer, AdvancedTrainingRunner
+        
+        # Initialize advanced trainer
+        trainer = AlzheimerTrainer()
+        advanced_runner = AdvancedTrainingRunner(trainer)
+        
+        # Run advanced training with multiple models
+        results = advanced_runner.run_advanced_training()
+        
+        print("✅ Advanced Training Completed!")
+        print(f"📊 Models Trained: {len(results['model_results'])}")
+        print(f"📊 Best Model: {results['best_model']}")
+        print(f"📊 Best Accuracy: {results['best_accuracy']:.3f}")
+        print(f"📊 Ensemble Accuracy: {results['ensemble_accuracy']:.3f}")
+        return True
+    except Exception as e:
+        print(f"❌ Advanced training failed: {e}")
+        return False
 
 def run_medical_ai_training():
     """Run medical AI focused training"""
@@ -144,9 +197,9 @@ def main():
     parser = argparse.ArgumentParser(description="Full Training Pipeline for DuetMind Adaptive")
     parser.add_argument(
         "--mode", 
-        choices=["basic", "kaggle", "simulation", "comprehensive", "medical"],
+        choices=["basic", "kaggle", "simulation", "comprehensive", "medical", "extended", "advanced"],
         default="comprehensive",
-        help="Training mode: basic (test data), kaggle (real data), simulation (agents), comprehensive (all), medical (medical AI)"
+        help="Training mode: basic (test data), kaggle (real data), simulation (agents), comprehensive (all), medical (medical AI), extended (enhanced ML), advanced (multiple models)"
     )
     parser.add_argument(
         "--verbose", 
@@ -175,6 +228,10 @@ def main():
             success = run_comprehensive_training()
         elif args.mode == "medical":
             success = run_medical_ai_training()
+        elif args.mode == "extended":
+            success = run_extended_training()
+        elif args.mode == "advanced":
+            success = run_advanced_training()
         else:
             print(f"❌ Unknown mode: {args.mode}")
             return False
