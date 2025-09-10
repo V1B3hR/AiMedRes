@@ -256,40 +256,9 @@ class UnifiedAdaptiveAgent:
             "event_log": self.event_log,
         }
 
-def run_labyrinth_simulation():
-    logger.info("=== Unified Adaptive Labyrinth Simulation ===")
-    resource_room = ResourceRoom()
-    maze_master = MazeMaster()
-    metrics = NetworkMetrics()
-
-    agents = [
-        UnifiedAdaptiveAgent("AgentA", {"logic": 0.8, "creativity": 0.5}, AliveLoopNode((0,0), (0.5,0), 15.0, node_id=1), resource_room),
-        UnifiedAdaptiveAgent("AgentB", {"creativity": 0.9, "analytical": 0.7}, AliveLoopNode((2,0), (0,0.5), 12.0, node_id=2), resource_room),
-        UnifiedAdaptiveAgent("AgentC", {"logic": 0.6, "expressiveness": 0.8}, AliveLoopNode((0,2), (0.3,-0.2), 10.0, node_id=3), resource_room),
-    ]
-    capacitors = [CapacitorInSpace((1,1), capacity=8.0, initial_energy=3.0)]
-
-    topics = ["Find exit", "Share wisdom", "Collaborate"]
-    for step in range(1, 21):
-        logger.info(f"\n--- Step {step} ---")
-        for i, agent in enumerate(agents):
-            topic = topics[step % len(topics)]
-            agent.reason(f"{topic} at step {step}")
-            agent.alive_node.move()
-            if step % 5 == 0:
-                agent.teleport_to_resource_room({"topic": topic, "step": step, "energy": agent.alive_node.energy})
-                retrieved = agent.retrieve_from_resource_room()
-        maze_master.govern_agents(agents)
-        metrics.update(agents)
-        logger.info(f"Network Health Score: {metrics.health_score()}")
-        for capacitor in capacitors:
-            logger.info(capacitor.status())
-        for agent in agents:
-            logger.info(f"{agent.name} state: {agent.get_state()}")
-        time.sleep(0.2)
-
-    logger.info("\n=== Simulation Complete ===")
-    logger.info(f"Total MazeMaster interventions: {maze_master.interventions}")
+# NOTE: run_labyrinth_simulation function has been moved to labyrinth_simulation.py
+# to consolidate duplicate implementations and add configuration support.
 
 if __name__ == "__main__":
+    from labyrinth_simulation import run_labyrinth_simulation
     run_labyrinth_simulation()

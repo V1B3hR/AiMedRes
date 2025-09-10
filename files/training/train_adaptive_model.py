@@ -8,7 +8,8 @@ import kagglehub
 from kagglehub import KaggleDatasetAdapter
 import pandas as pd
 import numpy as np
-from labyrinth_adaptive import run_labyrinth_simulation, UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom
+from labyrinth_simulation import run_labyrinth_simulation, LabyrinthSimulationConfig
+from labyrinth_adaptive import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom
 
 def load_training_data():
     """Load the Alzheimer's dataset for training"""

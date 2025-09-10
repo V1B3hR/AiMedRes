@@ -41,7 +41,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
 from labyrinth_adaptive import (
     UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, 
-    run_labyrinth_simulation, NetworkMetrics
+    NetworkMetrics
 )
 
 # Import security modules

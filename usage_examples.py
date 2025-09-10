@@ -80,7 +80,7 @@ def example_3_simple_simulation():
     print("EXAMPLE 3: BASIC AGENT SIMULATION")
     print("="*60)
     
-    from labyrinth_adaptive import run_labyrinth_simulation
+    from labyrinth_simulation import run_labyrinth_simulation
     
     print("Running basic labyrinth simulation...")
     print("(This demonstrates the core adaptive agent system)")
