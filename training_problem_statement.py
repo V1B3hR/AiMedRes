@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Updated to use the correct dataset from the problem statement.
-This script loads the exact dataset specified: lukechugh/best-alzheimer-mri-dataset-99-accuracy
+Training script implementing the exact problem statement requirements.
+Uses the specified dataset: lukechugh/best-alzheimer-mri-dataset-99-accuracy
+
+Note: This dataset contains MRI images, not CSV data. We create a metadata DataFrame
+from the image dataset structure to satisfy the problem statement requirements.
 """
 
 # Install dependencies as needed:
@@ -46,17 +49,33 @@ def create_dataframe_from_images(dataset_path):
     
     return pd.DataFrame(data)
 
-# Download the dataset and create DataFrame
+# Download the dataset first
+print("Downloading dataset...")
 try:
     dataset_path = kagglehub.dataset_download("lukechugh/best-alzheimer-mri-dataset-99-accuracy")
+    print(f"Dataset downloaded to: {dataset_path}")
+    
+    # Create DataFrame from the image structure
+    print("Creating DataFrame from image metadata...")
     df = create_dataframe_from_images(dataset_path)
+    
     print("First 5 records:", df.head())
+    print(f"\nDataset summary:")
+    print(f"Total records: {len(df)}")
+    print(f"Classes: {df['class'].unique()}")
+    print(f"Split distribution: {df['split'].value_counts().to_dict()}")
+    print(f"Class distribution: {df['class'].value_counts().to_dict()}")
+    
 except Exception as e:
-    print(f"Error: {e}")
-    # Fallback for demonstration
+    print(f"Error processing dataset: {e}")
+    # Fallback: create a simple example DataFrame to demonstrate the format
+    print("Creating example DataFrame with sample data...")
     df = pd.DataFrame({
         'image_id': ['train_no_0001', 'train_mild_0001', 'test_moderate_0001'],
+        'image_filename': ['image1.jpg', 'image2.jpg', 'image3.jpg'],
+        'image_path': ['train/No Impairment/image1.jpg', 'train/Mild Impairment/image2.jpg', 'test/Moderate Impairment/image3.jpg'],
         'class': ['No Impairment', 'Mild Impairment', 'Moderate Impairment'],
-        'split': ['train', 'train', 'test']
+        'split': ['train', 'train', 'test'],
+        'class_encoded': [0, 2, 3]
     })
     print("First 5 records:", df.head())
