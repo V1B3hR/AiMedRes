@@ -52,7 +52,7 @@ def main():
         X, y = trainer.preprocess_data(df)
         
         # Train model
-        results = trainer.train_model(X, y)
+        model, results = trainer.train_model(X, y)
         
         # Save model
         trainer.save_model(args.model_output)

@@ -7,10 +7,13 @@ Integrates machine learning training with the existing neural network framework
 import numpy as np
 import pandas as pd
 import logging
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from typing import Dict, Any, List, Tuple, Optional
 import pickle
 import os
@@ -300,6 +303,165 @@ def run_training_simulation():
     
     logger.info("\n=== Training Simulation Complete ===")
     return results, agents
+
+
+class ExtendedTrainingRunner:
+    """Extended training with enhanced ML capabilities including cross-validation and hyperparameter tuning"""
+    
+    def __init__(self, trainer: AlzheimerTrainer):
+        self.trainer = trainer
+        
+    def run_extended_training(self) -> Dict[str, Any]:
+        """Run extended training with cross-validation and hyperparameter optimization"""
+        logger.info("🔬 Starting Extended Training...")
+        
+        # Load and preprocess data
+        df = self.trainer.load_data()
+        X, y = self.trainer.preprocess_data(df)
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        
+        # Define hyperparameter grid for Random Forest
+        param_grid = {
+            'n_estimators': [50, 100, 200],
+            'max_depth': [None, 10, 20, 30],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4]
+        }
+        
+        # Perform grid search with cross-validation
+        logger.info("🔍 Performing hyperparameter optimization...")
+        rf = RandomForestClassifier(random_state=42)
+        grid_search = GridSearchCV(rf, param_grid, cv=5, scoring='accuracy', n_jobs=-1, verbose=1)
+        grid_search.fit(X_train, y_train)
+        
+        # Get best model
+        best_model = grid_search.best_estimator_
+        
+        # Perform cross-validation on best model
+        cv_scores = cross_val_score(best_model, X_train, y_train, cv=5, scoring='accuracy')
+        
+        # Final evaluation
+        best_model.fit(X_train, y_train)
+        y_pred = best_model.predict(X_test)
+        final_accuracy = accuracy_score(y_test, y_pred)
+        
+        # Save enhanced model
+        self.trainer.model = best_model
+        self.trainer.save_model("extended_alzheimer_model.pkl")
+        
+        results = {
+            'best_params': grid_search.best_params_,
+            'best_cv_score': grid_search.best_score_,
+            'cv_scores': cv_scores,
+            'cv_mean': cv_scores.mean(),
+            'cv_std': cv_scores.std(),
+            'final_accuracy': final_accuracy,
+            'classification_report': classification_report(y_test, y_pred, 
+                                                         target_names=self.trainer.label_encoder.classes_,
+                                                         output_dict=True)
+        }
+        
+        logger.info(f"✅ Extended training completed with accuracy: {final_accuracy:.3f}")
+        return results
+
+
+class AdvancedTrainingRunner:
+    """Advanced training with multiple models and ensemble methods"""
+    
+    def __init__(self, trainer: AlzheimerTrainer):
+        self.trainer = trainer
+        
+    def run_advanced_training(self) -> Dict[str, Any]:
+        """Run advanced training with multiple models and ensemble methods"""
+        logger.info("🚀 Starting Advanced Training...")
+        
+        # Load and preprocess data
+        df = self.trainer.load_data()
+        X, y = self.trainer.preprocess_data(df)
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        
+        # Define multiple models
+        models = {
+            'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
+            'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42),
+            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
+            'SVM': SVC(probability=True, random_state=42),
+            'Neural Network': MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500, random_state=42)
+        }
+        
+        # Train and evaluate each model
+        model_results = {}
+        trained_models = {}
+        
+        for name, model in models.items():
+            logger.info(f"📊 Training {name}...")
+            
+            # Train model
+            model.fit(X_train, y_train)
+            
+            # Evaluate
+            y_pred = model.predict(X_test)
+            accuracy = accuracy_score(y_test, y_pred)
+            
+            # Cross-validation
+            cv_scores = cross_val_score(model, X_train, y_train, cv=5, scoring='accuracy')
+            
+            model_results[name] = {
+                'accuracy': accuracy,
+                'cv_mean': cv_scores.mean(),
+                'cv_std': cv_scores.std(),
+                'classification_report': classification_report(y_test, y_pred, 
+                                                             target_names=self.trainer.label_encoder.classes_,
+                                                             output_dict=True)
+            }
+            trained_models[name] = model
+            
+            logger.info(f"   {name}: Accuracy = {accuracy:.3f}, CV = {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
+        
+        # Create ensemble model
+        logger.info("🤝 Creating ensemble model...")
+        ensemble_models = [
+            ('rf', trained_models['Random Forest']),
+            ('gb', trained_models['Gradient Boosting']),
+            ('lr', trained_models['Logistic Regression'])
+        ]
+        
+        ensemble = VotingClassifier(estimators=ensemble_models, voting='soft')
+        ensemble.fit(X_train, y_train)
+        
+        # Evaluate ensemble
+        y_pred_ensemble = ensemble.predict(X_test)
+        ensemble_accuracy = accuracy_score(y_test, y_pred_ensemble)
+        ensemble_cv = cross_val_score(ensemble, X_train, y_train, cv=5, scoring='accuracy')
+        
+        # Find best individual model
+        best_model_name = max(model_results.keys(), key=lambda k: model_results[k]['accuracy'])
+        best_accuracy = model_results[best_model_name]['accuracy']
+        
+        # Save best model and ensemble
+        self.trainer.model = trained_models[best_model_name]
+        self.trainer.save_model("advanced_best_model.pkl")
+        
+        with open("advanced_ensemble_model.pkl", 'wb') as f:
+            pickle.dump(ensemble, f)
+        
+        results = {
+            'model_results': model_results,
+            'best_model': best_model_name,
+            'best_accuracy': best_accuracy,
+            'ensemble_accuracy': ensemble_accuracy,
+            'ensemble_cv_mean': ensemble_cv.mean(),
+            'ensemble_cv_std': ensemble_cv.std(),
+            'trained_models': trained_models,
+            'ensemble_model': ensemble
+        }
+        
+        logger.info(f"✅ Advanced training completed. Best: {best_model_name} ({best_accuracy:.3f}), Ensemble: {ensemble_accuracy:.3f}")
+        return results
 
 
 if __name__ == "__main__":
