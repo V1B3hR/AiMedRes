@@ -87,6 +87,34 @@ def run_both_modes() -> bool:
     
     return training_success and simulation_success
 
+def run_comprehensive_medical_ai() -> bool:
+    """
+    Run comprehensive training + simulation (medical AI context) with labyrinth components
+    This implements the exact problem statement requirements
+    """
+    logger.info("=== Running Comprehensive Medical AI Training + Simulation ===")
+    
+    try:
+        from comprehensive_training_simulation import MedicalAIComprehensiveSystem
+        
+        # Initialize and run the comprehensive system
+        system = MedicalAIComprehensiveSystem()
+        result = system.run_comprehensive_system()
+        
+        if result["status"] == "success":
+            logger.info("=== Comprehensive Medical AI System Complete ===")
+            logger.info(f"Training accuracy: {result['training_phase']['accuracy']:.3f}")
+            logger.info(f"Simulation health score: {result['simulation_phase']['health_score']:.3f}")
+            logger.info(f"Labyrinth components imported and functional: {result['system_integration']['labyrinth_components_imported']}")
+            return True
+        else:
+            logger.error(f"Comprehensive system failed in {result.get('phase', 'unknown')} phase")
+            return False
+        
+    except Exception as e:
+        logger.error(f"Comprehensive medical AI system failed: {e}")
+        return False
+
 def main():
     """Main entry point with command line argument parsing"""
     parser = argparse.ArgumentParser(
@@ -94,16 +122,17 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py --mode training     # Run comprehensive training only
-  python main.py --mode simulation   # Run simulation only  
-  python main.py --mode both         # Run both training and simulation
-  python main.py                     # Interactive mode (default)
+  python main.py --mode training       # Run comprehensive training only
+  python main.py --mode simulation     # Run simulation only  
+  python main.py --mode both           # Run both training and simulation
+  python main.py --mode comprehensive  # Run comprehensive medical AI training + simulation
+  python main.py                       # Interactive mode (default)
         """
     )
     
     parser.add_argument(
         '--mode', 
-        choices=['training', 'simulation', 'both', 'interactive'],
+        choices=['training', 'simulation', 'both', 'comprehensive', 'interactive'],
         default='interactive',
         help='Execution mode (default: interactive)'
     )
@@ -137,6 +166,8 @@ Examples:
         success = run_simulation()
     elif args.mode == 'both':
         success = run_both_modes()
+    elif args.mode == 'comprehensive':
+        success = run_comprehensive_medical_ai()
     elif args.mode == 'interactive':
         # Interactive mode - ask user what to do
         print("\n=== DuetMind Adaptive System ===")
@@ -144,11 +175,12 @@ Examples:
         print("1. Run comprehensive training")
         print("2. Run simulation")
         print("3. Run both training and simulation")
-        print("4. Exit")
+        print("4. Run comprehensive medical AI training + simulation")
+        print("5. Exit")
         
         while True:
             try:
-                choice = input("\nEnter your choice (1-4): ").strip()
+                choice = input("\nEnter your choice (1-5): ").strip()
                 if choice == '1':
                     success = run_comprehensive_training()
                     break
@@ -159,10 +191,13 @@ Examples:
                     success = run_both_modes()
                     break
                 elif choice == '4':
+                    success = run_comprehensive_medical_ai()
+                    break
+                elif choice == '5':
                     print("Exiting...")
                     sys.exit(0)
                 else:
-                    print("Invalid choice. Please enter 1, 2, 3, or 4.")
+                    print("Invalid choice. Please enter 1, 2, 3, 4, or 5.")
             except KeyboardInterrupt:
                 print("\nExiting...")
                 sys.exit(0)
