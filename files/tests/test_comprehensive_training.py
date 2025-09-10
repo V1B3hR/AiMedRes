@@ -220,7 +220,7 @@ class ComprehensiveTrainingTest(unittest.TestCase):
         
         try:
             # Test basic imports
-            from training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
+            from files.files.training.training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
             
             # Test trainer instantiation
             trainer = AlzheimerTrainer()
@@ -247,7 +247,7 @@ class ComprehensiveTrainingTest(unittest.TestCase):
         print("💾 Testing Model Persistence...")
         
         try:
-            from training import AlzheimerTrainer
+            from files.files.training.training import AlzheimerTrainer
             
             # Create trainer and train model
             trainer = AlzheimerTrainer()

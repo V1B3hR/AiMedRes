@@ -24,7 +24,7 @@ sys.path.insert(0, project_root)
 # Import security and training components
 from security.auth import SecureAuthManager
 from security.encryption import DataEncryption
-from remote_training_manager import RemoteTrainingManager
+from files.files.training.remote_training_manager import RemoteTrainingManager
 
 # Configure logging
 logging.basicConfig(

@@ -13,7 +13,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
+from files.files.training.training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
 from neuralnet import AliveLoopNode, ResourceRoom
 
 

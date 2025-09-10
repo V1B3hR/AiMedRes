@@ -17,7 +17,7 @@ def example_1_basic_training():
     print("EXAMPLE 1: BASIC TRAINING WORKFLOW")
     print("="*60)
     
-    from training.alzheimer_training_system import (
+    from files.files.training.alzheimer_training_system import (
         load_alzheimer_data, preprocess_data, train_model, 
         evaluate_model, save_model
     )
@@ -52,7 +52,7 @@ def example_2_data_quality_check():
     print("="*60)
     
     from data_quality_monitor import DataQualityMonitor
-    from training.alzheimer_training_system import load_alzheimer_data
+    from files.files.training.alzheimer_training_system import load_alzheimer_data
     
     # Load data
     print("1. Loading dataset for quality check...")
@@ -96,8 +96,8 @@ def example_4_medical_agent_reasoning():
     print("EXAMPLE 4: MEDICAL AGENT REASONING")
     print("="*60)
     
-    from comprehensive_training_simulation import MedicalKnowledgeAgent, ComprehensiveSystem
-    from training.alzheimer_training_system import load_model
+    from files.files.training.comprehensive_training_simulation import MedicalKnowledgeAgent, ComprehensiveSystem
+    from files.files.training.alzheimer_training_system import load_model
     from labyrinth_adaptive import AliveLoopNode, ResourceRoom
     
     # Load or train model
@@ -150,7 +150,7 @@ def example_5_comprehensive_system():
     print("EXAMPLE 5: COMPREHENSIVE SYSTEM")
     print("="*60)
     
-    from comprehensive_training_simulation import ComprehensiveSystem
+    from files.files.training.comprehensive_training_simulation import ComprehensiveSystem
     
     print("1. Initializing comprehensive system...")
     system = ComprehensiveSystem()
@@ -202,7 +202,7 @@ def example_6_custom_scenarios():
     print("EXAMPLE 6: CUSTOM MEDICAL SCENARIOS")
     print("="*60)
     
-    from comprehensive_training_simulation import ComprehensiveSystem
+    from files.files.training.comprehensive_training_simulation import ComprehensiveSystem
     import numpy as np
     
     system = ComprehensiveSystem()

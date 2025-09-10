@@ -18,7 +18,7 @@ from datetime import datetime
 
 # Import security and training components
 from security.auth import require_auth, require_admin
-from remote_training_manager import RemoteTrainingManager
+from files.files.training.remote_training_manager import RemoteTrainingManager
 
 logger = logging.getLogger('duetmind.api')
 

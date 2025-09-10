@@ -95,7 +95,7 @@ def run_comprehensive_medical_ai() -> bool:
     logger.info("=== Running Comprehensive Medical AI Training + Simulation ===")
     
     try:
-        from comprehensive_training_simulation import MedicalAIComprehensiveSystem
+        from files.files.training.comprehensive_training_simulation import MedicalAIComprehensiveSystem
         
         # Initialize and run the comprehensive system
         system = MedicalAIComprehensiveSystem()

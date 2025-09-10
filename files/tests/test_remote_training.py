@@ -21,7 +21,7 @@ from unittest.mock import patch, MagicMock
 from security.auth import SecureAuthManager
 from security.encryption import DataEncryption
 from remote_training_manager import RemoteTrainingManager, TrainingStatus
-from training import AlzheimerTrainer
+from files.files.training.training import AlzheimerTrainer
 
 class TestSecureAuthentication(unittest.TestCase):
     """Test security and authentication components."""
