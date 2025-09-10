@@ -25,7 +25,7 @@ def run_basic_training():
         trainer = AlzheimerTrainer()
         df = trainer.load_data()
         X, y = trainer.preprocess_data(df)
-        results = trainer.train_model(X, y)
+        model, results = trainer.train_model(X, y)
         trainer.save_model("basic_alzheimer_model.pkl")
         
         print(f"✅ Basic Training Completed!")

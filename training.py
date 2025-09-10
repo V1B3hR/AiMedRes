@@ -244,7 +244,7 @@ def run_training_simulation():
     # Load and train model
     df = trainer.load_data()
     X, y = trainer.preprocess_data(df)
-    results = trainer.train_model(X, y)
+    model, results = trainer.train_model(X, y)
     
     # Save model
     trainer.save_model()
