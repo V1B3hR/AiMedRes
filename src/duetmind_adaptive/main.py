@@ -39,7 +39,12 @@ class DuetMindApplication:
     
     def __init__(self, config_path: Optional[Path] = None):
         """Initialize application with configuration"""
-        self.config = DuetMindConfig(config_path)
+        if isinstance(config_path, DuetMindConfig):
+            # If config object passed directly
+            self.config = config_path
+        else:
+            # If config path passed
+            self.config = DuetMindConfig(config_path)
         self.safety_monitor = None
         self.agents: Dict[str, DuetMindAgent] = {}
         self.neural_networks: Dict[str, AdaptiveNeuralNetwork] = {}

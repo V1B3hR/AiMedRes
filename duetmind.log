@@ -13,3 +13,292 @@
 2025-09-11 16:46:35,108 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
 2025-09-11 16:46:35,108 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: TestSystemAgent (test-agent)
 2025-09-11 16:46:35,108 - DuetMind - INFO - Created agent: TestSystemAgent (test-agent)
+2025-09-11 16:49:26,686 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:49:26,686 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:49:26,691 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 16→[32, 16]→3
+2025-09-11 16:49:26,693 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:49:26,693 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: Agent1 (6c845436-0e7e-470f-8efe-2164f58d8ebc)
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: Agent2 (b00e973d-ebc1-4dff-97f0-610627c63b1b)
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.neural_network - ERROR - Prediction error: Input size mismatch: expected 32, got 16
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.agent - ERROR - Agent Agent1 thinking error: Input size mismatch: expected 32, got 16
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.agent - INFO - Agent Agent1 sent message to b00e973d-ebc1-4dff-97f0-610627c63b1b
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:49:26,694 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:49:26,695 - duetmind_adaptive.utils.safety - INFO - Safety monitoring started
+2025-09-11 16:49:26,695 - duetmind_adaptive.training.pipeline - INFO - Training pipeline initialized
+2025-09-11 16:49:26,695 - duetmind_adaptive.training.trainer - INFO - Secure trainer initialized
+2025-09-11 16:49:26,695 - duetmind_adaptive.training.trainer - INFO - Training network on synthetic data: 200 samples, 3 epochs
+2025-09-11 16:49:26,696 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 16→[64, 32, 16]→3
+2025-09-11 16:49:26,696 - duetmind_adaptive.training.pipeline - INFO - Starting network training: 3 epochs, batch size 32
+2025-09-11 16:49:26,890 - duetmind_adaptive.training.pipeline - INFO - Epoch 1/3 complete: 160 samples in 0.19s
+2025-09-11 16:49:27,085 - duetmind_adaptive.training.pipeline - INFO - Epoch 2/3 complete: 160 samples in 0.19s
+2025-09-11 16:49:27,280 - duetmind_adaptive.training.pipeline - INFO - Epoch 3/3 complete: 160 samples in 0.20s
+2025-09-11 16:49:27,324 - duetmind_adaptive.training.pipeline - INFO - Training completed successfully: 3 epochs, 480 samples in 0.58s
+2025-09-11 16:49:27,325 - duetmind_adaptive.training.trainer - INFO - Training agent on 50 scenarios for 5 epochs
+2025-09-11 16:49:27,326 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:49:27,327 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: TestAgent (1fa01d3d-01b5-4fd3-9e9d-bbf3fe14d4bf)
+2025-09-11 16:49:27,327 - duetmind_adaptive.training.pipeline - INFO - Starting agent training: 50 scenarios, 5 epochs
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,380 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,381 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,382 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,383 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,384 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,385 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,386 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,387 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,388 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,389 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,390 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,391 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,392 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,393 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - WARNING - Agent TestAgent has low energy: 8.003114805676997
+2025-09-11 16:49:27,394 - duetmind_adaptive.training.pipeline - INFO - Agent training completed: 5 epochs, 0 interactions
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - INFO - Shutting down agent TestAgent
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.neural_network - INFO - Initiating neural network shutdown
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.neural_network - INFO - Neural network shutdown complete
+2025-09-11 16:49:27,394 - duetmind_adaptive.core.agent - INFO - Agent TestAgent shutdown complete
+2025-09-11 16:49:27,394 - duetmind_adaptive.training.trainer - INFO - Shutting down secure trainer
+2025-09-11 16:49:27,394 - duetmind_adaptive.training.pipeline - INFO - Shutting down training pipeline
+2025-09-11 16:49:28,394 - duetmind_adaptive.utils.safety - INFO - Safety monitoring stopped
+2025-09-11 16:49:28,395 - duetmind_adaptive.training.pipeline - INFO - Training pipeline shutdown complete
+2025-09-11 16:49:28,395 - duetmind_adaptive.training.trainer - INFO - Secure trainer shutdown complete
+2025-09-11 16:49:53,263 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:49:53,263 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:49:53,263 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:50:21,765 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:50:21,765 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:50:21,765 - DuetMind - INFO - DuetMind application initialized
+2025-09-11 16:50:21,766 - duetmind_adaptive.utils.safety - INFO - Safety monitoring started
+2025-09-11 16:50:21,770 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 8→[16, 8]→2
+2025-09-11 16:50:21,770 - DuetMind - INFO - Created neural network: test_net
+2025-09-11 16:50:21,771 - duetmind_adaptive.utils.safety - INFO - Safety monitoring started
+2025-09-11 16:50:21,772 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:50:21,772 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: TestAgent (test_agent)
+2025-09-11 16:50:21,772 - DuetMind - INFO - Created agent: TestAgent (test_agent)
+2025-09-11 16:50:21,774 - duetmind_adaptive.core.agent - INFO - Agent TestAgent sent message to broadcast
+2025-09-11 16:50:21,774 - DuetMind - INFO - Starting graceful shutdown...
+2025-09-11 16:50:21,774 - duetmind_adaptive.core.agent - INFO - Shutting down agent TestAgent
+2025-09-11 16:50:21,774 - duetmind_adaptive.core.neural_network - INFO - Initiating neural network shutdown
+2025-09-11 16:50:22,775 - duetmind_adaptive.utils.safety - INFO - Safety monitoring stopped
+2025-09-11 16:50:22,775 - duetmind_adaptive.core.neural_network - INFO - Neural network shutdown complete
+2025-09-11 16:50:22,775 - duetmind_adaptive.core.agent - INFO - Agent TestAgent shutdown complete
+2025-09-11 16:50:22,775 - duetmind_adaptive.core.neural_network - INFO - Initiating neural network shutdown
+2025-09-11 16:50:23,775 - duetmind_adaptive.utils.safety - INFO - Safety monitoring stopped
+2025-09-11 16:50:23,775 - duetmind_adaptive.core.neural_network - INFO - Neural network shutdown complete
+2025-09-11 16:50:23,776 - DuetMind - INFO - Graceful shutdown complete
+2025-09-11 16:50:23,776 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:50:23,776 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:50:23,776 - duetmind_adaptive.utils.safety - INFO - Safety monitoring started
+2025-09-11 16:50:23,776 - duetmind_adaptive.training.pipeline - INFO - Training pipeline initialized
+2025-09-11 16:50:23,776 - duetmind_adaptive.training.trainer - INFO - Secure trainer initialized
+2025-09-11 16:50:23,777 - duetmind_adaptive.training.trainer - INFO - Training network on synthetic data: 100 samples, 2 epochs
+2025-09-11 16:50:23,778 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 8→[64, 32, 16]→2
+2025-09-11 16:50:23,778 - duetmind_adaptive.training.pipeline - INFO - Starting network training: 2 epochs, batch size 32
+2025-09-11 16:50:23,874 - duetmind_adaptive.training.pipeline - INFO - Epoch 1/2 complete: 80 samples in 0.10s
+2025-09-11 16:50:23,970 - duetmind_adaptive.training.pipeline - INFO - Epoch 2/2 complete: 80 samples in 0.10s
+2025-09-11 16:50:23,991 - duetmind_adaptive.training.pipeline - INFO - Training completed successfully: 2 epochs, 160 samples in 0.19s
+2025-09-11 16:50:23,991 - duetmind_adaptive.training.trainer - INFO - Training agent on 20 scenarios for 2 epochs
+2025-09-11 16:50:23,992 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:50:23,992 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: TrainingTestAgent (b44695b1-de23-4bf5-ab32-3989c241306e)
+2025-09-11 16:50:23,992 - duetmind_adaptive.training.pipeline - INFO - Starting agent training: 20 scenarios, 2 epochs
+2025-09-11 16:50:24,038 - duetmind_adaptive.training.pipeline - INFO - Agent training completed: 2 epochs, 0 interactions
+2025-09-11 16:50:24,038 - duetmind_adaptive.core.agent - INFO - Shutting down agent TrainingTestAgent
+2025-09-11 16:50:24,038 - duetmind_adaptive.core.neural_network - INFO - Initiating neural network shutdown
+2025-09-11 16:50:24,038 - duetmind_adaptive.core.neural_network - INFO - Neural network shutdown complete
+2025-09-11 16:50:24,038 - duetmind_adaptive.core.agent - INFO - Agent TrainingTestAgent shutdown complete
+2025-09-11 16:50:24,038 - duetmind_adaptive.training.trainer - INFO - Shutting down secure trainer
+2025-09-11 16:50:24,038 - duetmind_adaptive.training.pipeline - INFO - Shutting down training pipeline
+2025-09-11 16:50:25,038 - duetmind_adaptive.utils.safety - INFO - Safety monitoring stopped
+2025-09-11 16:50:25,039 - duetmind_adaptive.training.pipeline - INFO - Training pipeline shutdown complete
+2025-09-11 16:50:25,039 - duetmind_adaptive.training.trainer - INFO - Secure trainer shutdown complete
