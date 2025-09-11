@@ -1,0 +1,15 @@
+2025-09-11 16:46:35,099 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:46:35,099 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:46:35,103 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 8→[16, 8]→2
+2025-09-11 16:46:35,105 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:46:35,105 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: TestAgent (04687053-f3c2-4303-a26f-b303b57cb21a)
+2025-09-11 16:46:35,105 - duetmind_adaptive.core.neural_network - ERROR - Prediction error: Input size mismatch: expected 32, got 8
+2025-09-11 16:46:35,105 - duetmind_adaptive.core.agent - ERROR - Agent TestAgent thinking error: Input size mismatch: expected 32, got 8
+2025-09-11 16:46:35,106 - duetmind_adaptive.core.agent - INFO - Agent TestAgent sent message to test_recipient
+2025-09-11 16:46:35,106 - duetmind_adaptive.core.config - INFO - Loading default configuration
+2025-09-11 16:46:35,106 - duetmind_adaptive.core.config - INFO - Configuration validation passed
+2025-09-11 16:46:35,106 - DuetMind - INFO - DuetMind application initialized
+2025-09-11 16:46:35,107 - duetmind_adaptive.utils.safety - INFO - Safety monitoring started
+2025-09-11 16:46:35,108 - duetmind_adaptive.core.neural_network - INFO - AdaptiveNeuralNetwork initialized: 32→[64, 32, 16]→2
+2025-09-11 16:46:35,108 - duetmind_adaptive.core.agent - INFO - DuetMind agent initialized: TestSystemAgent (test-agent)
+2025-09-11 16:46:35,108 - DuetMind - INFO - Created agent: TestSystemAgent (test-agent)
