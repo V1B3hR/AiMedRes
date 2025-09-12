@@ -1,0 +1,37 @@
+stages:
+  ingest_raw:
+    cmd: python mlops/pipelines/ingest_raw.py
+    params:
+      - data.raw
+    outs:
+      - data/raw/alzheimer_sample.csv:
+          cache: false
+    
+  build_features:
+    cmd: python mlops/pipelines/build_features.py
+    deps:
+      - mlops/pipelines/build_features.py
+      - data/raw/alzheimer_sample.csv
+    params:
+      - data.processed
+      - data.features
+      - data.labels
+      - features
+    outs:
+      - data/processed/features.parquet
+      - data/processed/labels.parquet
+    
+  train_model:
+    cmd: python mlops/pipelines/train_model.py
+    deps:
+      - mlops/pipelines/train_model.py
+      - data/processed/features.parquet
+      - data/processed/labels.parquet
+    params:
+      - model
+      - mlflow
+    metrics:
+      - mlruns/
+    outs:
+      - models/:
+          cache: false
