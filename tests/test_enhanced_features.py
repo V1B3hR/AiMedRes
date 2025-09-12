@@ -361,9 +361,9 @@ class TestIntegrationWithExistingSystems(unittest.TestCase):
         
         # All agents should have required attributes from base classes
         for agent in agents:
-            self.hasattr(agent, 'name')
-            self.hasattr(agent, 'specialization')
-            self.hasattr(agent, 'expertise_areas')
+            self.assertTrue(hasattr(agent, 'name'))
+            self.assertTrue(hasattr(agent, 'specialization'))
+            self.assertTrue(hasattr(agent, 'expertise_areas'))
 
 
 if __name__ == '__main__':
