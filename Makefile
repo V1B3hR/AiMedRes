@@ -107,6 +107,20 @@ infra-down:
 infra-logs:
 	docker compose -f mlops/infra/docker-compose.yml logs -f
 
+# Database migrations
+db-migrate:
+	@echo "Running database migrations..."
+	cd mlops/infra && alembic upgrade head
+
+db-migrate-create:
+	@echo "Creating new migration..."
+	cd mlops/infra && alembic revision --autogenerate -m "$(message)"
+
+# Metadata management
+backfill-metadata:
+	@echo "Backfilling metadata..."
+	python scripts/backfill_metadata.py
+
 # MLflow UI
 mlflow-ui:
 	@echo "Starting MLflow UI..."

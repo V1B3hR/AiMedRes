@@ -249,6 +249,120 @@ Most system scripts import and use `neuralnet.py` as the core adaptive neural ne
 
 ---
 
+## MLOps Architecture
+
+**duetmind_adaptive** now includes a comprehensive MLOps (Machine Learning Operations) architecture that provides reproducible pipelines, automated training, and advanced agent memory capabilities.
+
+### Quick Start with MLOps
+
+```bash
+# Setup MLOps environment
+make setup-env
+
+# Run the complete ML pipeline
+make reproduce
+
+# Start MLOps infrastructure (Postgres + MLflow + MinIO)
+make infra-up
+
+# View experiment tracking
+make mlflow-ui
+```
+
+### MLOps Components
+
+#### 🔄 **Data Pipeline**
+- **Automated ingestion** from multiple data sources
+- **Feature engineering** with schema validation (Pandera)
+- **Data versioning** with DVC integration
+- **Quality monitoring** and drift detection
+
+#### 🧪 **Experiment Tracking**
+- **MLflow integration** for model versioning and metrics
+- **Feature hashing** for schema consistency
+- **Performance monitoring** with automated alerts
+- **Model registry** with promotion workflows
+
+#### 🚀 **Production Infrastructure**
+- **Docker Compose** stack (PostgreSQL + MinIO + MLflow)
+- **Database migrations** with Alembic
+- **Object storage** for model artifacts
+- **CI/CD pipeline** with GitHub Actions
+
+#### 🧠 **Agent Memory System**
+- **Vector embeddings** with pgvector for semantic memory
+- **Agent session management** with persistent memory
+- **Semantic similarity search** for reasoning retrieval
+- **Memory associations** for knowledge graphs
+
+### MLOps Commands
+
+```bash
+# Data operations
+make data              # Ingest raw data
+make features          # Build and validate features  
+make train             # Train model with MLflow logging
+make validate          # Run schema validation
+make hash-features     # Compute feature consistency hash
+
+# Infrastructure
+make infra-up          # Start MLOps infrastructure
+make db-migrate        # Run database migrations
+make backfill-metadata # Register existing data assets
+
+# Development
+make test              # Run test suite
+make lint              # Code quality checks
+make format            # Auto-format code
+make reproduce         # Full DVC pipeline reproduction
+```
+
+### Architecture Phases
+
+The MLOps system is implemented in three incremental phases:
+
+1. **Phase 1 - Reproducibility** ✅
+   - Data pipelines, schema validation, MLflow tracking, DVC integration
+
+2. **Phase 2 - Infrastructure** ✅  
+   - PostgreSQL metadata, Docker containers, model registry, migrations
+
+3. **Phase 3 - Advanced Features** ✅
+   - Vector memory, CI/CD automation, drift detection, agent embeddings
+
+### Key Features
+
+- **📊 Experiment Tracking**: MLflow integration with SQLite/PostgreSQL backend
+- **🔍 Schema Validation**: Pandera contracts for data quality assurance
+- **📦 Data Versioning**: DVC pipeline for reproducible data workflows
+- **🏗️ Infrastructure**: Docker Compose for local development and testing
+- **🤖 Agent Memory**: pgvector-based semantic memory for AI agents
+- **⚡ Automation**: GitHub Actions CI/CD for automated retraining
+- **📈 Monitoring**: Data drift detection and model performance tracking
+
+### Documentation
+
+- **[MLOps Architecture Guide](./MLOPS_ARCHITECTURE.md)**: Comprehensive architecture documentation
+- **[Model Promotion Guidelines](./mlops/registry/model_promotion.md)**: Model lifecycle management
+- **[Configuration Reference](./params.yaml)**: Central parameter configuration
+
+### Agent Memory Demo
+
+The vector memory system enables agents to store and retrieve semantic memories:
+
+```bash
+# Run agent memory demonstration
+python agent_memory/embed_memory.py
+```
+
+This demonstrates:
+- Storing agent reasoning as vector embeddings
+- Semantic similarity search for memory retrieval  
+- Memory associations and importance scoring
+- Session-based memory isolation
+
+---
+
 ## Contributing
 
 Contributions and feedback are welcome! Please open issues or pull requests for bugs, features, or documentation improvements.
