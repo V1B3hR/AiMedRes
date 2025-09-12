@@ -298,9 +298,11 @@ def run_multi_seed_training(config: Dict[str, Any], target_column: str = None) -
             
             aggregate_results.append(run_metrics)
             
+            primary_metric = config.get('metric_primary', 'macro_f1')
+            best_score_key = f'best_val_{primary_metric}'
             logger.info(f"Completed seed {seed}: "
                        f"best_model={run_metrics.get('best_model', 'N/A')}, "
-                       f"best_score={run_metrics.get(f'best_val_{config.get(\"metric_primary\", \"macro_f1\")}', 0):.4f}, "
+                       f"best_score={run_metrics.get(best_score_key, 0):.4f}, "
                        f"time={training_time:.1f}s")
             
         except Exception as e:

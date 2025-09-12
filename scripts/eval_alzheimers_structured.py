@@ -30,8 +30,13 @@ from sklearn.metrics import (
     confusion_matrix, roc_auc_score, precision_recall_curve,
     roc_curve
 )
-import matplotlib.pyplot as plt
-import seaborn as sns
+
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    VISUALIZATION_AVAILABLE = True
+except ImportError:
+    VISUALIZATION_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(
@@ -322,10 +327,11 @@ def create_visualizations(metrics: Dict[str, Any], output_path: Path):
         metrics: Evaluation metrics containing confusion matrix
         output_path: Directory to save plots
     """
-    try:
-        import matplotlib.pyplot as plt
-        import seaborn as sns
+    if not VISUALIZATION_AVAILABLE:
+        logger.warning("Matplotlib/Seaborn not available - skipping visualizations")
+        return
         
+    try:
         # Confusion Matrix
         if 'confusion_matrix' in metrics:
             cm = np.array(metrics['confusion_matrix'])
@@ -341,8 +347,6 @@ def create_visualizations(metrics: Dict[str, Any], output_path: Path):
             
             logger.info("Confusion matrix visualization saved")
     
-    except ImportError:
-        logger.warning("Matplotlib/Seaborn not available - skipping visualizations")
     except Exception as e:
         logger.warning(f"Error creating visualizations: {e}")
 

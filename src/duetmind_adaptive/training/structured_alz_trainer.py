@@ -66,6 +66,12 @@ class EarlyStoppingMLP:
         """
         Train MLP with early stopping using batch processing
         """
+        # Convert to numpy arrays to ensure indexing works
+        X_train = np.array(X_train)
+        y_train = np.array(y_train)
+        X_val = np.array(X_val)
+        y_val = np.array(y_val)
+        
         n_samples = X_train.shape[0]
         indices = np.arange(n_samples)
         epoch_metrics = []
