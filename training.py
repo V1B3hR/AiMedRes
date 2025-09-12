@@ -18,32 +18,62 @@ from typing import Dict, Any, List, Tuple, Optional
 import pickle
 import os
 from pathlib import Path
+import random
 
 # Import existing components
 from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
 from files.dataset.create_test_data import create_test_alzheimer_data
+from data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DuetMindTraining")
 
+
+class TrainingConfig:
+    """Configuration class for deterministic training"""
+    
+    def __init__(self, 
+                 random_seed: int = 42,
+                 test_size: float = 0.3,
+                 n_estimators: int = 100,
+                 max_depth: int = 5,
+                 min_samples_split: int = 2):
+        self.random_seed = random_seed
+        self.test_size = test_size
+        self.n_estimators = n_estimators
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+    
+    def set_random_seeds(self):
+        """Set all random seeds for deterministic behavior"""
+        np.random.seed(self.random_seed)
+        random.seed(self.random_seed)
+
+
 class AlzheimerTrainer:
     """Training system for Alzheimer disease prediction integrated with duetmind_adaptive agents"""
     
-    def __init__(self, data_path: Optional[str] = None):
-        self.data_path = data_path
+    def __init__(self, 
+                 data_loader: Optional[DataLoader] = None,
+                 config: Optional[TrainingConfig] = None):
+        self.data_loader = data_loader
+        self.config = config or TrainingConfig()
         self.model = None
         self.label_encoder = LabelEncoder()
         self.feature_scaler = StandardScaler()
         self.feature_columns = []
         self.target_column = 'diagnosis'
         
+        # Set random seeds for deterministic behavior
+        self.config.set_random_seeds()
+        
     def load_data(self) -> pd.DataFrame:
-        """Load Alzheimer dataset from file or create test data"""
-        if self.data_path and os.path.exists(self.data_path):
-            logger.info(f"Loading data from {self.data_path}")
-            df = pd.read_csv(self.data_path)
+        """Load Alzheimer dataset using data loader or create test data"""
+        if self.data_loader:
+            logger.info("Loading data using provided data loader")
+            df = self.data_loader.load_data()
         else:
-            logger.info("Creating test data for training")
+            logger.info("No data loader provided, creating test data for training")
             df = create_test_alzheimer_data()
             
         logger.info(f"Loaded dataset with {len(df)} rows and {len(df.columns)} columns")
@@ -84,19 +114,24 @@ class AlzheimerTrainer:
         
         return X_scaled, y_encoded
     
-    def train_model(self, X: np.ndarray, y: np.ndarray) -> Tuple[RandomForestClassifier, Dict[str, Any]]:
+    def train_model(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
         """Train the Alzheimer prediction model"""
+        # Ensure deterministic behavior
+        self.config.set_random_seeds()
+        
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.3, random_state=42, stratify=y
+            X, y, test_size=self.config.test_size, 
+            random_state=self.config.random_seed, 
+            stratify=y
         )
         
         # Train Random Forest classifier
         self.model = RandomForestClassifier(
-            n_estimators=100,
-            random_state=42,
-            max_depth=5,
-            min_samples_split=2
+            n_estimators=self.config.n_estimators,
+            random_state=self.config.random_seed,
+            max_depth=self.config.max_depth,
+            min_samples_split=self.config.min_samples_split
         )
         
         logger.info("Training Random Forest classifier...")
@@ -130,7 +165,7 @@ class AlzheimerTrainer:
             )
         }
         
-        return self.model, metrics
+        return metrics
     
     def save_model(self, model_path: str = "alzheimer_model.pkl"):
         """Save the trained model and preprocessors"""
@@ -161,10 +196,18 @@ class AlzheimerTrainer:
     def predict(self, features: Dict[str, Any]) -> str:
         """Make prediction for a single case"""
         if self.model is None:
-            raise ValueError("Model not trained or loaded")
+            raise ValueError("No trained model available. Please train or load a model first.")
+        
+        # Check for required features
+        missing_features = set(self.feature_columns) - set(features.keys())
+        if missing_features:
+            raise ValueError(f"Missing required features: {missing_features}")
         
         # Convert features to DataFrame
         feature_df = pd.DataFrame([features])
+        
+        # Select only the features used during training
+        feature_df = feature_df[self.feature_columns]
         
         # Apply same preprocessing
         if 'gender' in feature_df.columns:
@@ -247,7 +290,7 @@ def run_training_simulation():
     # Load and train model
     df = trainer.load_data()
     X, y = trainer.preprocess_data(df)
-    model, results = trainer.train_model(X, y)
+    results = trainer.train_model(X, y)
     
     # Save model
     trainer.save_model()
