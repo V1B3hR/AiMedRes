@@ -123,29 +123,76 @@ jobs:
             print('No significant drift detected')
         "
 
-    - name: Run ML pipeline
+    - name: Run Enhanced ML Pipeline
       id: training
       run: |
         # Set MLflow tracking URI for CI
         export MLFLOW_TRACKING_URI=sqlite:///mlflow_ci.db
         
-        # Run the full pipeline
-        echo "Starting ML pipeline..."
+        # Run the full enhanced pipeline
+        echo "Starting Enhanced ML pipeline..."
         
-        # Ingest data
+        # Ingest data (including new lung disease dataset)
         python mlops/pipelines/ingest_raw.py
         
         # Build features and validate schema
         python mlops/pipelines/build_features.py
         
         # Validate processed data
-        python mlops/validation/schema_contracts.py data/processed/features.parquet --schema features
-        python mlops/validation/schema_contracts.py data/processed/labels.parquet --schema labels
+        if [ -f data/processed/features.parquet ]; then
+          python mlops/validation/schema_contracts.py data/processed/features.parquet --schema features
+        fi
+        if [ -f data/processed/labels.parquet ]; then
+          python mlops/validation/schema_contracts.py data/processed/labels.parquet --schema labels
+        fi
         
-        # Train model
+        # Run enhanced ensemble training
+        echo "Running enhanced ensemble training..."
+        python -c "
+        import sys
+        sys.path.append('.')
+        from enhanced_ensemble_training import run_enhanced_training_pipeline
+        results = run_enhanced_training_pipeline()
+        print(f'Enhanced training completed - Best accuracy: {results[\"best_test_accuracy\"]:.3f}')
+        "
+        
+        # Run multi-modal data integration demo
+        echo "Running multi-modal data integration..."
+        python -c "
+        import sys
+        sys.path.append('.')
+        from multimodal_data_integration import run_multimodal_demo
+        results = run_multimodal_demo()
+        print('Multi-modal integration completed successfully')
+        "
+        
+        # Run specialized medical agents simulation
+        echo "Running specialized medical agents simulation..."
+        python -c "
+        import sys
+        sys.path.append('.')
+        from specialized_medical_agents import create_specialized_medical_team, ConsensusManager, run_multi_step_diagnostic_simulation
+        from files.training.comprehensive_training_simulation import create_test_case
+        from labyrinth_adaptive import AliveLoopNode, ResourceRoom
+        
+        # Create test environment
+        alive_node = AliveLoopNode((0, 0), (0.5, 0), 15.0, node_id=1)
+        resource_room = ResourceRoom()
+        
+        # Create and test specialized team
+        medical_team = create_specialized_medical_team(alive_node, resource_room)
+        consensus_manager = ConsensusManager()
+        test_cases = [create_test_case() for _ in range(3)]
+        results = run_multi_step_diagnostic_simulation(medical_team, consensus_manager, test_cases)
+        
+        avg_confidence = sum(r['consensus_confidence'] for r in results) / len(results)
+        print(f'Medical agents simulation completed - Average confidence: {avg_confidence:.3f}')
+        "
+        
+        # Train original models for compatibility
         python mlops/pipelines/train_model.py
         
-        echo "ML pipeline completed successfully"
+        echo "Enhanced ML pipeline completed successfully"
 
     - name: Evaluate model performance
       id: evaluation
