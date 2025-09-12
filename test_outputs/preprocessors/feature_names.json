@@ -1,0 +1,18 @@
+[
+  "Age",
+  "BMI",
+  "AlcoholConsumption",
+  "PhysicalActivity",
+  "DietQuality",
+  "SleepQuality",
+  "FamilyHistoryAlzheimers",
+  "CardiovascularDisease",
+  "Diabetes",
+  "Depression",
+  "HeadInjury",
+  "Hypertension",
+  "Gender_F",
+  "Gender_M",
+  "Smoking_No",
+  "Smoking_Yes"
+]

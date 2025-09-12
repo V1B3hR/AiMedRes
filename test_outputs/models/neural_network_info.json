@@ -1,0 +1,10 @@
+{
+  "input_dim": 16,
+  "num_classes": 3,
+  "hidden_dims": [
+    256,
+    128,
+    64,
+    32
+  ]
+}
