@@ -207,7 +207,7 @@ class TrainingPipeline:
     def train_agent(self,
                    agent: DuetMindAgent,
                    training_scenarios: List[Dict[str, Any]],
-                   epochs: int = 50) -> TrainingResult:
+                   epochs: int = 20) -> TrainingResult:
         """
         Train cognitive agent with interactive scenarios
         
