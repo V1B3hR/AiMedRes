@@ -417,7 +417,7 @@ class AlzheimerTrainingPipeline:
         self.classical_results = results
         return results
     
-    def train_neural_network(self, epochs: int = 50, batch_size: int = 32) -> Dict[str, Any]:
+    def train_neural_network(self, epochs: int = 20, batch_size: int = 32) -> Dict[str, Any]:
         """
         Train a tabular neural network (MLP)
         
@@ -673,7 +673,7 @@ class AlzheimerTrainingPipeline:
         
         logger.info(f"Saved summary report to {summary_path}")
     
-    def run_full_pipeline(self, data_path: str = None, target_column: str = None, epochs: int = 50, n_folds: int = 5) -> Dict[str, Any]:
+    def run_full_pipeline(self, data_path: str = None, target_column: str = None, epochs: int = 20, n_folds: int = 5) -> Dict[str, Any]:
         """
         Run the complete training pipeline
         
@@ -749,8 +749,8 @@ def main():
     parser.add_argument(
         '--epochs', 
         type=int, 
-        default=50,
-        help='Number of epochs for neural network training (default: 50)'
+        default=20,
+        help='Number of epochs for neural network training (default: 20)'
     )
     parser.add_argument(
         '--folds', 
