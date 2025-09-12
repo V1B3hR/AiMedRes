@@ -54,4 +54,5 @@ privacy_audit.db
 htmlcov/
 
 # Logs
-*.log
+*.logoutputs/
+test_outputs/

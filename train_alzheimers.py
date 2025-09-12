@@ -204,12 +204,12 @@ class AlzheimerTrainingPipeline:
             logger.error(f"Error loading dataset: {e}")
             raise
     
-    def preprocess_data(self, target_column: str = "Class") -> Tuple[np.ndarray, np.ndarray]:
+    def preprocess_data(self, target_column: str = None) -> Tuple[np.ndarray, np.ndarray]:
         """
         Preprocess the data: drop ID columns, encode categorical, impute missing, standardize
         
         Args:
-            target_column: Name of the target column
+            target_column: Name of the target column. If None, auto-detects from common names.
             
         Returns:
             Tuple of (X_processed, y_encoded)
@@ -221,6 +221,21 @@ class AlzheimerTrainingPipeline:
         
         # Make a copy to avoid modifying original data
         df = self.data.copy()
+        
+        # Auto-detect target column if not provided
+        if target_column is None:
+            possible_targets = ['Class', 'Diagnosis', 'Target', 'Label', 'class', 'diagnosis', 'target', 'label']
+            for col in possible_targets:
+                if col in df.columns:
+                    target_column = col
+                    logger.info(f"Auto-detected target column: '{target_column}'")
+                    break
+            
+            if target_column is None:
+                available_cols = list(df.columns)
+                logger.error(f"Could not auto-detect target column. Available columns: {available_cols}")
+                logger.error("Please specify the target column explicitly using the target_column parameter.")
+                raise ValueError("Target column not found. Common target column names not detected in dataset")
         
         # Check if target column exists
         if target_column not in df.columns:
@@ -658,12 +673,13 @@ class AlzheimerTrainingPipeline:
         
         logger.info(f"Saved summary report to {summary_path}")
     
-    def run_full_pipeline(self, data_path: str = None, epochs: int = 50, n_folds: int = 5) -> Dict[str, Any]:
+    def run_full_pipeline(self, data_path: str = None, target_column: str = None, epochs: int = 50, n_folds: int = 5) -> Dict[str, Any]:
         """
         Run the complete training pipeline
         
         Args:
             data_path: Optional path to dataset
+            target_column: Name of target column (auto-detects if None)
             epochs: Number of epochs for neural network
             n_folds: Number of folds for cross-validation
             
@@ -678,7 +694,7 @@ class AlzheimerTrainingPipeline:
             self.load_data(data_path)
             
             # Preprocess data
-            self.preprocess_data()
+            self.preprocess_data(target_column)
             
             # Train classical models
             self.train_classical_models(n_folds)
@@ -719,6 +735,12 @@ def main():
         help='Path to dataset CSV file (if None, downloads from Kaggle)'
     )
     parser.add_argument(
+        '--target-column', 
+        type=str, 
+        default=None,
+        help='Name of target column (auto-detects if None)'
+    )
+    parser.add_argument(
         '--output-dir', 
         type=str, 
         default='outputs',
@@ -745,6 +767,7 @@ def main():
     try:
         report = pipeline.run_full_pipeline(
             data_path=args.data_path,
+            target_column=args.target_column,
             epochs=args.epochs,
             n_folds=args.folds
         )
