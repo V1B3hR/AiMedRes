@@ -57,7 +57,10 @@ class TestAlzheimerTrainer(unittest.TestCase):
             temp_path = f.name
         
         try:
-            trainer = AlzheimerTrainer(data_path=temp_path)
+            # Use the new data loader API
+            from data_loaders import CSVDataLoader
+            csv_loader = CSVDataLoader(temp_path)
+            trainer = AlzheimerTrainer(data_loader=csv_loader)
             df = trainer.load_data()
             self.assertEqual(len(df), 2)
             self.assertIn('diagnosis', df.columns)

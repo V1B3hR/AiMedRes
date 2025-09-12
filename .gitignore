@@ -47,3 +47,11 @@ trained_models/
 secure_medical_workspace/
 privacy_audit.db
 *.encrypted
+
+# Test coverage and pytest
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Logs
+*.log
