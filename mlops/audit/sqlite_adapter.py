@@ -147,3 +147,35 @@ class SQLiteAuditEventChain(AuditEventChain):
         except Exception as e:
             logger.error(f"Error logging audit event: {e}")
             raise
+    
+    def verify_chain_integrity(self, start_index: int = 1, end_index: int = None) -> dict:
+        """SQLite-compatible chain integrity verification."""
+        try:
+            # Use parent method but handle SQLite datetime functions
+            result = super().verify_chain_integrity(start_index, end_index)
+            
+            # Update verification status with SQLite-compatible datetime
+            with self.engine.connect() as conn:
+                if result.get('chain_valid', False):
+                    conn.execute(text("""
+                    UPDATE audit_chain_summary 
+                    SET last_verification = datetime('now'), chain_status = 'valid'
+                    """))
+                else:
+                    conn.execute(text("""
+                    UPDATE audit_chain_summary 
+                    SET last_verification = datetime('now'), chain_status = 'invalid'
+                    """))
+                conn.commit()
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in SQLite chain verification: {e}")
+            return {
+                'error': str(e),
+                'chain_valid': False,
+                'valid_events': 0,
+                'total_events_checked': 0,
+                'verification_timestamp': datetime.now().isoformat()
+            }
