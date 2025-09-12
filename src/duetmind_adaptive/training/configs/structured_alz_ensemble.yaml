@@ -1,0 +1,69 @@
+# Structured Alzheimer's Training - Ensemble Configuration
+profile: ensemble
+epochs: 80
+patience: 8
+batch_size: 64
+validation_split: 0.2
+seeds: [42, 1337, 2025]
+models: [logreg, random_forest, mlp]
+ensemble: true
+metric_primary: macro_f1
+class_weight: balanced
+output_dir: metrics/structured_alz
+
+# Ensemble configuration
+ensemble_params:
+  voting: soft  # soft or hard voting
+  estimators: [logreg, random_forest, mlp]
+  weights: null  # Equal weights, or specify [0.3, 0.4, 0.3]
+  n_jobs: 1
+
+# Model-specific hyperparameters
+model_params:
+  logreg:
+    max_iter: 200
+    solver: lbfgs
+    multi_class: auto
+  random_forest:
+    n_estimators: 300
+    max_depth: null
+    min_samples_split: 2
+    min_samples_leaf: 1
+  mlp:
+    hidden_layer_sizes: [64, 32]
+    activation: relu
+    solver: adam
+    learning_rate_init: 0.001
+    alpha: 0.0001
+
+# Data preprocessing
+preprocessing:
+  numeric_strategy: median
+  categorical_strategy: most_frequent
+  missing_threshold: 0.1  # Warn if >10% missing values
+  scale_features: true
+  handle_unknown: ignore
+
+# Early stopping for MLP
+early_stopping:
+  enabled: true
+  monitor: macro_f1
+  patience: 8
+  min_delta: 0.000001
+  restore_best_weights: true
+
+# Metrics and evaluation
+metrics:
+  save_per_epoch: true
+  save_confusion_matrix: true  
+  save_classification_report: true
+  compute_roc_auc: true
+  save_formats: [json, csv]
+
+# Output and artifacts
+artifacts:
+  save_best_model: true
+  save_final_model: true
+  save_preprocessing: true
+  save_feature_names: true
+  compress_models: false
