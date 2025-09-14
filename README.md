@@ -2,6 +2,32 @@
 
 ...
 
+## Migration Notes
+
+### File Structure Updates (December 2024)
+
+**Important**: The project file structure has been reorganized. If you have existing code that imports from the old paths, please update your imports:
+
+#### Updated Import Paths:
+- **Old**: `from training.alzheimer_training_system import ...`
+- **New**: `from files.training.alzheimer_training_system import ...`
+
+#### Files Updated:
+- Training modules are now located in `files/training/` directory
+- All references to `training.*` imports have been updated to `files.training.*`
+- Documentation and examples have been updated with correct import paths
+
+#### For Developers:
+If you encounter import errors like `ModuleNotFoundError: No module named 'training.alzheimer_training_system'`, update your imports to use the new path structure:
+
+```python
+# Old import (will fail)
+from training.alzheimer_training_system import load_alzheimer_data
+
+# New import (correct)
+from files.training.alzheimer_training_system import load_alzheimer_data
+```
+
 ## Roadmap
 
 - [x] Core integration of AdaptiveNN and DuetMind

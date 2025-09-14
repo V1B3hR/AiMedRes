@@ -17,7 +17,7 @@ def example_1_basic_training():
     print("EXAMPLE 1: BASIC TRAINING WORKFLOW")
     print("="*60)
     
-    from training.alzheimer_training_system import (
+    from files.training.alzheimer_training_system import (
         load_alzheimer_data, preprocess_data, train_model, 
         evaluate_model, save_model
     )
@@ -52,7 +52,7 @@ def example_2_data_quality_check():
     print("="*60)
     
     from data_quality_monitor import DataQualityMonitor
-    from training.alzheimer_training_system import load_alzheimer_data
+    from files.training.alzheimer_training_system import load_alzheimer_data
     
     # Load data
     print("1. Loading dataset for quality check...")
@@ -97,7 +97,7 @@ def example_4_medical_agent_reasoning():
     print("="*60)
     
     from comprehensive_training_simulation import MedicalKnowledgeAgent, ComprehensiveSystem
-    from training.alzheimer_training_system import load_model
+    from files.training.alzheimer_training_system import load_model
     from labyrinth_adaptive import AliveLoopNode, ResourceRoom
     
     # Load or train model
