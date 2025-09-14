@@ -19,12 +19,27 @@ import json
 import os
 
 # Import our monitoring systems
-from ..security.safety_monitor import SafetyMonitor, SafetyDomain
-from ..security.monitoring import SecurityMonitor
-from ..mlops.monitoring.production_monitor import ProductionMonitor
-from ..agent_memory.memory_consolidation import MemoryConsolidator
-from ..agent_memory.embed_memory import AgentMemoryStore
-from ..agent_memory.agent_extensions import CapabilityRegistry
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from security.safety_monitor import SafetyMonitor, SafetyDomain
+    from security.monitoring import SecurityMonitor
+    from mlops.monitoring.production_monitor import ProductionMonitor
+    from agent_memory.memory_consolidation import MemoryConsolidator
+    from agent_memory.embed_memory import AgentMemoryStore
+    from agent_memory.agent_extensions import CapabilityRegistry
+except ImportError as e:
+    # Fallback for when modules are not available
+    SafetyMonitor = None
+    SafetyDomain = None
+    SecurityMonitor = None
+    ProductionMonitor = None
+    MemoryConsolidator = None
+    AgentMemoryStore = None
+    CapabilityRegistry = None
+    logger.warning(f"Some monitoring modules not available: {e}")
 
 logger = logging.getLogger('duetmind.visualization.api')
 
