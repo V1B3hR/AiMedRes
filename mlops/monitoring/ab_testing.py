@@ -250,13 +250,15 @@ class ABTestingManager:
                 # Log audit event
                 audit_event_id = self.audit_chain.log_event(
                     event_type="ab_experiment_created",
-                    user_id="system",
-                    details={
+                    entity_type="experiment",
+                    entity_id=config.experiment_name,
+                    event_data={
                         'experiment_name': config.experiment_name,
                         'model_a': config.model_a_version,
                         'model_b': config.model_b_version,
                         'traffic_split': config.traffic_split
-                    }
+                    },
+                    user_id="system"
                 )
                 
                 logger.info(f"Created experiment: {config.experiment_name}")
@@ -319,8 +321,10 @@ class ABTestingManager:
             # Log audit event
             self.audit_chain.log_event(
                 event_type="ab_experiment_started",
-                user_id="system",
-                details={'experiment_name': experiment_name}
+                entity_type="experiment",
+                entity_id=experiment_name,
+                event_data={'experiment_name': experiment_name},
+                user_id="system"
             )
             
             logger.info(f"Started experiment: {experiment_name}")
@@ -615,13 +619,15 @@ class ABTestingManager:
         # Log audit event
         self.audit_chain.log_event(
             event_type="ab_experiment_stopped",
-            user_id="system",
-            details={
+            entity_type="experiment",
+            entity_id=experiment_name,
+            event_data={
                 'experiment_name': experiment_name,
                 'reason': reason,
                 'winner': results.winner,
                 'recommendation': results.recommendation
-            }
+            },
+            user_id="system"
         )
         
         logger.info(f"Stopped experiment: {experiment_name} - Winner: {results.winner}")

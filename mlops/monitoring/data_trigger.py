@@ -390,12 +390,14 @@ class DataDrivenRetrainingTrigger:
         # Log audit event
         audit_event_id = self.audit_chain.log_event(
             event_type="retraining_triggered",
-            user_id="system",
-            details={
+            entity_type="model",
+            entity_id=self.model_name,
+            event_data={
                 'trigger_type': trigger_type,
                 'reason': reason,
                 'model_name': self.model_name
-            }
+            },
+            user_id="system"
         )
         event.audit_event_id = audit_event_id
         

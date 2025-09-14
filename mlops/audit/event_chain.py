@@ -39,45 +39,49 @@ class AuditEventChain:
         """Create audit event tables if they don't exist."""
         try:
             with self.engine.connect() as conn:
-                # Create audit events table
+                # Create audit events table (SQLite compatible)
                 conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS audit_events (
-                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    event_type VARCHAR(100) NOT NULL,
-                    entity_type VARCHAR(100) NOT NULL,
-                    entity_id VARCHAR(200) NOT NULL,
-                    user_id VARCHAR(100),
-                    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                    event_data JSONB,
-                    metadata_json JSONB,
-                    previous_hash VARCHAR(64),
-                    current_hash VARCHAR(64) NOT NULL,
+                    id TEXT PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    entity_type TEXT NOT NULL,
+                    entity_id TEXT NOT NULL,
+                    user_id TEXT,
+                    timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+                    event_data TEXT,
+                    metadata_json TEXT,
+                    previous_hash TEXT,
+                    current_hash TEXT NOT NULL,
                     chain_index INTEGER NOT NULL,
-                    verification_status VARCHAR(20) DEFAULT 'unverified'
-                );
-                
-                CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(timestamp);
-                CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON audit_events(entity_type, entity_id);
-                CREATE INDEX IF NOT EXISTS idx_audit_events_hash ON audit_events(current_hash);
-                CREATE INDEX IF NOT EXISTS idx_audit_events_chain ON audit_events(chain_index);
+                    verification_status TEXT DEFAULT 'unverified'
+                )
                 """))
                 
-                # Create audit event summary table for chain integrity
+                # Create indexes separately
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(timestamp)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_audit_events_entity ON audit_events(entity_type, entity_id)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_audit_events_hash ON audit_events(current_hash)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS idx_audit_events_chain ON audit_events(chain_index)"))
+                
+                # Create audit event summary table for chain integrity (SQLite compatible)
                 conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS audit_chain_summary (
-                    id SERIAL PRIMARY KEY,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     last_chain_index INTEGER NOT NULL DEFAULT 0,
-                    last_hash VARCHAR(64),
+                    last_hash TEXT,
                     total_events INTEGER NOT NULL DEFAULT 0,
-                    last_verification TIMESTAMP WITH TIME ZONE,
-                    chain_status VARCHAR(20) DEFAULT 'valid'
-                );
-                
-                -- Initialize summary if empty
-                INSERT INTO audit_chain_summary (last_chain_index, total_events)
-                SELECT 0, 0
-                WHERE NOT EXISTS (SELECT 1 FROM audit_chain_summary);
+                    last_verification TEXT,
+                    chain_status TEXT DEFAULT 'valid'
+                )
                 """))
+                
+                # Initialize summary if empty
+                conn.execute(text("""
+                INSERT OR IGNORE INTO audit_chain_summary (id, last_chain_index, total_events)
+                VALUES (1, 0, 0)
+                """))
+                
+                conn.commit()
                 
                 conn.commit()
                 logger.info("Audit event tables created/verified")
@@ -154,24 +158,28 @@ class AuditEventChain:
                     'event_data': event_data
                 }
                 
+                # Generate unique ID
+                import uuid
+                event_id = str(uuid.uuid4())
+                
                 # Calculate hash
                 current_hash = self._calculate_hash(event_for_hash, previous_hash)
                 
                 # Insert event
-                result = conn.execute(text("""
+                conn.execute(text("""
                 INSERT INTO audit_events 
-                (event_type, entity_type, entity_id, user_id, timestamp, 
+                (id, event_type, entity_type, entity_id, user_id, timestamp, 
                  event_data, metadata_json, previous_hash, current_hash, chain_index)
                 VALUES 
-                (:event_type, :entity_type, :entity_id, :user_id, :timestamp,
+                (:id, :event_type, :entity_type, :entity_id, :user_id, :timestamp,
                  :event_data, :metadata, :previous_hash, :current_hash, :chain_index)
-                RETURNING id
                 """), {
+                    'id': event_id,
                     'event_type': event_type,
                     'entity_type': entity_type,
                     'entity_id': entity_id,
                     'user_id': user_id,
-                    'timestamp': timestamp,
+                    'timestamp': timestamp.isoformat(),
                     'event_data': json.dumps(event_data),
                     'metadata': json.dumps(metadata or {}),
                     'previous_hash': previous_hash,
@@ -179,14 +187,13 @@ class AuditEventChain:
                     'chain_index': new_index
                 })
                 
-                event_id = str(result.fetchone()[0])
-                
                 # Update chain summary
                 conn.execute(text("""
                 UPDATE audit_chain_summary 
                 SET last_chain_index = :chain_index,
                     last_hash = :current_hash,
                     total_events = :total_events
+                WHERE id = 1
                 """), {
                     'chain_index': new_index,
                     'current_hash': current_hash,
