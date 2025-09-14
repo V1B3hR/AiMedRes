@@ -40,7 +40,7 @@ All models trained with **5-fold stratified cross-validation**:
 ### Neural Network
 - **Architecture**: Multi-Layer Perceptron (MLP) with 4 hidden layers
 - **Layers**: [256, 128, 64, 32] neurons with BatchNorm and Dropout
-- **Training**: 50 epochs with Adam optimizer and learning rate scheduling
+- **Training**: 100 epochs with Adam optimizer and learning rate scheduling
 - **Regularization**: Batch normalization, dropout (30%), weight decay
 
 ### Metrics Reported
@@ -57,8 +57,8 @@ For each model, the following metrics are calculated and reported:
 # Train with default settings (downloads dataset automatically)
 python3 train_alzheimers.py
 
-# Train with custom parameters
-python3 train_alzheimers.py --epochs 100 --folds 10 --output-dir my_results
+# Train with custom parameters (100 epochs is default)
+python3 train_alzheimers.py --epochs 50 --folds 10 --output-dir my_results
 ```
 
 ### Advanced Usage
@@ -78,7 +78,7 @@ python3 train_alzheimers.py --epochs 10 --folds 3
 --data-path DATA_PATH          Path to dataset CSV (downloads from Kaggle if None)
 --target-column TARGET_COLUMN  Target column name (auto-detects if None)
 --output-dir OUTPUT_DIR        Output directory (default: outputs)
---epochs EPOCHS               Neural network epochs (default: 50)
+--epochs EPOCHS               Neural network epochs (default: 100)
 --folds FOLDS                 Cross-validation folds (default: 5)
 ```
 
@@ -94,7 +94,7 @@ python3 train_alzheimers.py --epochs 10 --folds 3
 | XGBoost | 95.11% ± 0.49% | 94.22% ± 0.76% | 94.61% ± 0.56% | 95.31% ± 0.66% |
 | **LightGBM** | **95.44% ± 0.48%** | **94.68% ± 0.80%** | **94.98% ± 0.56%** | **95.33% ± 0.79%** |
 
-**Neural Network (50 epochs):**
+**Neural Network (100 epochs):**
 | Metric | Score |
 |--------|-------|
 | Accuracy | **97.53%** |
