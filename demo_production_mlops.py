@@ -596,7 +596,7 @@ def main():
             print("   • Comprehensive observability")
             
             print("\n📚 Next Steps:")
-            print("   • Review PRODUCTION_MLOPS_GUIDE.md for detailed usage")
+            print("   • Review docs/PRODUCTION_MLOPS_GUIDE.md for detailed usage")
             print("   • Configure production environment settings")
             print("   • Set up monitoring dashboards")
             print("   • Establish incident response procedures")

@@ -4,6 +4,9 @@ Comprehensive Training and Simulation System for duetmind_adaptive
 Integrates real data training with adaptive agent simulation
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import os
 import sys
 import logging

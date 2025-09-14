@@ -94,8 +94,8 @@ python run_training.py --model-output my_model.pkl
 ### Alternative Training Entry Points
 
 ```bash
-# Comprehensive training modes in files/training/
-cd files/training
+# Comprehensive training modes in training/
+cd training
 python train.py comprehensive
 
 # Complete training with problem statement data
@@ -136,7 +136,7 @@ After training, you'll have:
 alzheimer_model.pkl              # Standard training model
 basic_alzheimer_model.pkl        # Basic training model
 alzheimer_mri_model.pkl          # Kaggle MRI data model
-files/training/alzheimer_mri_model.pkl  # Problem statement model
+training/alzheimer_mri_model.pkl  # Problem statement model
 ```
 
 ## Requirements
@@ -246,4 +246,4 @@ The training system seamlessly integrates with:
 For issues or questions:
 1. Check existing training documentation in `TRAINING_README.md`
 2. Review training test files in `files/tests/`
-3. Examine example implementations in `files/training/`
+3. Examine example implementations in `training/`

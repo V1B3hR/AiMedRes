@@ -150,7 +150,7 @@ pre-commit:
 docs:
 	@echo "Available documentation:"
 	@echo "  - README.md: Main project documentation"
-	@echo "  - MLOPS_ARCHITECTURE.md: MLOps architecture details"
+	@echo "  - docs/MLOPS_ARCHITECTURE.md: MLOps architecture details"
 	@echo "  - params.yaml: Configuration parameters"
 
 # Development workflow

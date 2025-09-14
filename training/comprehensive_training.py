@@ -4,6 +4,9 @@ Comprehensive Training Module for DuetMind Adaptive System
 Implements multi-phase training for neural networks, adaptive behaviors, and biological cycles
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import numpy as np
 import json
 import logging

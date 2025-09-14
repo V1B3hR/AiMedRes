@@ -4,6 +4,9 @@ Comprehensive Training Pipeline for duetmind_adaptive
 Integrates dataset loading with adaptive agent simulation for training
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 import pandas as pd

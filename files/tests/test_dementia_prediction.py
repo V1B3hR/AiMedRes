@@ -43,7 +43,7 @@ class TestDementiaPredictionDataset(unittest.TestCase):
         # Run the training script and capture output
         result = subprocess.run([
             'python3', 
-            'files/training/problem_statement_exact.py'
+            'training/problem_statement_exact.py'
         ], capture_output=True, text=True, cwd='/home/runner/work/duetmind_adaptive/duetmind_adaptive')
         
         # Check that script ran successfully

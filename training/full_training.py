@@ -43,7 +43,7 @@ def run_kaggle_training():
         # Run the complete training with Kaggle data
         result = subprocess.run([
             sys.executable, 
-            "files/training/run_training_complete.py"
+            "training/run_training_complete.py"
         ], capture_output=True, text=True, timeout=300)
         
         if result.returncode == 0:
@@ -179,7 +179,7 @@ def run_medical_ai_training():
         # Use the comprehensive medical training
         result = subprocess.run([
             sys.executable, 
-            "files/training/comprehensive_medical_ai_training.py"
+            "training/comprehensive_medical_ai_training.py"
         ], capture_output=True, text=True, timeout=300)
         
         if result.returncode == 0:

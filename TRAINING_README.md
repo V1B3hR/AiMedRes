@@ -47,7 +47,7 @@ python3 run_training.py --data-path /path/to/your/dataset.csv
 Load the exact dataset as specified in the problem statement:
 
 ```bash
-python3 files/training/problem_statement_exact.py
+python3 training/problem_statement_exact.py
 ```
 
 This implements the exact code from the problem statement with necessary auto-detection for empty file_path.

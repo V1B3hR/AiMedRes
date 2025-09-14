@@ -186,6 +186,6 @@ All promotions must maintain:
 ## Related Documentation
 
 - [Model Training Guide](../TRAINING_GUIDE.md)
-- [Deployment Architecture](../MLOPS_ARCHITECTURE.md)
+- [Deployment Architecture](../../docs/MLOPS_ARCHITECTURE.md)
 - [Monitoring Setup](../monitoring/README.md)
 - [Incident Response](../security/INCIDENT_RESPONSE.md)

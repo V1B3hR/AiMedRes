@@ -43,8 +43,8 @@ python labyrinth_simulation.py --confusion-thresh 0.9 --entropy-thresh 2.0
 - **Removed**: Duplicate `run_labyrinth_simulation` function from `neuralnet.py`
 - **Updated**: All import statements to use new authoritative module:
   - `main.py` - simulation mode entry point
-  - `files/training/train.py` - training pipeline simulation
-  - `files/training/train_adaptive_model.py` - adaptive model training
+  - `training/train.py` - training pipeline simulation
+  - `training/train_adaptive_model.py` - adaptive model training
   - `usage_examples.py` - example usage demonstrations
 - **Cleaned**: Unused imports in comprehensive training files
 
@@ -81,7 +81,7 @@ python labyrinth_simulation.py --confusion-thresh 0.9 --advice-thresh 0.7
 ## Integration Status
 
 ### Phase 2: Medical AI Training System
-- ✅ **Verified**: `files/training/comprehensive_medical_ai_training.py` uses its own specialized medical simulation logic (as intended)
+- ✅ **Verified**: `training/comprehensive_medical_ai_training.py` uses its own specialized medical simulation logic (as intended)
 - ✅ **Confirmed**: Core labyrinth simulation consolidation doesn't interfere with medical AI workflows
 - ✅ **Validated**: Training system can still import and use labyrinth components as needed
 

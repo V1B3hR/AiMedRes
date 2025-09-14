@@ -18,6 +18,9 @@ This system integrates:
 4. Audited medical simulation scenarios
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import os
 import sys
 import warnings

@@ -4,6 +4,9 @@ Complete demonstration of the duetmind_adaptive machine learning training system
 This script demonstrates the exact usage patterns specified in the problem statement.
 """
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import logging
 import sys
 import os

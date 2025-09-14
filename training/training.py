@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from typing import Dict, Any, Tuple, Optional, List
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split

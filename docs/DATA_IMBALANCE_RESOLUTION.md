@@ -23,7 +23,7 @@ The original dataset showed significant data imbalance:
 ### 2. Integration Points
 
 #### Files Modified:
-- `files/training/alzheimer_training_system.py`: Added upsampling functionality
+- `training/alzheimer_training_system.py`: Added upsampling functionality
 - `training_with_upsampling.py`: Complete implementation with upsampling
 - `problem_statement_fixed.py`: Fixed problem statement with working dataset
 
@@ -35,12 +35,12 @@ The original dataset showed significant data imbalance:
 
 #### Basic Usage (with upsampling enabled by default):
 ```bash
-python files/training/alzheimer_training_system.py
+python training/alzheimer_training_system.py
 ```
 
 #### Disable upsampling:
 ```bash
-python files/training/alzheimer_training_system.py --no-upsampling
+python training/alzheimer_training_system.py --no-upsampling
 ```
 
 #### Standalone upsampling implementation:
