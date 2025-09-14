@@ -1,0 +1,33 @@
+CARDIOVASCULAR DISEASE CLASSIFICATION TRAINING REPORT
+============================================================
+
+Training completed: 2025-09-14T11:40:40.330381
+Dataset: 5000 samples, 17 features
+
+CLASSICAL MODELS PERFORMANCE:
+------------------------------
+Logistic Regression:
+  Accuracy: 0.8100
+  F1 Score: 0.8899
+  ROC AUC: 0.7778
+
+Random Forest:
+  Accuracy: 0.8126
+  F1 Score: 0.8912
+  ROC AUC: 0.7624
+
+XGBoost:
+  Accuracy: 0.8040
+  F1 Score: 0.8835
+  ROC AUC: 0.7486
+
+LightGBM:
+  Accuracy: 0.8098
+  F1 Score: 0.8874
+  ROC AUC: 0.7729
+
+NEURAL NETWORK PERFORMANCE:
+------------------------------
+Accuracy: 0.8100
+F1 Score: 0.7795
+Balanced Accuracy: 0.6036

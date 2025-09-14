@@ -4,14 +4,15 @@ Cardiovascular Disease Risk Classification Training Pipeline
 
 This script implements a comprehensive machine learning pipeline for cardiovascular disease risk classification
 using the specified Kaggle datasets:
-- https://www.kaggle.com/datasets/alphiree/cardiovascular-diseases-risk-prediction-dataset
-- https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset
+- https://www.kaggle.com/datasets/colewelkins/cardiovascular-disease
+- https://www.kaggle.com/datasets/thedevastator/exploring-risk-factors-for-cardiovascular-diseas
+- https://www.kaggle.com/datasets/jocelyndumlao/cardiovascular-disease-dataset
 
 Features:
 - Downloads datasets using kagglehub
 - Comprehensive data preprocessing  
 - Training of classical models with 5-fold cross-validation
-- Tabular neural network training (MLP) with 20 epochs
+- Tabular neural network training (MLP) with 100 epochs
 - Detailed metrics reporting
 - Model and preprocessing pipeline persistence
 """
@@ -147,15 +148,16 @@ class CardiovascularTrainingPipeline:
         
         logger.info(f"Cardiovascular training pipeline initialized. Output directory: {self.output_dir}")
     
-    def load_data(self, data_path: str = None, dataset_choice: str = "cardiovascular-prediction") -> pd.DataFrame:
+    def load_data(self, data_path: str = None, dataset_choice: str = "colewelkins") -> pd.DataFrame:
         """
         Load cardiovascular disease dataset from Kaggle or local file
         
         Args:
             data_path: Path to local CSV file (optional)
             dataset_choice: Which Kaggle dataset to use
-                - "cardiovascular-prediction": alphiree/cardiovascular-diseases-risk-prediction-dataset
-                - "cardiovascular-disease": sulianova/cardiovascular-disease-dataset
+                - "colewelkins": colewelkins/cardiovascular-disease
+                - "thedevastator": thedevastator/exploring-risk-factors-for-cardiovascular-diseas
+                - "jocelyndumlao": jocelyndumlao/cardiovascular-disease-dataset
         
         Returns:
             pandas DataFrame with loaded data
@@ -190,15 +192,18 @@ class CardiovascularTrainingPipeline:
                 logger.warning("Kaggle credentials not found. Creating sample data for demonstration.")
                 return self._create_sample_data()
             
-            if dataset_choice == "cardiovascular-prediction":
-                logger.info("Downloading cardiovascular diseases risk prediction dataset...")
-                path = kagglehub.dataset_download("alphiree/cardiovascular-diseases-risk-prediction-dataset")
-            elif dataset_choice == "cardiovascular-disease":
-                logger.info("Downloading cardiovascular disease dataset...")
-                path = kagglehub.dataset_download("sulianova/cardiovascular-disease-dataset")
+            if dataset_choice == "colewelkins":
+                logger.info("Downloading Cole Welkins cardiovascular disease dataset...")
+                path = kagglehub.dataset_download("colewelkins/cardiovascular-disease")
+            elif dataset_choice == "thedevastator":
+                logger.info("Downloading TheDevastator cardiovascular risk factors dataset...")
+                path = kagglehub.dataset_download("thedevastator/exploring-risk-factors-for-cardiovascular-diseas")
+            elif dataset_choice == "jocelyndumlao":
+                logger.info("Downloading Jocelyn Dumlao cardiovascular disease dataset...")
+                path = kagglehub.dataset_download("jocelyndumlao/cardiovascular-disease-dataset")
             else:
-                logger.warning(f"Unknown dataset choice: {dataset_choice}. Using cardiovascular-prediction.")
-                path = kagglehub.dataset_download("alphiree/cardiovascular-diseases-risk-prediction-dataset")
+                logger.warning(f"Unknown dataset choice: {dataset_choice}. Using colewelkins dataset.")
+                path = kagglehub.dataset_download("colewelkins/cardiovascular-disease")
             
             # Find CSV file in downloaded path
             csv_files = list(Path(path).glob("*.csv"))
@@ -415,7 +420,7 @@ class CardiovascularTrainingPipeline:
         
         return results
     
-    def train_neural_network(self, epochs: int = 20) -> Dict[str, float]:
+    def train_neural_network(self, epochs: int = 100) -> Dict[str, float]:
         """
         Train neural network classifier
         """
@@ -590,7 +595,7 @@ class CardiovascularTrainingPipeline:
         logger.info(f"Training report saved to {json_path} and {text_path}")
     
     def run_full_pipeline(self, data_path: str = None, target_column: str = None, 
-                         epochs: int = 20, n_folds: int = 5, dataset_choice: str = "cardiovascular-prediction") -> Dict[str, Any]:
+                         epochs: int = 100, n_folds: int = 5, dataset_choice: str = "colewelkins") -> Dict[str, Any]:
         """
         Run the complete cardiovascular disease classification pipeline
         """
@@ -640,9 +645,9 @@ def main():
     parser.add_argument(
         '--dataset-choice',
         type=str,
-        default='cardiovascular-prediction',
-        choices=['cardiovascular-prediction', 'cardiovascular-disease'],
-        help='Which dataset to use: cardiovascular-prediction or cardiovascular-disease (default: cardiovascular-prediction)'
+        default='colewelkins',
+        choices=['colewelkins', 'thedevastator', 'jocelyndumlao'],
+        help='Which dataset to use: colewelkins, thedevastator, or jocelyndumlao (default: colewelkins)'
     )
     parser.add_argument(
         '--output-dir', 
@@ -653,8 +658,8 @@ def main():
     parser.add_argument(
         '--epochs', 
         type=int, 
-        default=20,
-        help='Number of epochs for neural network training (default: 20)'
+        default=100,
+        help='Number of epochs for neural network training (default: 100)'
     )
     parser.add_argument(
         '--folds', 
