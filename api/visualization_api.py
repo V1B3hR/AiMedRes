@@ -1,11 +1,13 @@
 """
-Visualization API for DuetMind Adaptive Safety and Memory Monitoring.
+Enhanced Visualization API for DuetMind Adaptive Safety and Memory Monitoring.
 
 Provides REST endpoints for:
-- Safety monitoring dashboard data
-- Agent interaction graphs
-- Memory state visualization
-- Real-time monitoring metrics
+- Enhanced safety monitoring dashboard data
+- Agent interaction graphs with real-time metrics
+- Memory state visualization with consolidation events
+- Real-time monitoring metrics with semantic conflicts
+- Plugin system monitoring and management
+- Memory introspection and decision traceability
 """
 
 from flask import Flask, jsonify, request, render_template_string
@@ -22,12 +24,13 @@ from ..security.monitoring import SecurityMonitor
 from ..mlops.monitoring.production_monitor import ProductionMonitor
 from ..agent_memory.memory_consolidation import MemoryConsolidator
 from ..agent_memory.embed_memory import AgentMemoryStore
+from ..agent_memory.agent_extensions import CapabilityRegistry
 
 logger = logging.getLogger('duetmind.visualization.api')
 
 
 class VisualizationAPI:
-    """API service for monitoring and visualization data."""
+    """Enhanced API service for monitoring and visualization data."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
@@ -40,25 +43,28 @@ class VisualizationAPI:
         self.production_monitor = None
         self.memory_consolidator = None
         self.memory_store = None
+        self.capability_registry = None
         
         # Setup routes
         self._setup_routes()
         
-        logger.info("Visualization API initialized")
+        logger.info("Enhanced Visualization API initialized")
     
     def initialize_monitors(self, safety_monitor: SafetyMonitor = None,
                           security_monitor: SecurityMonitor = None,
                           production_monitor: ProductionMonitor = None,
                           memory_store: AgentMemoryStore = None,
-                          memory_consolidator: MemoryConsolidator = None):
+                          memory_consolidator: MemoryConsolidator = None,
+                          capability_registry: CapabilityRegistry = None):
         """Initialize monitoring system references."""
         self.safety_monitor = safety_monitor
         self.security_monitor = security_monitor
         self.production_monitor = production_monitor
         self.memory_store = memory_store
         self.memory_consolidator = memory_consolidator
+        self.capability_registry = capability_registry
         
-        logger.info("Monitoring systems initialized for API")
+        logger.info("Enhanced monitoring systems initialized for API")
     
     def _setup_routes(self):
         """Setup API routes."""
@@ -233,6 +239,195 @@ class VisualizationAPI:
                 logger.error(f"Error getting memory consolidation summary: {e}")
                 return jsonify({'error': str(e)}), 500
         
+        @self.app.route('/api/memory/introspection', methods=['POST'])
+        def memory_introspection():
+            """Get memory introspection for decision traceability."""
+            try:
+                data = request.get_json() or {}
+                decision_context = data.get('decision_context', '')
+                session_id = data.get('session_id', '')
+                
+                if not decision_context or not session_id:
+                    return jsonify({'error': 'decision_context and session_id required'}), 400
+                
+                if self.memory_consolidator:
+                    introspection = self.memory_consolidator.get_memory_introspection(
+                        decision_context, session_id
+                    )
+                    return jsonify(introspection)
+                else:
+                    return jsonify({'error': 'Memory consolidator not initialized'}), 503
+                    
+            except Exception as e:
+                logger.error(f"Error getting memory introspection: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/memory/conflicts')
+        def memory_conflicts():
+            """Get semantic conflicts in memory."""
+            try:
+                session_id = request.args.get('session_id')
+                status = request.args.get('status', 'pending')
+                
+                if self.memory_consolidator:
+                    # Get conflicts from database
+                    import sqlite3
+                    conflicts = []
+                    
+                    try:
+                        with sqlite3.connect(self.memory_consolidator.consolidation_db) as conn:
+                            cursor = conn.execute("""
+                                SELECT conflict_id, memory_id1, memory_id2, conflict_type,
+                                       confidence_score, resolution_status, created_at, metadata_json
+                                FROM semantic_conflicts
+                                WHERE resolution_status = ?
+                                ORDER BY created_at DESC
+                                LIMIT 50
+                            """, (status,))
+                            
+                            for row in cursor.fetchall():
+                                conflicts.append({
+                                    'conflict_id': row[0],
+                                    'memory_id1': row[1],
+                                    'memory_id2': row[2],
+                                    'conflict_type': row[3],
+                                    'confidence_score': row[4],
+                                    'resolution_status': row[5],
+                                    'created_at': row[6],
+                                    'metadata': json.loads(row[7] or '{}')
+                                })
+                    
+                    except Exception as db_error:
+                        logger.error(f"Database error getting conflicts: {db_error}")
+                        conflicts = []
+                    
+                    return jsonify({
+                        'conflicts': conflicts,
+                        'count': len(conflicts),
+                        'status_filter': status
+                    })
+                else:
+                    return jsonify({'error': 'Memory consolidator not initialized'}), 503
+                    
+            except Exception as e:
+                logger.error(f"Error getting memory conflicts: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/memory/conflicts/<conflict_id>/resolve', methods=['POST'])
+        def resolve_conflict(conflict_id: str):
+            """Resolve a semantic conflict."""
+            try:
+                data = request.get_json() or {}
+                resolution_method = data.get('resolution_method', 'manual')
+                winning_memory_id = data.get('winning_memory_id')
+                
+                if self.memory_consolidator:
+                    success = self.memory_consolidator.resolve_semantic_conflict(
+                        conflict_id, resolution_method, winning_memory_id
+                    )
+                    
+                    return jsonify({
+                        'success': success,
+                        'conflict_id': conflict_id,
+                        'resolution_method': resolution_method,
+                        'resolved_at': datetime.now().isoformat()
+                    })
+                else:
+                    return jsonify({'error': 'Memory consolidator not initialized'}), 503
+                    
+            except Exception as e:
+                logger.error(f"Error resolving conflict: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/plugins/summary')
+        def plugins_summary():
+            """Get plugin system summary."""
+            try:
+                if self.capability_registry:
+                    metrics = self.capability_registry.get_plugin_metrics()
+                    return jsonify(metrics)
+                else:
+                    return jsonify({
+                        'error': 'Capability registry not initialized',
+                        'plugin_system_status': 'unavailable'
+                    }), 503
+                    
+            except Exception as e:
+                logger.error(f"Error getting plugins summary: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/plugins/list')
+        def plugins_list():
+            """List all registered plugins."""
+            try:
+                if self.capability_registry:
+                    plugins_data = []
+                    
+                    for name, plugin in self.capability_registry.plugins.items():
+                        status = self.capability_registry.plugin_status.get(name, 'unknown')
+                        
+                        plugins_data.append({
+                            'name': plugin.name,
+                            'version': plugin.version,
+                            'status': status.value if hasattr(status, 'value') else str(status),
+                            'capabilities': plugin.capabilities(),
+                            'manifest': {
+                                'description': plugin.manifest.description,
+                                'author': plugin.manifest.author,
+                                'required_scopes': [scope.value for scope in plugin.manifest.required_scopes],
+                                'sandbox_required': plugin.manifest.sandbox_required
+                            }
+                        })
+                    
+                    return jsonify({
+                        'plugins': plugins_data,
+                        'total_count': len(plugins_data)
+                    })
+                else:
+                    return jsonify({'error': 'Capability registry not initialized'}), 503
+                    
+            except Exception as e:
+                logger.error(f"Error listing plugins: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/plugins/<plugin_name>/activate', methods=['POST'])
+        def activate_plugin(plugin_name: str):
+            """Activate a plugin."""
+            try:
+                if self.capability_registry:
+                    success = self.capability_registry.activate_plugin(plugin_name)
+                    return jsonify({
+                        'success': success,
+                        'plugin_name': plugin_name,
+                        'action': 'activate',
+                        'timestamp': datetime.now().isoformat()
+                    })
+                else:
+                    return jsonify({'error': 'Capability registry not initialized'}), 503
+                    
+            except Exception as e:
+                logger.error(f"Error activating plugin: {e}")
+                return jsonify({'error': str(e)}), 500
+        
+        @self.app.route('/api/plugins/<plugin_name>/deactivate', methods=['POST'])
+        def deactivate_plugin(plugin_name: str):
+            """Deactivate a plugin."""
+            try:
+                if self.capability_registry:
+                    success = self.capability_registry.deactivate_plugin(plugin_name)
+                    return jsonify({
+                        'success': success,
+                        'plugin_name': plugin_name,
+                        'action': 'deactivate',
+                        'timestamp': datetime.now().isoformat()
+                    })
+                else:
+                    return jsonify({'error': 'Capability registry not initialized'}), 503
+                    
+            except Exception as e:
+                logger.error(f"Error deactivating plugin: {e}")
+                return jsonify({'error': str(e)}), 500
+        
         @self.app.route('/api/memory/session/<session_id>')
         def memory_session_info(session_id: str):
             """Get memory information for a specific session."""
@@ -272,9 +467,9 @@ class VisualizationAPI:
         
         @self.app.route('/api/agent/interaction-graph')
         def agent_interaction_graph():
-            """Get agent interaction graph data."""
+            """Get enhanced agent interaction graph data."""
             try:
-                # Mock agent interaction data (would be real in production)
+                # Enhanced agent interaction data with more detailed metrics
                 graph_data = {
                     'timestamp': datetime.now().isoformat(),
                     'agents': [
@@ -285,7 +480,12 @@ class VisualizationAPI:
                             'cpu_percent': 5.2,
                             'memory_mb': 128,
                             'pending_tasks': 2,
-                            'last_activity': datetime.now().isoformat()
+                            'last_activity': datetime.now().isoformat(),
+                            'metrics': {
+                                'checks_per_minute': 45,
+                                'findings_last_hour': 3,
+                                'critical_alerts': 0
+                            }
                         },
                         {
                             'id': 'production_monitor', 
@@ -294,16 +494,26 @@ class VisualizationAPI:
                             'cpu_percent': 3.1,
                             'memory_mb': 256,
                             'pending_tasks': 0,
-                            'last_activity': datetime.now().isoformat()
+                            'last_activity': datetime.now().isoformat(),
+                            'metrics': {
+                                'predictions_per_minute': 12,
+                                'accuracy_last_hour': 0.89,
+                                'drift_score': 0.02
+                            }
                         },
                         {
                             'id': 'memory_consolidator',
                             'type': 'memory',
-                            'state': 'idle',
+                            'state': 'consolidating' if self.memory_consolidator and self.memory_consolidator.running else 'idle',
                             'cpu_percent': 0.8,
                             'memory_mb': 64,
                             'pending_tasks': 0,
-                            'last_activity': (datetime.now() - timedelta(minutes=15)).isoformat()
+                            'last_activity': (datetime.now() - timedelta(minutes=15)).isoformat(),
+                            'metrics': {
+                                'consolidations_last_hour': 2,
+                                'conflicts_detected': 1,
+                                'synaptic_tagged_memories': 15
+                            }
                         }
                     ],
                     'edges': [
@@ -313,7 +523,8 @@ class VisualizationAPI:
                             'messages_per_minute': 12,
                             'avg_latency_ms': 45,
                             'error_rate': 0.01,
-                            'connection_strength': 0.8
+                            'connection_strength': 0.8,
+                            'relationship_type': 'monitoring'
                         },
                         {
                             'source': 'production_monitor',
@@ -321,10 +532,33 @@ class VisualizationAPI:
                             'messages_per_minute': 3,
                             'avg_latency_ms': 120,
                             'error_rate': 0.0,
-                            'connection_strength': 0.6
+                            'connection_strength': 0.6,
+                            'relationship_type': 'data_flow'
                         }
                     ]
                 }
+                
+                # Add plugin agents if capability registry is available
+                if self.capability_registry:
+                    plugin_metrics = self.capability_registry.get_plugin_metrics()
+                    
+                    for name, plugin in self.capability_registry.plugins.items():
+                        status = self.capability_registry.plugin_status.get(name, 'unknown')
+                        
+                        graph_data['agents'].append({
+                            'id': f'plugin_{name}',
+                            'type': 'plugin',
+                            'state': status.value if hasattr(status, 'value') else str(status),
+                            'cpu_percent': 1.2,  # Estimated
+                            'memory_mb': 32,     # Estimated
+                            'pending_tasks': 0,
+                            'last_activity': datetime.now().isoformat(),
+                            'metrics': {
+                                'capabilities': len(plugin.capabilities()),
+                                'version': plugin.version,
+                                'sandbox_required': plugin.manifest.sandbox_required
+                            }
+                        })
                 
                 return jsonify(graph_data)
                 
@@ -375,7 +609,20 @@ class VisualizationAPI:
                     overview['components']['memory'] = {
                         'status': 'active' if memory_summary.get('total_consolidation_events', 0) > 0 else 'idle',
                         'consolidation_events': memory_summary.get('total_consolidation_events', 0),
-                        'last_consolidation': memory_summary.get('last_consolidation')
+                        'last_consolidation': memory_summary.get('last_consolidation'),
+                        'synaptic_tagged': memory_summary.get('synaptic_tagged_memories', 0),
+                        'pending_conflicts': memory_summary.get('pending_conflicts', 0)
+                    }
+                
+                # Plugin system status
+                if self.capability_registry:
+                    plugin_metrics = self.capability_registry.get_plugin_metrics()
+                    overview['components']['plugins'] = {
+                        'status': 'active' if plugin_metrics.get('active_plugins', 0) > 0 else 'inactive',
+                        'total_plugins': plugin_metrics.get('total_plugins', 0),
+                        'active_plugins': plugin_metrics.get('active_plugins', 0),
+                        'total_capabilities': plugin_metrics.get('total_capabilities', 0),
+                        'plugin_failures': plugin_metrics.get('plugin_failures', 0)
                     }
                 
                 # Determine overall system status
@@ -462,11 +709,28 @@ DASHBOARD_HTML = """
             <h3>🧠 Memory Consolidation</h3>
             <div id="memory-metrics">Loading memory metrics...</div>
         </div>
+        
+        <div class="status-card">
+            <h3>🔌 Plugin System</h3>
+            <div id="plugin-metrics">Loading plugin metrics...</div>
+        </div>
+        
+        <div class="status-card">
+            <h3>🕸️ Agent Network</h3>
+            <div id="agent-network">Loading agent network...</div>
+        </div>
     </div>
     
-    <div class="status-card">
-        <h2>Recent Safety Findings</h2>
-        <div id="safety-findings">Loading recent findings...</div>
+    <div class="metrics-grid">
+        <div class="status-card">
+            <h2>⚠️ Semantic Conflicts</h2>
+            <div id="memory-conflicts">Loading memory conflicts...</div>
+        </div>
+        
+        <div class="status-card">
+            <h2>🔍 Recent Safety Findings</h2>
+            <div id="safety-findings">Loading recent findings...</div>
+        </div>
     </div>
 
     <script>
@@ -477,6 +741,9 @@ DASHBOARD_HTML = """
             loadSecurityMetrics();
             loadProductionMetrics();
             loadMemoryMetrics();
+            loadPluginMetrics();
+            loadAgentNetwork();
+            loadMemoryConflicts();
             loadSafetyFindings();
         }
         
@@ -584,11 +851,90 @@ DASHBOARD_HTML = """
                     element.innerHTML = `
                         <div class="metric-value">${status}</div>
                         <p>Consolidation Status</p>
-                        <p>Events: ${data.total_consolidation_events || 0}</p>
+                        <p>Events: ${data.total_consolidation_events || 0} | Conflicts: ${data.pending_conflicts || 0}</p>
+                        <p>Synaptic Tagged: ${data.synaptic_tagged_memories || 0}</p>
                     `;
                 })
                 .catch(error => {
                     document.getElementById('memory-metrics').innerHTML = `<div class="error">Failed to load</div>`;
+                });
+        }
+        
+        function loadPluginMetrics() {
+            fetch('/api/plugins/summary')
+                .then(response => response.json())
+                .then(data => {
+                    const element = document.getElementById('plugin-metrics');
+                    if (data.error) {
+                        element.innerHTML = `<div class="error">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    const status = data.active_plugins > 0 ? 'Active' : 'Inactive';
+                    element.innerHTML = `
+                        <div class="metric-value">${status}</div>
+                        <p>Plugin System</p>
+                        <p>Plugins: ${data.active_plugins}/${data.total_plugins} | Capabilities: ${data.total_capabilities || 0}</p>
+                        <p>Failures: ${data.plugin_failures || 0}</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('plugin-metrics').innerHTML = `<div class="error">Failed to load</div>`;
+                });
+        }
+        
+        function loadAgentNetwork() {
+            fetch('/api/agent/interaction-graph')
+                .then(response => response.json())
+                .then(data => {
+                    const element = document.getElementById('agent-network');
+                    if (data.error) {
+                        element.innerHTML = `<div class="error">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    const activeAgents = data.agents.filter(a => a.state === 'active').length;
+                    element.innerHTML = `
+                        <div class="metric-value">${activeAgents}/${data.agents.length}</div>
+                        <p>Agents Active</p>
+                        <p>Connections: ${data.edges.length} | Avg Latency: ${Math.round(data.edges.reduce((sum, e) => sum + e.avg_latency_ms, 0) / data.edges.length || 0)}ms</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('agent-network').innerHTML = `<div class="error">Failed to load</div>`;
+                });
+        }
+        
+        function loadMemoryConflicts() {
+            fetch('/api/memory/conflicts?status=pending')
+                .then(response => response.json())
+                .then(data => {
+                    const element = document.getElementById('memory-conflicts');
+                    if (data.error) {
+                        element.innerHTML = `<div class="error">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    if (data.conflicts.length === 0) {
+                        element.innerHTML = '<p>No pending conflicts</p>';
+                        return;
+                    }
+                    
+                    let html = `<p><strong>${data.count} pending conflicts</strong></p><ul>`;
+                    data.conflicts.slice(0, 5).forEach(conflict => {
+                        html += `
+                            <li>
+                                <strong>[${conflict.conflict_type.toUpperCase()}]</strong> 
+                                Memories ${conflict.memory_id1} vs ${conflict.memory_id2}
+                                <span class="timestamp">Confidence: ${(conflict.confidence_score * 100).toFixed(0)}%</span>
+                            </li>
+                        `;
+                    });
+                    html += '</ul>';
+                    element.innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('memory-conflicts').innerHTML = `<div class="error">Failed to load conflicts</div>`;
                 });
         }
         

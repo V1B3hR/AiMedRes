@@ -12,6 +12,8 @@ werkzeug>=2.0.0
 
 # Data Storage and Caching
 redis>=4.0.0
+sqlalchemy>=1.4.0
+sentence-transformers>=2.0.0
 
 # System and Performance
 psutil>=5.8.0
