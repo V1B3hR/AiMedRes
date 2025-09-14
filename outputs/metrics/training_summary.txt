@@ -1,7 +1,7 @@
 Alzheimer's Disease Classification Training Summary
 ==================================================
 
-Training Date: 2025-09-14T12:06:34.668211
+Training Date: 2025-09-14T12:16:39.469598
 
 Dataset Information:
   Shape: (2149, 35)
@@ -36,12 +36,12 @@ LightGBM:
 
 Neural Network Performance:
 ------------------------------
-Accuracy: 0.8893
-Balanced Accuracy: 0.8732
-Macro F1: 0.8774
-ROC AUC: 0.9441
-Training Epochs: 5
-Final Loss: 0.3715
+Accuracy: 0.9991
+Balanced Accuracy: 0.9987
+Macro F1: 0.9990
+ROC AUC: 1.0000
+Training Epochs: 100
+Final Loss: 0.1305
 
 Output Files:
 ---------------
