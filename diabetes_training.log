@@ -680,3 +680,34 @@ ValueError: Found array with 0 feature(s) (shape=(347, 0)) while a minimum of 1 
 2025-09-14 11:21:05,722 - INFO - Preprocessor saved to /tmp/quick_diabetes_test/preprocessors/preprocessor.pkl
 2025-09-14 11:21:05,722 - INFO - Training report saved to /tmp/quick_diabetes_test/metrics/training_report.json and /tmp/quick_diabetes_test/metrics/training_summary.txt
 2025-09-14 11:21:05,722 - INFO - Full pipeline completed successfully!
+2025-09-14 11:22:35,521 - INFO - Initialized DiabetesTrainingPipeline with output directory: /tmp/consistency_diabetes
+2025-09-14 11:22:35,521 - INFO - Starting full diabetes classification training pipeline...
+2025-09-14 11:22:35,521 - INFO - Loading diabetes dataset...
+2025-09-14 11:22:35,521 - INFO - Downloading early diabetes classification dataset...
+2025-09-14 11:22:35,724 - INFO - Loading data from: /home/runner/.cache/kagglehub/datasets/andrewmvd/early-diabetes-classification/versions/1/diabetes_data.csv
+2025-09-14 11:22:35,727 - INFO - Dataset loaded successfully. Shape: (520, 17)
+2025-09-14 11:22:35,727 - INFO - Columns: ['age', 'gender', 'polyuria', 'polydipsia', 'sudden_weight_loss', 'weakness', 'polyphagia', 'genital_thrush', 'visual_blurring', 'itching', 'irritability', 'delayed_healing', 'partial_paresis', 'muscle_stiffness', 'alopecia', 'obesity', 'class']
+2025-09-14 11:22:35,727 - INFO - Starting data preprocessing...
+2025-09-14 11:22:35,727 - INFO - Using target column: class
+2025-09-14 11:22:35,728 - INFO - Found 1 categorical and 15 numerical features
+2025-09-14 11:22:35,733 - INFO - Preprocessing completed. Feature matrix shape: (520, 16)
+2025-09-14 11:22:35,734 - INFO - Target classes: [0 1]
+2025-09-14 11:22:35,734 - INFO - Target distribution: [200 320]
+2025-09-14 11:22:35,734 - INFO - Training classical models with 2-fold cross-validation...
+2025-09-14 11:22:35,734 - INFO - Training Logistic Regression...
+2025-09-14 11:22:35,756 - INFO - Logistic Regression - Accuracy: 0.9250 (±0.0019)
+2025-09-14 11:22:35,757 - INFO - Training Random Forest...
+2025-09-14 11:22:36,110 - INFO - Random Forest - Accuracy: 0.9731 (±0.0038)
+2025-09-14 11:22:36,110 - INFO - Training XGBoost...
+2025-09-14 11:22:36,179 - INFO - XGBoost - Accuracy: 0.9635 (±0.0019)
+2025-09-14 11:22:36,179 - INFO - Training LightGBM...
+2025-09-14 11:22:36,246 - INFO - LightGBM - Accuracy: 0.9654 (±0.0038)
+2025-09-14 11:22:36,246 - INFO - Training neural network for 20 epochs...
+2025-09-14 11:22:37,210 - INFO - Epoch 5/20, Loss: 0.2616
+2025-09-14 11:22:37,401 - INFO - Epoch 10/20, Loss: 0.1870
+2025-09-14 11:22:37,591 - INFO - Epoch 15/20, Loss: 0.1007
+2025-09-14 11:22:37,781 - INFO - Epoch 20/20, Loss: 0.0792
+2025-09-14 11:22:37,789 - INFO - Neural Network - Accuracy: 0.9885, F1: 0.9879
+2025-09-14 11:22:37,789 - INFO - Preprocessor saved to /tmp/consistency_diabetes/preprocessors/preprocessor.pkl
+2025-09-14 11:22:37,790 - INFO - Training report saved to /tmp/consistency_diabetes/metrics/training_report.json and /tmp/consistency_diabetes/metrics/training_summary.txt
+2025-09-14 11:22:37,790 - INFO - Full pipeline completed successfully!
