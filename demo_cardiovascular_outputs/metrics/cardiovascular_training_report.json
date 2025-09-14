@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-14T11:40:40.330381",
+  "timestamp": "2025-09-14T11:39:10.726031",
   "dataset_info": {
     "n_samples": 5000,
     "n_features": 17,
@@ -60,9 +60,9 @@
     }
   },
   "neural_network": {
-    "accuracy": 0.81,
-    "f1": 0.7795114481900615,
-    "balanced_accuracy": 0.6035816336584885,
-    "best_val_loss": 0.42854261584579945
+    "accuracy": 0.814,
+    "f1": 0.7975260619217748,
+    "balanced_accuracy": 0.6461966696226229,
+    "best_val_loss": 0.40291130170226097
   }
 }

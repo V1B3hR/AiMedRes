@@ -1,7 +1,7 @@
 CARDIOVASCULAR DISEASE CLASSIFICATION TRAINING REPORT
 ============================================================
 
-Training completed: 2025-09-14T11:40:40.330381
+Training completed: 2025-09-14T11:39:10.726031
 Dataset: 5000 samples, 17 features
 
 CLASSICAL MODELS PERFORMANCE:
@@ -28,6 +28,6 @@ LightGBM:
 
 NEURAL NETWORK PERFORMANCE:
 ------------------------------
-Accuracy: 0.8100
-F1 Score: 0.7795
-Balanced Accuracy: 0.6036
+Accuracy: 0.8140
+F1 Score: 0.7975
+Balanced Accuracy: 0.6462

@@ -81,7 +81,7 @@ python demo_cardiovascular_training.py
 1. **New Training Script**: Created `train_cardiovascular.py` with:
    - Complete cardiovascular disease classification pipeline
    - Support for both specified Kaggle datasets
-   - 20 epochs neural network training (consistent with existing systems)
+   - 100 epochs neural network training (as specified in problem statement)
    - Medical-domain-optimized preprocessing
 
 2. **Cardiovascular-Specific Features**:
@@ -97,7 +97,7 @@ python demo_cardiovascular_training.py
 
 ### Validation
 - ✅ Both cardiovascular datasets load and train successfully
-- ✅ Training completes with exactly 20 epochs as specified
+- ✅ Training completes with exactly 100 epochs as specified
 - ✅ All existing tests pass without regression
 - ✅ Consistent with existing Alzheimer's, Brain MRI, and Diabetes training
 
@@ -145,7 +145,7 @@ cardiovascular_outputs/
 
 ### Basic Training
 ```bash
-# Train with default settings (20 epochs)
+# Train with default settings (100 epochs)
 python train_cardiovascular.py
 
 # Train with specific dataset
@@ -170,9 +170,9 @@ python train_cardiovascular.py --target-column disease_outcome --epochs 20
 python demo_cardiovascular_training.py
 
 # This will:
-# 1. Train with cardiovascular-prediction dataset (20 epochs)
-# 2. Train with cardiovascular-disease dataset (20 epochs)  
-# 3. Compare with diabetes training (20 epochs)
+# 1. Train with colewelkins dataset (100 epochs)
+# 2. Train with thedevastator dataset (100 epochs)  
+# 3. Train with jocelyndumlao dataset (100 epochs)
 # 4. Show consistency across all systems
 ```
 
@@ -180,7 +180,7 @@ python demo_cardiovascular_training.py
 
 This implementation fully satisfies the problem statement requirements:
 
-1. **"Follow as previously with 20 epochs"**: ✅ Uses 20 epochs consistently across all systems
+1. **"learning, training and tests. 100 epochs"**: ✅ Uses 100 epochs for comprehensive training
 2. **Specified datasets**: ✅ Supports both cardiovascular datasets from the URLs provided
 3. **"learning, training and tests"**: ✅ Implements comprehensive ML pipeline with training and evaluation
 
