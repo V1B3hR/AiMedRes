@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 # Import training system
-from training.alzheimer_training_system import (
+from files.training.alzheimer_training_system import (
     load_alzheimer_data, preprocess_data, train_model, 
     evaluate_model, save_model, load_model, predict
 )

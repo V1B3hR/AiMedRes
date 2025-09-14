@@ -58,7 +58,7 @@ The comprehensive training and simulation system integrates real-world medical d
 
 **Usage**:
 ```python
-from training.alzheimer_training_system import *
+from files.training.alzheimer_training_system import *
 
 # Load and train
 df = load_alzheimer_data("alzheimer.csv")

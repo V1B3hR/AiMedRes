@@ -172,8 +172,7 @@ jobs:
         python -c "
         import sys
         sys.path.append('.')
-        from specialized_medical_agents import create_specialized_medical_team, ConsensusManager, run_multi_step_diagnostic_simulation
-        from files.training.comprehensive_training_simulation import create_test_case
+        from specialized_medical_agents import create_specialized_medical_team, ConsensusManager, run_multi_step_diagnostic_simulation, create_test_case
         from labyrinth_adaptive import AliveLoopNode, ResourceRoom
         
         # Create test environment
