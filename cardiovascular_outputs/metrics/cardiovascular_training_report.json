@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-09-14T11:37:33.528826",
+  "dataset_info": {
+    "n_samples": 68205,
+    "n_features": 22,
+    "feature_names": [
+      "id",
+      "age",
+      "gender",
+      "height",
+      "weight",
+      "ap_hi",
+      "ap_lo",
+      "cholesterol",
+      "gluc",
+      "smoke",
+      "alco",
+      "active",
+      "age_years",
+      "bmi",
+      "bp_category",
+      "bp_category_encoded"
+    ],
+    "target_names": [
+      "No Disease",
+      "Disease"
+    ],
+    "class_distribution": {
+      "0": 34533,
+      "1": 33672
+    }
+  },
+  "classical_models": {
+    "Logistic Regression": {
+      "accuracy": 0.72774723260758,
+      "accuracy_std": 0.0013296132598788534,
+      "balanced_accuracy": 0.7267895873600978,
+      "f1": 0.7024424643391695,
+      "roc_auc": 0.7930083269118464
+    },
+    "Random Forest": {
+      "accuracy": 0.7211054907997948,
+      "accuracy_std": 0.0026303727107001296,
+      "balanced_accuracy": 0.7207778856251037,
+      "f1": 0.7109765148021332,
+      "roc_auc": 0.7829451755140733
+    },
+    "XGBoost": {
+      "accuracy": 0.7278791877428341,
+      "accuracy_std": 0.003311073906791653,
+      "balanced_accuracy": 0.7273194571493035,
+      "f1": 0.7124887637300075,
+      "roc_auc": 0.7923923740114539
+    },
+    "LightGBM": {
+      "accuracy": 0.734315666006891,
+      "accuracy_std": 0.0018875456074931433,
+      "balanced_accuracy": 0.7337572334385174,
+      "f1": 0.7192871183427851,
+      "roc_auc": 0.7997118892643315
+    }
+  },
+  "neural_network": {
+    "accuracy": 0.7360164210834983,
+    "f1": 0.7338051958740411,
+    "balanced_accuracy": 0.7348962320006188,
+    "best_val_loss": 0.5428975898528767
+  }
+}
