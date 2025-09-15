@@ -417,7 +417,7 @@ class AlzheimerTrainingPipeline:
         self.classical_results = results
         return results
     
-    def train_neural_network(self, epochs: int = 100, batch_size: int = 32) -> Dict[str, Any]:
+    def train_neural_network(self, epochs: int = 30, batch_size: int = 32) -> Dict[str, Any]:
         """
         Train a tabular neural network (MLP)
         
@@ -749,8 +749,8 @@ def main():
     parser.add_argument(
         '--epochs', 
         type=int, 
-        default=100,
-        help='Number of epochs for neural network training (default: 100)'
+        default=30,
+        help='Number of epochs for neural network training (default: 30 for small datasets)'
     )
     parser.add_argument(
         '--folds', 

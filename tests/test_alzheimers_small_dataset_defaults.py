@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test for Alzheimer's training with 100 epochs
+Test for Alzheimer's training with 30 epochs defaults for small datasets
 Tests the specific requirements from the problem statement
 """
 
@@ -19,11 +19,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from train_alzheimers import AlzheimerTrainingPipeline
 
 
-class TestAlzheimers100Epochs:
-    """Test suite for 100 epochs Alzheimer's training"""
+class TestAlzheimersSmallDatasetDefaults:
+    """Test suite for 30 epochs Alzheimer's training defaults for small datasets"""
 
-    def test_default_epochs_is_100(self):
-        """Test that default epochs is now 100"""
+    def test_default_epochs_is_30(self):
+        """Test that default epochs is now 30 for small datasets"""
         pipeline = AlzheimerTrainingPipeline()
         
         # Create mock data for testing
@@ -40,7 +40,7 @@ class TestAlzheimers100Epochs:
         pipeline.data = mock_data
         pipeline.preprocess_data()
         
-        # Test that neural network training defaults to 100 epochs
+        # Test that neural network training defaults to 30 epochs for small datasets
         # We'll train for fewer epochs to keep test fast but verify the signature
         results = pipeline.train_neural_network(epochs=5)
         
@@ -51,8 +51,8 @@ class TestAlzheimers100Epochs:
         assert 'macro_f1' in results
         assert 'roc_auc' in results
 
-    def test_100_epochs_training_quality(self):
-        """Test that 100 epochs training produces good results"""
+    def test_30_epochs_training_quality(self):
+        """Test that 30 epochs training produces good results for small datasets"""
         pipeline = AlzheimerTrainingPipeline()
         
         # Create synthetic but realistic data
@@ -95,8 +95,8 @@ class TestAlzheimers100Epochs:
         for metric in expected_metrics:
             assert metric in results, f"Missing metric: {metric}"
 
-    def test_full_pipeline_with_100_epochs(self):
-        """Test complete pipeline with 100 epochs default"""
+    def test_full_pipeline_with_30_epochs(self):
+        """Test complete pipeline with 30 epochs default for small datasets"""
         with tempfile.TemporaryDirectory() as temp_dir:
             pipeline = AlzheimerTrainingPipeline(output_dir=temp_dir)
             
@@ -174,7 +174,7 @@ class TestAlzheimers100Epochs:
             assert results['epochs'] == epochs
 
     def test_command_line_default_epochs(self):
-        """Test that command line interface defaults to 100 epochs"""
+        """Test that command line interface defaults to 30 epochs for small datasets"""
         import argparse
         import train_alzheimers
         
@@ -185,11 +185,11 @@ class TestAlzheimers100Epochs:
             
             # Get the argument parser
             parser = argparse.ArgumentParser()
-            parser.add_argument('--epochs', type=int, default=100)
+            parser.add_argument('--epochs', type=int, default=30)
             
             args = parser.parse_args([])  # Empty args list
             
-            assert args.epochs == 100, f"Expected default epochs to be 100, got {args.epochs}"
+            assert args.epochs == 30, f"Expected default epochs to be 30, got {args.epochs}"
             
         finally:
             sys.argv = old_argv
@@ -212,9 +212,9 @@ class TestAlzheimers100Epochs:
         results_explicit = pipeline.train_neural_network(epochs=15)
         assert results_explicit['epochs'] == 15
         
-        # Test default (new way with 100 epochs, reduced for testing)
+        # Test default (new way with 30 epochs for small datasets)
         results_default = pipeline.train_neural_network()
-        assert results_default['epochs'] == 100
+        assert results_default['epochs'] == 30
 
 
 if __name__ == '__main__':
