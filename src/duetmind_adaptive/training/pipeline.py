@@ -84,7 +84,7 @@ class TrainingPipeline:
                      training_labels: Optional[np.ndarray] = None,
                      validation_data: Optional[np.ndarray] = None,
                      validation_labels: Optional[np.ndarray] = None,
-                     epochs: int = 100,
+                     epochs: int = 30,
                      batch_size: int = 32) -> TrainingResult:
         """
         Train neural network with comprehensive safety monitoring
