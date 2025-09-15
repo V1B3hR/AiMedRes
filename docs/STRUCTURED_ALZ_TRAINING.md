@@ -64,9 +64,9 @@ The baseline configuration (`structured_alz_baseline.yaml`) provides sensible de
 
 ```yaml
 profile: baseline
-epochs: 80
+epochs: 30
 patience: 8
-batch_size: 64
+batch_size: 32
 validation_split: 0.2
 seeds: [42, 1337, 2025]
 models: [logreg, random_forest, mlp]
@@ -92,9 +92,9 @@ ensemble_params:
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `epochs` | Maximum training epochs | 80 |
+| `epochs` | Maximum training epochs | 30 |
 | `patience` | Early stopping patience | 8 |
-| `batch_size` | Training batch size | 64 |
+| `batch_size` | Training batch size | 32 |
 | `validation_split` | Validation set proportion | 0.2 |
 | `seeds` | Random seeds for reproducibility | [42, 1337, 2025] |
 | `models` | Algorithms to train | [logreg, random_forest, mlp] |
