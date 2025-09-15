@@ -341,6 +341,126 @@ ensemble_params:
   n_jobs: 1                   # parallel processing
 ```
 
+## Usage Examples
+
+### Basic Training for Small Datasets (~373 samples)
+
+For datasets like Kaggle 'brsdincer/alzheimer-features' with ~373 samples and 9 features:
+
+```bash
+# Basic training with optimized configuration for small datasets
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.csv \
+  --config src/duetmind_adaptive/training/configs/structured_alz_small_dataset.yaml
+
+# Quick training with 30 epochs and batch size 32 (problem statement defaults)
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.csv \
+  --epochs 30 \
+  --batch-size 32
+
+# Multi-seed training for robust evaluation
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.csv \
+  --override-seeds 42 1337 2025 \
+  --epochs 30 \
+  --batch-size 32 \
+  --output-dir metrics/alzheimer_small_dataset
+```
+
+### CSV and Parquet Support
+
+The pipeline automatically detects file formats:
+
+```bash
+# CSV input
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.csv
+
+# Parquet input  
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.parquet
+
+# Auto-detect target column or specify manually
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.csv \
+  --target-column diagnosis
+```
+
+### Evaluation Examples
+
+Evaluate a single trained model:
+
+```bash
+python scripts/eval_alzheimers_structured.py \
+  --model-dir metrics/structured_alz/runs/seed_42 \
+  --test-data data/test_set.csv
+```
+
+Evaluate all models from multi-seed training:
+
+```bash
+python scripts/eval_alzheimers_structured.py \
+  --aggregate-dir metrics/structured_alz \
+  --test-data data/test_set.csv
+```
+
+### Configuration Examples
+
+#### Small Dataset Configuration (recommended for ~373 samples)
+
+```yaml
+# structured_alz_small_dataset.yaml
+profile: small_dataset
+epochs: 30
+batch_size: 32
+validation_split: 0.2
+seeds: [42, 1337, 2025]
+
+model_params:
+  random_forest:
+    n_estimators: 100      # Reduced for faster training
+    max_depth: 10          # Prevent overfitting
+    min_samples_split: 5   # Higher for small datasets
+  mlp:
+    hidden_layer_sizes: [32, 16]  # Smaller network
+    alpha: 0.01                   # Higher regularization
+```
+
+#### 80/20 Train/Test Split
+
+The pipeline uses 80/20 split by default (`validation_split: 0.2`). To save test split for later evaluation:
+
+```bash
+python scripts/train_alzheimers_structured.py \
+  --data-path data/alzheimer_features.csv \
+  --save-test-split \
+  --epochs 30
+```
+
+### Feature Engineering
+
+The pipeline automatically handles:
+
+- **Missing Value Imputation**: Median for numerical, most frequent for categorical
+- **Feature Type Detection**: Automatic classification of numerical vs categorical
+- **Scaling**: StandardScaler for numerical features
+- **Encoding**: OneHotEncoder for categorical features
+- **Target Column Auto-Detection**: Searches for common names like 'diagnosis', 'target', 'label'
+
+### Overfitting Monitoring
+
+Built-in early stopping prevents overfitting:
+
+```yaml
+early_stopping:
+  enabled: true
+  monitor: macro_f1        # Primary metric to monitor
+  patience: 8              # Epochs to wait for improvement
+  min_delta: 0.001         # Minimum improvement threshold
+  restore_best_weights: true
+```
+
 ## Performance Optimization
 
 ### Memory Management
