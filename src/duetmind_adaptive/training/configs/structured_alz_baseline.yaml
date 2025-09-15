@@ -1,8 +1,8 @@
 # Structured Alzheimer's Training - Baseline Configuration
 profile: baseline
-epochs: 80
+epochs: 30
 patience: 8
-batch_size: 64
+batch_size: 32
 validation_split: 0.2
 seeds: [42, 1337, 2025]
 models: [logreg, random_forest, mlp]

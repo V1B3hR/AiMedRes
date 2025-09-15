@@ -1,40 +1,35 @@
-# Structured Alzheimer's Training - Ensemble Configuration
-profile: ensemble
+# Structured Alzheimer's Training - Small Dataset Configuration
+# Optimized for ~373 samples datasets like Kaggle 'brsdincer/alzheimer-features'
+profile: small_dataset
 epochs: 30
 patience: 8
 batch_size: 32
 validation_split: 0.2
 seeds: [42, 1337, 2025]
 models: [logreg, random_forest, mlp]
-ensemble: true
+ensemble: false
 metric_primary: macro_f1
 class_weight: balanced
 output_dir: metrics/structured_alz
 
-# Ensemble configuration
-ensemble_params:
-  voting: soft  # soft or hard voting
-  estimators: [logreg, random_forest, mlp]
-  weights: null  # Equal weights, or specify [0.3, 0.4, 0.3]
-  n_jobs: 1
-
-# Model-specific hyperparameters
+# Model-specific hyperparameters optimized for small datasets
 model_params:
   logreg:
     max_iter: 200
     solver: lbfgs
     multi_class: auto
+    C: 1.0  # Default regularization suitable for small datasets
   random_forest:
-    n_estimators: 300
-    max_depth: null
-    min_samples_split: 2
-    min_samples_leaf: 1
+    n_estimators: 100  # Reduced from 300 for faster training on small datasets
+    max_depth: 10      # Limited depth to prevent overfitting
+    min_samples_split: 5  # Higher to prevent overfitting
+    min_samples_leaf: 2   # Higher to prevent overfitting
   mlp:
-    hidden_layer_sizes: [64, 32]
+    hidden_layer_sizes: [32, 16]  # Smaller network for small datasets
     activation: relu
     solver: adam
     learning_rate_init: 0.001
-    alpha: 0.0001
+    alpha: 0.01  # Higher regularization for small datasets
 
 # Data preprocessing
 preprocessing:
@@ -44,12 +39,12 @@ preprocessing:
   scale_features: true
   handle_unknown: ignore
 
-# Early stopping for MLP
+# Early stopping for MLP (more aggressive for small datasets)
 early_stopping:
   enabled: true
   monitor: macro_f1
   patience: 8
-  min_delta: 0.000001
+  min_delta: 0.001  # Less strict for small datasets
   restore_best_weights: true
 
 # Metrics and evaluation
