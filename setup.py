@@ -52,6 +52,16 @@ setup(
         ],
         'web': [
             'streamlit>=1.0.0',
+        ],
+        'imaging': [
+            'nibabel>=5.0.0',       # NIfTI file format support
+            'pydicom>=2.4.0',      # DICOM file format support
+            'simpleitk>=2.3.0',    # Medical image processing
+            'pyradiomics>=3.0.0',  # Radiomics feature extraction (fixed version)
+            'nipype>=1.8.0',       # Neuroimaging pipelines
+            'nilearn>=0.10.0',     # Neuroimaging machine learning
+            'bids-validator>=1.13.0',  # BIDS compliance validation
+            'pybids>=0.15.0',      # BIDS dataset management
         ]
     },
     entry_points={

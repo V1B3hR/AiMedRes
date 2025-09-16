@@ -1,0 +1,94 @@
+# Dockerfile for DuetMind Adaptive - Medical Imaging Pipeline
+# Based on Ubuntu with medical imaging tools and dependencies
+
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# Install system dependencies for medical imaging
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-dev \
+    python3-venv \
+    # Medical imaging and DICOM tools
+    dcmtk \
+    dcm2niix \
+    fsl-core \
+    # Build tools for compiled packages
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
+    # System utilities
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    # Medical imaging libraries
+    libinsighttoolkit5-dev \
+    libvtk9-dev \
+    # Database and networking
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up FSL environment (for neuroimaging)
+ENV FSLDIR=/usr/share/fsl/5.0
+ENV PATH=${FSLDIR}/bin:${PATH}
+ENV FSLOUTPUTTYPE=NIFTI_GZ
+
+# Install ANTs (Advanced Normalization Tools) for image registration
+RUN wget -O ants.tar.gz "https://github.com/ANTsX/ANTs/releases/download/v2.5.3/ants-2.5.3-ubuntu.tar.gz" \
+    && tar -C /opt -xzf ants.tar.gz \
+    && rm ants.tar.gz \
+    && ln -s /opt/ants-2.5.3/bin/* /usr/local/bin/
+
+# Create working directory
+WORKDIR /app
+
+# Copy requirements and setup files
+COPY requirements.txt requirements-dev.txt setup.py ./
+COPY mlops/infra/requirements-imaging.txt ./
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel
+
+# Install core requirements
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Install imaging-specific requirements
+RUN pip3 install --no-cache-dir -r requirements-imaging.txt
+
+# Install the package with imaging extras
+RUN pip3 install --no-cache-dir -e .[imaging]
+
+# Copy application code
+COPY . .
+
+# Set up directories for medical imaging data
+RUN mkdir -p /app/data/imaging/{raw,processed,nifti,bids} \
+    && mkdir -p /app/outputs/imaging/{qc,features,reports} \
+    && mkdir -p /app/logs/imaging
+
+# Environment variables for imaging pipeline
+ENV DUETMIND_IMAGING_DATA_DIR=/app/data/imaging
+ENV DUETMIND_IMAGING_OUTPUT_DIR=/app/outputs/imaging
+ENV DUETMIND_IMAGING_LOG_DIR=/app/logs/imaging
+ENV DUETMIND_IMAGING_TEMP_DIR=/tmp/imaging
+ENV OMP_NUM_THREADS=4
+ENV ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=4
+
+# Expose ports for imaging services
+EXPOSE 8001 8002
+
+# Health check for imaging services
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import nibabel, pydicom, SimpleITK; print('Imaging dependencies OK')" || exit 1
+
+# Default command
+CMD ["python3", "-m", "mlops.imaging.server"]

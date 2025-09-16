@@ -1,0 +1,243 @@
+# DuetMind Adaptive - Medical Imaging Pipeline Parameters
+# Configuration for medical imaging data processing and analysis
+
+# Data directories and paths
+data:
+  # Raw imaging data
+  raw_imaging_dir: "data/imaging/raw"
+  # Processed imaging data
+  processed_dir: "data/imaging/processed"
+  # NIfTI converted data
+  nifti_dir: "data/imaging/nifti"
+  # BIDS structured data
+  bids_dir: "data/imaging/bids"
+  # Quality control outputs
+  qc_dir: "outputs/imaging/qc"
+  # Feature extraction outputs
+  features_dir: "outputs/imaging/features"
+  # De-identification mappings
+  deidentify_dir: "secure_medical_workspace/deidentified"
+
+# Synthetic data generation
+synthetic:
+  # Number of synthetic subjects to generate
+  num_subjects: 10
+  # Modalities to generate for each subject
+  modalities: ["T1w", "T2w", "FLAIR"]
+  # Fraction of subjects with simulated pathology
+  pathology_rate: 0.3
+  # Output directory for synthetic data
+  output_dir: "data/imaging/synthetic"
+  # Standard image dimensions (MNI152 space)
+  image_shape: [182, 218, 182]
+  # Voxel size (mm)
+  voxel_size: [1.0, 1.0, 1.0]
+
+# DICOM to NIfTI conversion
+conversion:
+  # Use dcm2niix if available (preferred)
+  prefer_dcm2niix: true
+  # Compression for NIfTI files
+  compress_nifti: true
+  # De-identify during conversion
+  deidentify: true
+  # Output filename format
+  filename_format: "{subject_id}_{modality}_{series_num:03d}_{description}"
+  # Maximum time for conversion (seconds)
+  timeout: 300
+
+# BIDS validation
+bids:
+  # BIDS version to validate against
+  bids_version: "1.8.0"
+  # Generate validation report
+  generate_report: true
+  # Report output path
+  report_path: "outputs/imaging/bids_validation_report.txt"
+  # Fail on warnings
+  strict_validation: false
+
+# De-identification settings
+deidentification:
+  # Enable de-identification
+  enabled: true
+  # Encryption key for ID mappings (set via environment variable)
+  encryption_key_env: "DUETMIND_DEIDENTIFY_KEY"
+  # ID mappings file
+  mappings_file: "secure_medical_workspace/id_mappings.encrypted"
+  # Date shifting enabled
+  shift_dates: true
+  # Remove PHI from text fields
+  anonymize_text: true
+  # Audit log file
+  audit_log: "secure_medical_workspace/audit/deidentification.log"
+
+# Quality control parameters
+quality_control:
+  # QC metrics to calculate
+  metrics:
+    - "snr_estimate"
+    - "contrast_score"
+    - "motion_score"
+    - "artifact_score"
+    - "coverage_score"
+  # QC thresholds
+  thresholds:
+    min_snr: 10.0
+    min_contrast: 0.5
+    max_motion_score: 0.3
+    max_artifact_score: 0.2
+  # Automated QC flags
+  auto_flags:
+    - "low_snr"
+    - "high_motion"
+    - "artifacts_detected"
+    - "poor_coverage"
+  # Manual review required for these flags
+  manual_review_flags:
+    - "borderline_quality"
+    - "unusual_appearance"
+
+# Feature extraction
+feature_extraction:
+  # Extraction pipelines to run
+  pipelines:
+    - "volumetric"
+    - "cortical_thickness"
+    - "radiomics"
+    - "deep_learning"
+  
+  # Volumetric measurements
+  volumetric:
+    # Brain regions to measure
+    regions:
+      - "total_brain"
+      - "gray_matter"
+      - "white_matter"
+      - "csf"
+      - "hippocampus"
+      - "ventricles"
+    # Atlas for region definition
+    atlas: "AAL3"
+    # Registration method
+    registration: "ants"
+  
+  # Cortical thickness analysis
+  cortical:
+    # Surface-based analysis
+    surface_analysis: true
+    # Smoothing kernel (mm)
+    smoothing: 5.0
+    # Parcellation atlas
+    parcellation: "Desikan-Killiany"
+  
+  # Radiomics feature extraction
+  radiomics:
+    # PyRadiomics settings
+    settings:
+      interpolator: "sitkBSpline"
+      resampledPixelSpacing: [1.0, 1.0, 1.0]
+      padDistance: 5
+    # Feature classes to extract
+    feature_classes:
+      - "firstorder"
+      - "shape"
+      - "glcm"
+      - "glrlm"
+      - "glszm"
+      - "gldm"
+    # Image filters
+    filters:
+      - "Original"
+      - "Wavelet"
+      - "LoG"
+  
+  # Deep learning features
+  deep_learning:
+    # Pre-trained models to use
+    models:
+      - "brain_age"
+      - "tissue_segmentation"
+      - "pathology_detection"
+    # Feature extraction layers
+    extract_layers:
+      - "conv_features"
+      - "fc_features"
+    # Batch size for processing
+    batch_size: 8
+
+# Database configuration
+database:
+  # Imaging tables to use
+  subjects_table: "imaging_subjects"
+  studies_table: "imaging_studies"
+  series_table: "imaging_series"
+  qc_table: "imaging_qc"
+  features_table: "imaging_features"
+  
+  # Batch size for database operations
+  batch_size: 100
+  # Connection timeout (seconds)
+  connection_timeout: 30
+
+# Processing configuration
+processing:
+  # Number of parallel workers
+  n_jobs: 4
+  # Memory limit per job (GB)
+  memory_limit: 8
+  # Temporary directory for processing
+  temp_dir: "/tmp/duetmind_imaging"
+  # Keep intermediate files
+  keep_intermediate: false
+  # Logging level
+  log_level: "INFO"
+
+# MLOps integration
+mlops:
+  # Track experiments with MLflow
+  track_experiments: true
+  # MLflow experiment name
+  experiment_name: "medical_imaging_pipeline"
+  # Log artifacts to MLflow
+  log_artifacts: true
+  # Artifact paths to log
+  artifact_paths:
+    - "outputs/imaging/qc"
+    - "outputs/imaging/features"
+    - "outputs/imaging/reports"
+
+# Compliance and security
+compliance:
+  # Enable HIPAA compliance logging
+  hipaa_logging: true
+  # Audit all data access
+  audit_access: true
+  # Encrypt sensitive data at rest
+  encrypt_at_rest: true
+  # Retention policy (days)
+  retention_days: 2555  # 7 years
+  
+# Advanced settings
+advanced:
+  # Memory mapping for large files
+  use_memory_mapping: true
+  # Lazy loading of images
+  lazy_loading: true
+  # Cache preprocessed data
+  enable_caching: true
+  # Cache directory
+  cache_dir: "cache/imaging"
+  # Maximum cache size (GB)
+  max_cache_size: 10
+
+# Pipeline stages
+stages:
+  # Enable/disable pipeline stages
+  synthetic_generation: true
+  dicom_conversion: true
+  bids_validation: true
+  quality_control: true
+  feature_extraction: true
+  deidentification: true
+  database_upload: true
