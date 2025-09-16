@@ -1,4 +1,5 @@
 stages:
+  # Original stages
   ingest_raw:
     cmd: python mlops/pipelines/ingest_raw.py
     params:
@@ -7,11 +8,50 @@ stages:
       - data/raw/alzheimer_sample.csv:
           cache: false
     
+  # New imaging pipeline stages
+  ingest_imaging:
+    cmd: python mlops/pipelines/ingest_imaging.py
+    params:
+      - data.raw_imaging_dir
+      - data.nifti_dir
+    outs:
+      - data/imaging/raw/:
+          cache: false
+    
+  preprocess_imaging:
+    cmd: python mlops/pipelines/preprocess_imaging.py
+    deps:
+      - mlops/pipelines/preprocess_imaging.py
+      - data/imaging/raw/
+    params:
+      - processing
+      - quality_control
+    outs:
+      - data/imaging/processed/:
+          cache: false
+      - outputs/imaging/qc/:
+          cache: false
+    
+  extract_features:
+    cmd: python mlops/pipelines/extract_features.py
+    deps:
+      - mlops/pipelines/extract_features.py
+      - data/imaging/processed/
+    params:
+      - feature_extraction
+      - mlops
+    outs:
+      - outputs/imaging/features/:
+          cache: false
+    metrics:
+      - outputs/imaging/features/feature_summary.json
+          
   build_features:
     cmd: python mlops/pipelines/build_features.py
     deps:
       - mlops/pipelines/build_features.py
       - data/raw/alzheimer_sample.csv
+      - outputs/imaging/features/
     params:
       - data.processed
       - data.features

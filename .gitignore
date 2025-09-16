@@ -54,5 +54,12 @@ privacy_audit.db
 htmlcov/
 
 # Logs
-*.logoutputs/
+*.log
+
+# Test and output directories
+outputs/
 test_outputs/
+cache/
+
+# MLflow
+mlruns/
