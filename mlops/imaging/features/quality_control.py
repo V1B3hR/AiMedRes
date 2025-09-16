@@ -341,17 +341,24 @@ class QualityControlMetrics:
         # Use sliding window to calculate local contrasts
         coords = np.where(fg_mask)
         
+        if len(coords[0]) == 0:
+            return np.array([])
+        
         for i in range(0, len(coords[0]), window_size):
             end_idx = min(i + window_size, len(coords[0]))
-            local_coords = [coords[j][i:end_idx] for j in range(3)]
+            local_coords = tuple([coords[j][i:end_idx] for j in range(3)])
             
             if len(local_coords[0]) > 1:
-                local_intensities = data[local_coords]
-                if len(local_intensities) > 0:
-                    local_std = np.std(local_intensities)
-                    local_mean = np.mean(local_intensities)
-                    if local_mean > 0:
-                        local_contrasts.append(local_std / local_mean)
+                try:
+                    local_intensities = data[local_coords]
+                    if len(local_intensities) > 0:
+                        local_std = np.std(local_intensities)
+                        local_mean = np.mean(local_intensities)
+                        if local_mean > 0:
+                            local_contrasts.append(local_std / local_mean)
+                except IndexError:
+                    # Skip invalid coordinates
+                    continue
         
         return np.array(local_contrasts)
     
