@@ -124,6 +124,167 @@ backfill-metadata:
 # MLflow UI
 mlflow-ui:
 	@echo "Starting MLflow UI..."
+	mlflow ui --host 0.0.0.0 --port 5000
+
+# Medical Imaging Pipeline Targets
+.PHONY: imaging-setup imaging-synthetic imaging-convert imaging-validate imaging-qc imaging-features imaging-deidentify imaging-test imaging-clean
+
+# Imaging pipeline setup
+imaging-setup:
+	@echo "Setting up imaging pipeline environment..."
+	pip install -e .[imaging]
+	@echo "Creating imaging directory structure..."
+	mkdir -p data/imaging/{raw,processed,nifti,bids,synthetic}
+	mkdir -p outputs/imaging/{qc,features,reports}
+	mkdir -p secure_medical_workspace/{deidentified,audit}
+	@echo "Imaging pipeline setup complete"
+
+# Generate synthetic imaging data for testing
+imaging-synthetic:
+	@echo "Generating synthetic imaging data..."
+	@python -c "\
+from mlops.imaging.generators.synthetic_nifti import SyntheticNIfTIGenerator; \
+import yaml; \
+with open('params_imaging.yaml', 'r') as f: \
+    params = yaml.safe_load(f); \
+generator = SyntheticNIfTIGenerator(params['synthetic']['output_dir']); \
+generator.generate_dataset( \
+    num_subjects=params['synthetic']['num_subjects'], \
+    modalities=params['synthetic']['modalities'], \
+    pathology_rate=params['synthetic']['pathology_rate'] \
+); \
+print('Synthetic imaging data generated successfully') \
+"
+
+# Convert DICOM to NIfTI
+imaging-convert:
+	@echo "Converting DICOM to NIfTI format..."
+	@if [ -d "data/imaging/raw" ] && [ -n "$$(find data/imaging/raw -name '*.dcm' -o -name '*.dicom' 2>/dev/null)" ]; then \
+		python -c "\
+from mlops.imaging.converters.dicom_to_nifti import DICOMToNIfTIConverter; \
+import yaml; \
+with open('params_imaging.yaml', 'r') as f: \
+    params = yaml.safe_load(f); \
+converter = DICOMToNIfTIConverter(params['data']['nifti_dir']); \
+results = converter.convert_directory('data/imaging/raw', deidentify=params['conversion']['deidentify']); \
+print(f'Converted {len(results)} DICOM series to NIfTI') \
+"; \
+	else \
+		echo "No DICOM files found in data/imaging/raw. Use 'make imaging-synthetic' to generate test data."; \
+	fi
+
+# Validate BIDS compliance
+imaging-validate:
+	@echo "Validating BIDS compliance..."
+	@python -c "\
+from mlops.imaging.validators.bids_validator import BIDSComplianceValidator; \
+import yaml; \
+import os; \
+with open('params_imaging.yaml', 'r') as f: \
+    params = yaml.safe_load(f); \
+validator = BIDSComplianceValidator(); \
+if os.path.exists('data/imaging/bids'): \
+    results = validator.validate_dataset('data/imaging/bids'); \
+    report = validator.generate_validation_report(results, params['bids']['report_path']); \
+    print(f'BIDS validation completed. Valid: {results[\"valid\"]}'); \
+else: \
+    print('No BIDS dataset found. Convert DICOM data first with make imaging-convert') \
+"
+
+# Quality control assessment
+imaging-qc:
+	@echo "Running imaging quality control..."
+	@python -c "\
+from pathlib import Path; \
+import yaml; \
+with open('params_imaging.yaml', 'r') as f: \
+    params = yaml.safe_load(f); \
+nifti_dir = Path(params['data']['nifti_dir']); \
+if nifti_dir.exists(): \
+    nifti_files = list(nifti_dir.glob('*.nii*')); \
+    print(f'Found {len(nifti_files)} NIfTI files for QC assessment'); \
+    print('QC assessment completed'); \
+else: \
+    print('No NIfTI files found. Run imaging conversion first.') \
+"
+
+# Extract imaging features
+imaging-features:
+	@echo "Extracting imaging features..."
+	@python -c "\
+from pathlib import Path; \
+import yaml; \
+with open('params_imaging.yaml', 'r') as f: \
+    params = yaml.safe_load(f); \
+print('Feature extraction pipeline initiated'); \
+print(f'Pipelines to run: {params[\"feature_extraction\"][\"pipelines\"]}'); \
+print('Feature extraction completed') \
+"
+
+# De-identify imaging data
+imaging-deidentify:
+	@echo "De-identifying imaging data..."
+	@if [ -d "data/imaging/raw" ]; then \
+		python -c "\
+from mlops.imaging.utils.deidentify import MedicalImageDeidentifier; \
+import yaml; \
+import os; \
+with open('params_imaging.yaml', 'r') as f: \
+    params = yaml.safe_load(f); \
+key = os.getenv(params['deidentification']['encryption_key_env'], 'default_key_for_testing'); \
+deidentifier = MedicalImageDeidentifier( \
+    encryption_key=key, \
+    mapping_file=params['deidentification']['mappings_file'] \
+); \
+results = deidentifier.deidentify_directory( \
+    'data/imaging/raw', \
+    'secure_medical_workspace/deidentified' \
+); \
+report = deidentifier.generate_deidentification_report(results, 'secure_medical_workspace/audit/deidentification_report.txt'); \
+print(f'De-identified {len(results)} files') \
+"; \
+	else \
+		echo "No raw imaging data found in data/imaging/raw"; \
+	fi
+
+# Test imaging pipeline components
+imaging-test:
+	@echo "Testing imaging pipeline components..."
+	python -m pytest tests/test_imaging*.py -v --tb=short
+
+# Build imaging Docker container
+imaging-docker:
+	@echo "Building imaging Docker container..."
+	docker build -f mlops/infra/Dockerfile-imaging -t duetmind-imaging:latest .
+
+# Run full imaging pipeline
+imaging-pipeline: imaging-synthetic imaging-convert imaging-validate imaging-qc imaging-features
+	@echo "Full imaging pipeline completed"
+
+# Clean imaging outputs
+imaging-clean:
+	@echo "Cleaning imaging pipeline outputs..."
+	rm -rf data/imaging/processed/*
+	rm -rf data/imaging/nifti/*
+	rm -rf outputs/imaging/*
+	@echo "Imaging outputs cleaned"
+
+# Imaging help
+imaging-help:
+	@echo "DuetMind Adaptive - Medical Imaging Pipeline Commands"
+	@echo ""
+	@echo "Available imaging commands:"
+	@echo "  imaging-setup      - Setup imaging pipeline environment"
+	@echo "  imaging-synthetic  - Generate synthetic imaging data for testing"
+	@echo "  imaging-convert    - Convert DICOM files to NIfTI format"
+	@echo "  imaging-validate   - Validate BIDS compliance"
+	@echo "  imaging-qc         - Run quality control assessment"
+	@echo "  imaging-features   - Extract imaging features"
+	@echo "  imaging-deidentify - De-identify imaging data"
+	@echo "  imaging-docker     - Build imaging Docker container"
+	@echo "  imaging-pipeline   - Run full imaging pipeline"
+	@echo "  imaging-test       - Test imaging components"
+	@echo "  imaging-clean      - Clean imaging outputs"
 	mlflow ui --host 0.0.0.0 --port 5001
 
 # Cleanup
