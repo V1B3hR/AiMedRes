@@ -1,0 +1,207 @@
+# AAL3 Atlas ROI Mapping
+# Maps numerical labels to anatomical region names
+
+roi_labels:
+  # Frontal Lobe - Left
+  1: "Precentral_L"
+  2: "Frontal_Sup_L"
+  3: "Frontal_Sup_Orb_L"
+  4: "Frontal_Mid_L"
+  5: "Frontal_Mid_Orb_L"
+  6: "Frontal_Inf_Oper_L"
+  7: "Frontal_Inf_Tri_L"
+  8: "Frontal_Inf_Orb_L"
+  9: "Rolandic_Oper_L"
+  10: "Supp_Motor_Area_L"
+  
+  # Frontal Lobe - Right
+  11: "Precentral_R"
+  12: "Frontal_Sup_R"
+  13: "Frontal_Sup_Orb_R"
+  14: "Frontal_Mid_R"
+  15: "Frontal_Mid_Orb_R"
+  16: "Frontal_Inf_Oper_R"
+  17: "Frontal_Inf_Tri_R"
+  18: "Frontal_Inf_Orb_R"
+  19: "Rolandic_Oper_R"
+  20: "Supp_Motor_Area_R"
+  
+  # Parietal Lobe - Left
+  21: "Postcentral_L"
+  22: "Parietal_Sup_L"
+  23: "Parietal_Inf_L"
+  24: "SupraMarginal_L"
+  25: "Angular_L"
+  26: "Precuneus_L"
+  
+  # Parietal Lobe - Right
+  27: "Postcentral_R"
+  28: "Parietal_Sup_R"
+  29: "Parietal_Inf_R"
+  30: "SupraMarginal_R"
+  31: "Angular_R"
+  32: "Precuneus_R"
+  
+  # Temporal Lobe - Left
+  33: "Temporal_Sup_L"
+  34: "Temporal_Pole_Sup_L"
+  35: "Temporal_Mid_L"
+  36: "Temporal_Pole_Mid_L"
+  37: "Temporal_Inf_L"
+  38: "Heschl_L"
+  39: "Fusiform_L"
+  
+  # Temporal Lobe - Right
+  40: "Temporal_Sup_R"
+  41: "Temporal_Pole_Sup_R"
+  42: "Temporal_Mid_R"
+  43: "Temporal_Pole_Mid_R"
+  44: "Temporal_Inf_R"
+  45: "Heschl_R"
+  46: "Fusiform_R"
+  
+  # Occipital Lobe - Left
+  47: "Occipital_Sup_L"
+  48: "Occipital_Mid_L"
+  49: "Occipital_Inf_L"
+  50: "Cuneus_L"
+  51: "Calcarine_L"
+  52: "Lingual_L"
+  
+  # Occipital Lobe - Right
+  53: "Occipital_Sup_R"
+  54: "Occipital_Mid_R"
+  55: "Occipital_Inf_R"
+  56: "Cuneus_R"
+  57: "Calcarine_R"
+  58: "Lingual_R"
+  
+  # Limbic System - Left
+  59: "Hippocampus_L"
+  60: "ParaHippocampal_L"
+  61: "Amygdala_L"
+  62: "Olfactory_L"
+  63: "Rectus_L"
+  64: "Cingulate_Ant_L"
+  65: "Cingulate_Mid_L"
+  66: "Cingulate_Post_L"
+  
+  # Limbic System - Right
+  67: "Hippocampus_R"
+  68: "ParaHippocampal_R"
+  69: "Amygdala_R"
+  70: "Olfactory_R"
+  71: "Rectus_R"
+  72: "Cingulate_Ant_R"
+  73: "Cingulate_Mid_R"
+  74: "Cingulate_Post_R"
+  
+  # Subcortical - Left
+  75: "Caudate_L"
+  76: "Putamen_L"
+  77: "Pallidum_L"
+  78: "Thalamus_L"
+  79: "Insula_L"
+  
+  # Subcortical - Right
+  80: "Caudate_R"
+  81: "Putamen_R"
+  82: "Pallidum_R"
+  83: "Thalamus_R"
+  84: "Insula_R"
+
+# Hierarchical groupings
+region_groups:
+  frontal:
+    - "Precentral_L"
+    - "Precentral_R"
+    - "Frontal_Sup_L"
+    - "Frontal_Sup_R"
+    - "Frontal_Mid_L"
+    - "Frontal_Mid_R"
+    - "Frontal_Inf_Oper_L"
+    - "Frontal_Inf_Oper_R"
+    - "Frontal_Inf_Tri_L"
+    - "Frontal_Inf_Tri_R"
+    - "Supp_Motor_Area_L"
+    - "Supp_Motor_Area_R"
+    
+  parietal:
+    - "Postcentral_L"
+    - "Postcentral_R"
+    - "Parietal_Sup_L"
+    - "Parietal_Sup_R"
+    - "Parietal_Inf_L"
+    - "Parietal_Inf_R"
+    - "SupraMarginal_L"
+    - "SupraMarginal_R"
+    - "Angular_L"
+    - "Angular_R"
+    - "Precuneus_L"
+    - "Precuneus_R"
+    
+  temporal:
+    - "Temporal_Sup_L"
+    - "Temporal_Sup_R"
+    - "Temporal_Mid_L"
+    - "Temporal_Mid_R"
+    - "Temporal_Inf_L"
+    - "Temporal_Inf_R"
+    - "Heschl_L"
+    - "Heschl_R"
+    - "Fusiform_L"
+    - "Fusiform_R"
+    
+  occipital:
+    - "Occipital_Sup_L"
+    - "Occipital_Sup_R"
+    - "Occipital_Mid_L"
+    - "Occipital_Mid_R"
+    - "Occipital_Inf_L"
+    - "Occipital_Inf_R"
+    - "Cuneus_L"
+    - "Cuneus_R"
+    - "Calcarine_L"
+    - "Calcarine_R"
+    - "Lingual_L"
+    - "Lingual_R"
+    
+  limbic:
+    - "Hippocampus_L"
+    - "Hippocampus_R"
+    - "ParaHippocampal_L"
+    - "ParaHippocampal_R"
+    - "Amygdala_L"
+    - "Amygdala_R"
+    - "Cingulate_Ant_L"
+    - "Cingulate_Ant_R"
+    - "Cingulate_Mid_L"
+    - "Cingulate_Mid_R"
+    - "Cingulate_Post_L"
+    - "Cingulate_Post_R"
+    
+  subcortical:
+    - "Caudate_L"
+    - "Caudate_R"
+    - "Putamen_L"
+    - "Putamen_R"
+    - "Pallidum_L"
+    - "Pallidum_R"
+    - "Thalamus_L"
+    - "Thalamus_R"
+    
+  left_hemisphere:
+    - "Precentral_L"
+    - "Frontal_Sup_L"
+    - "Temporal_Sup_L"
+    - "Hippocampus_L"
+    - "Caudate_L"
+    # ... (all left regions)
+    
+  right_hemisphere:
+    - "Precentral_R"
+    - "Frontal_Sup_R"
+    - "Temporal_Sup_R"
+    - "Hippocampus_R"
+    - "Caudate_R"
+    # ... (all right regions)

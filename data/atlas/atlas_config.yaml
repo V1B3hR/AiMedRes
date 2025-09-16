@@ -1,0 +1,67 @@
+# Atlas Configuration for DuetMind Adaptive
+# Defines available atlases, their properties, and access methods
+
+atlases:
+  MNI152_1mm:
+    name: "MNI152 1mm Template"
+    description: "Montreal Neurological Institute 152 template at 1mm resolution"
+    dimensions: [182, 218, 182]
+    voxel_size: [1.0, 1.0, 1.0]
+    space: "MNI152NLin2009cAsym"
+    source: "FSL"
+    download_url: "https://fsl.fmrib.ox.ac.uk/fsldownloads/"
+    local_path: "templates/MNI152_1mm.nii.gz"
+    checksum: null  # To be filled when downloaded
+    
+  MNI152_2mm:
+    name: "MNI152 2mm Template"
+    description: "Montreal Neurological Institute 152 template at 2mm resolution"
+    dimensions: [91, 109, 91]
+    voxel_size: [2.0, 2.0, 2.0]
+    space: "MNI152NLin2009cAsym"
+    source: "FSL"
+    download_url: "https://fsl.fmrib.ox.ac.uk/fsldownloads/"
+    local_path: "templates/MNI152_2mm.nii.gz"
+    checksum: null
+    
+  AAL3:
+    name: "AAL3 Atlas"
+    description: "Automated Anatomical Labeling atlas version 3"
+    dimensions: [182, 218, 182]
+    voxel_size: [1.0, 1.0, 1.0]
+    space: "MNI152NLin2009cAsym"
+    source: "SPM"
+    download_url: "https://www.gin.cnrs.fr/en/tools/aal/"
+    local_path: "templates/AAL3.nii.gz"
+    roi_mapping: "roi_mappings/aal3_mapping.yaml"
+    num_regions: 170
+    
+  HarvardOxford:
+    name: "Harvard-Oxford Atlas"
+    description: "Harvard-Oxford cortical and subcortical structural atlas"
+    dimensions: [182, 218, 182]
+    voxel_size: [1.0, 1.0, 1.0]
+    space: "MNI152NLin2009cAsym"
+    source: "FSL"
+    download_url: "https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/Atlases"
+    local_path: "templates/HarvardOxford.nii.gz"
+    roi_mapping: "roi_mappings/harvard_oxford_mapping.yaml"
+    num_regions: 96
+
+# Default atlas for different use cases
+defaults:
+  registration_template: "MNI152_2mm"
+  volumetric_analysis: "AAL3"
+  quality_control: "MNI152_1mm"
+  
+# Download settings
+download:
+  auto_download: false  # Set to true to automatically download missing atlases
+  cache_dir: "cache/atlas"
+  verify_checksums: true
+  
+# Processing settings
+processing:
+  interpolation: "linear"
+  dtype: "float32"
+  compress: true
