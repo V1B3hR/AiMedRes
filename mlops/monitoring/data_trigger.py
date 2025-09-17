@@ -50,6 +50,12 @@ class RetrainingTriggerConfig:
     data_quality_threshold: float = 0.95
     missing_data_threshold: float = 0.1
     
+    # Imaging-specific triggers
+    new_study_threshold: int = 100  # Number of new imaging studies to trigger retraining
+    imaging_drift_threshold: float = 0.15  # Higher threshold for imaging drift
+    image_quality_threshold: float = 0.8  # SNR or quality score threshold
+    modality_change_trigger: bool = True  # Trigger on new imaging modalities
+    
     # Retraining constraints
     min_hours_between_retrains: int = 6
     max_retrains_per_day: int = 4
@@ -269,6 +275,7 @@ class DataDrivenRetrainingTrigger:
                 self._check_time_based_trigger()
                 self._check_performance_based_trigger()
                 self._check_data_quality_trigger()
+                self._check_imaging_triggers()
                 
                 # Reset daily counter if needed
                 self._reset_daily_counter()
@@ -567,6 +574,111 @@ class DataDrivenRetrainingTrigger:
             self.config.min_hours_between_retrains = original_min_hours
             self.config.max_retrains_per_day = original_max_retrains
             self.config.require_manual_approval = original_approval
+
+    def _check_imaging_triggers(self):
+        """Check imaging-specific triggers for retraining."""
+        try:
+            # Check new imaging studies threshold
+            if self._check_new_imaging_studies():
+                self._handle_trigger('new_imaging_studies', 
+                                   f"New imaging studies exceed threshold ({self.config.new_study_threshold})")
+                return
+                
+            # Check imaging drift
+            if self._check_imaging_drift():
+                self._handle_trigger('imaging_drift', 
+                                   f"Imaging drift detected above threshold ({self.config.imaging_drift_threshold})")
+                return
+                
+            # Check image quality degradation
+            if self._check_image_quality_degradation():
+                self._handle_trigger('image_quality', 
+                                   f"Image quality below threshold ({self.config.image_quality_threshold})")
+                return
+                
+        except Exception as e:
+            logger.error(f"Error checking imaging triggers: {e}")
+
+    def _check_new_imaging_studies(self) -> bool:
+        """Check if enough new imaging studies have arrived."""
+        try:
+            # Check for new imaging files in data directories
+            new_studies = 0
+            
+            if self.config.data_directories:
+                for directory in self.config.data_directories:
+                    if os.path.exists(directory):
+                        cutoff_time = self.last_retrain_time or (datetime.now() - timedelta(days=1))
+                        
+                        # Look for imaging file patterns (DICOM, NIfTI, etc.)
+                        imaging_patterns = ['*.dcm', '*.nii', '*.nii.gz', '*.img', '*.hdr']
+                        
+                        for pattern in imaging_patterns:
+                            for file_path in Path(directory).rglob(pattern):
+                                if file_path.stat().st_mtime > cutoff_time.timestamp():
+                                    new_studies += 1
+            
+            logger.debug(f"New imaging studies detected: {new_studies}")
+            return new_studies >= self.config.new_study_threshold
+            
+        except Exception as e:
+            logger.error(f"Error checking new imaging studies: {e}")
+            return False
+
+    def _check_imaging_drift(self) -> bool:
+        """Check for imaging data drift using specialized monitoring."""
+        try:
+            # This would integrate with the ImagingDriftDetector
+            # For now, we'll use a simplified approach
+            
+            if hasattr(self, 'drift_monitor'):
+                # Check if drift monitor exists and has recent results
+                latest_drift = getattr(self.drift_monitor, 'latest_drift_score', None)
+                if latest_drift and latest_drift > self.config.imaging_drift_threshold:
+                    logger.info(f"Imaging drift detected: {latest_drift}")
+                    return True
+            
+            # Fallback: check for changes in imaging metadata or quality metrics
+            # This could be enhanced to analyze DICOM headers, acquisition parameters, etc.
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error checking imaging drift: {e}")
+            return False
+
+    def _check_image_quality_degradation(self) -> bool:
+        """Check for degradation in image quality metrics."""
+        try:
+            # Check recent image quality scores
+            # This could integrate with quality control pipelines
+            
+            # For demonstration, check if any recent QC files indicate poor quality
+            if self.config.data_directories:
+                for directory in self.config.data_directories:
+                    qc_dir = Path(directory) / "quality_control"
+                    if qc_dir.exists():
+                        cutoff_time = datetime.now() - timedelta(hours=24)
+                        
+                        for qc_file in qc_dir.glob("*.json"):
+                            if datetime.fromtimestamp(qc_file.stat().st_mtime) > cutoff_time:
+                                try:
+                                    with open(qc_file, 'r') as f:
+                                        qc_data = json.load(f)
+                                    
+                                    # Check SNR or other quality metrics
+                                    if 'snr' in qc_data and qc_data['snr'] < self.config.image_quality_threshold * 20:
+                                        return True
+                                    if 'quality_score' in qc_data and qc_data['quality_score'] < self.config.image_quality_threshold:
+                                        return True
+                                        
+                                except Exception:
+                                    continue
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error checking image quality: {e}")
+            return False
 
 
 def create_data_trigger(model_name: str,

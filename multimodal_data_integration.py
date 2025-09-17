@@ -16,6 +16,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import kagglehub
+from contextlib import contextmanager
 
 # Machine learning imports
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -310,13 +311,37 @@ class DataFusionProcessor:
         return fused_data
     
     def late_fusion(self, data_dict: Dict[str, pd.DataFrame], 
-                   target_column: str) -> Dict[str, Any]:
-        """Late fusion: train separate models and combine predictions"""
+                   target_column: str, use_mlflow: bool = True, 
+                   mlflow_experiment: str = "multimodal_late_fusion") -> Dict[str, Any]:
+        """Late fusion: train separate models and combine predictions with evaluation"""
         
         logger.info("Performing late fusion...")
         
+        if use_mlflow:
+            import mlflow
+            import mlflow.sklearn
+            mlflow.set_experiment(mlflow_experiment)
+        
+        # Use MLflow context if enabled
+        if use_mlflow:
+            with mlflow.start_run():
+                return self._perform_late_fusion_with_mlflow(data_dict, target_column, True)
+        else:
+            return self._perform_late_fusion_with_mlflow(data_dict, target_column, False)
+    
+    def _perform_late_fusion_with_mlflow(self, data_dict: Dict[str, pd.DataFrame], 
+                                        target_column: str, use_mlflow: bool) -> Dict[str, Any]:
+        """Internal method to perform late fusion with optional MLflow logging."""
+        """Internal method to perform late fusion with optional MLflow logging."""
+        
+        if use_mlflow:
+            mlflow.log_param("fusion_type", "late_fusion")
+            mlflow.log_param("num_modalities", len(data_dict))
+            mlflow.log_param("modalities", list(data_dict.keys()))
+        
         modality_models = {}
         modality_predictions = {}
+        modality_metrics = {}
         
         for modality_name, data in data_dict.items():
             if target_column not in data.columns:
@@ -329,27 +354,89 @@ class DataFusionProcessor:
             X = data.drop(columns=[target_column])
             y = data[target_column]
             
+            if use_mlflow:
+                mlflow.log_param(f"{modality_name}_features", X.shape[1])
+                mlflow.log_param(f"{modality_name}_samples", X.shape[0])
+            
             # Handle categorical variables
             categorical_columns = X.select_dtypes(include=['object']).columns
             for col in categorical_columns:
                 le = LabelEncoder()
                 X[col] = le.fit_transform(X[col].astype(str))
             
+            # Split for evaluation
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+            
             # Train model
             model = RandomForestClassifier(n_estimators=100, random_state=42)
-            model.fit(X, y)
+            model.fit(X_train, y_train)
+            
+            # Evaluate individual modality
+            y_pred = model.predict(X_test)
+            y_pred_proba = model.predict_proba(X_test)
+            
+            accuracy = accuracy_score(y_test, y_pred)
+            report = classification_report(y_test, y_pred, output_dict=True)
+            
+            modality_metrics[modality_name] = {
+                'accuracy': accuracy,
+                'precision': report['weighted avg']['precision'],
+                'recall': report['weighted avg']['recall'],
+                'f1_score': report['weighted avg']['f1-score']
+            }
+            
+            if use_mlflow:
+                mlflow.log_metric(f"{modality_name}_accuracy", accuracy)
+                mlflow.log_metric(f"{modality_name}_precision", report['weighted avg']['precision'])
+                mlflow.log_metric(f"{modality_name}_recall", report['weighted avg']['recall'])
+                mlflow.log_metric(f"{modality_name}_f1", report['weighted avg']['f1-score'])
             
             modality_models[modality_name] = model
-            modality_predictions[modality_name] = model.predict_proba(X)
+            modality_predictions[modality_name] = y_pred_proba
+            
+            logger.info(f"{modality_name} - Accuracy: {accuracy:.4f}")
         
         # Combine predictions (simple averaging)
+        ensemble_predictions = {}
         if modality_predictions:
             combined_predictions = np.mean(list(modality_predictions.values()), axis=0)
+            ensemble_pred_labels = np.argmax(combined_predictions, axis=1)
+            
+            # Evaluate ensemble if we have test data
+            if len(modality_predictions) > 0:
+                # Use the same test split as the last modality for ensemble evaluation
+                ensemble_accuracy = accuracy_score(y_test, ensemble_pred_labels)
+                ensemble_report = classification_report(y_test, ensemble_pred_labels, output_dict=True)
+                
+                ensemble_predictions = {
+                    'accuracy': ensemble_accuracy,
+                    'precision': ensemble_report['weighted avg']['precision'],
+                    'recall': ensemble_report['weighted avg']['recall'],
+                    'f1_score': ensemble_report['weighted avg']['f1-score']
+                }
+                
+                if use_mlflow:
+                    mlflow.log_metric("ensemble_accuracy", ensemble_accuracy)
+                    mlflow.log_metric("ensemble_precision", ensemble_report['weighted avg']['precision'])
+                    mlflow.log_metric("ensemble_recall", ensemble_report['weighted avg']['recall'])
+                    mlflow.log_metric("ensemble_f1", ensemble_report['weighted avg']['f1-score'])
+                    
+                    # Log the ensemble as an artifact
+                    import joblib
+                    ensemble_path = "ensemble_models.pkl"
+                    joblib.dump(modality_models, ensemble_path)
+                    mlflow.log_artifact(ensemble_path)
+                
+                logger.info(f"Ensemble - Accuracy: {ensemble_accuracy:.4f}")
             
             return {
                 'modality_models': modality_models,
                 'modality_predictions': modality_predictions,
-                'combined_predictions': combined_predictions
+                'combined_predictions': combined_predictions,
+                'modality_metrics': modality_metrics,
+                'ensemble_metrics': ensemble_predictions
             }
         
         return {}
