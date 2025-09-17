@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "duetmind-adaptive"
+version = "0.1.0"
+description = "DuetMind Adaptive - Agent Memory Store"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "SQLAlchemy>=2.0.20",
+  "psycopg2-binary>=2.9.9",
+  "pgvector>=0.2.5",
+  "sentence-transformers>=3.0.0",
+  "PyYAML>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+  "black>=24.8.0",
+  "isort>=5.13.2",
+  "mypy>=1.11.1",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
