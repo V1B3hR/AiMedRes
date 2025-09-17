@@ -12,7 +12,15 @@ import numpy as np
 from dataclasses import dataclass
 
 from .embed_memory import AgentMemoryStore
-from ..audit.event_chain import AuditEventChain
+
+try:
+    from ..audit.event_chain import AuditEventChain
+except ImportError:
+    # Fallback for standalone usage
+    try:
+        from audit.event_chain import AuditEventChain
+    except ImportError:
+        AuditEventChain = None
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
