@@ -12,7 +12,15 @@ import numpy as np
 from dataclasses import dataclass
 
 from .embed_memory import AgentMemoryStore
-from ..audit.event_chain import AuditEventChain
+
+try:
+    from ..audit.event_chain import AuditEventChain
+except ImportError:
+    # Fallback for standalone usage
+    try:
+        from audit.event_chain import AuditEventChain
+    except ImportError:
+        AuditEventChain = None
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +68,7 @@ class LiveReasoningAgent:
     SUPPORTED_REASONING_TYPES = {
         "medical_consultation": "Clinical context synthesis with evaluative guidance",
         "diagnosis": "Supports structuring differential or provisional assessments",
+        "imaging_analysis": "Medical imaging interpretation with clinical correlation",
         "deductive": "Logical necessity from stated premises / retrieved memory facts",
         "inductive": "Generalization from multiple observations toward broader patterns",
         "abductive": "Inference to the most plausible explanatory hypothesis under uncertainty",
@@ -244,6 +253,8 @@ class LiveReasoningAgent:
             response = self._generate_medical_response(context, insights)
         elif rt == "diagnosis":
             response = self._generate_diagnosis_response(context, insights)
+        elif rt == "imaging_analysis":
+            response = self._generate_imaging_analysis_response(context, insights)
         elif rt == "deductive":
             response = self._generate_deductive_response(context, insights)
         elif rt == "inductive":
@@ -301,6 +312,60 @@ class LiveReasoningAgent:
             response += f"based on {len(insights)} related case memories, "
             response += "key factors include clinical presentation, patient history, and relevant biomarkers. "
         response += "A structured, multifactorial assessment approach is recommended."
+        return response
+
+    def _generate_imaging_analysis_response(self, context: ReasoningContext, insights: List[str]) -> str:
+        """
+        Imaging analysis reasoning: interpret medical imaging with clinical correlation.
+        """
+        response = f"Imaging Analysis for: {context.query}\n\n"
+        
+        # Extract imaging-specific insights from memory
+        imaging_insights = []
+        quantitative_findings = []
+        
+        for mem in context.retrieved_memories:
+            if mem.get('type') == 'imaging_insight':
+                imaging_insights.append(mem['content'])
+                # Extract quantitative measures if available in metadata
+                if 'metadata' in mem and 'quantitative_measures' in mem['metadata']:
+                    measures = mem['metadata']['quantitative_measures']
+                    for measure, value in measures.items():
+                        quantitative_findings.append(f"{measure}: {value}")
+        
+        if imaging_insights:
+            response += "Relevant Imaging History:\n"
+            for i, insight in enumerate(imaging_insights[:3], 1):
+                response += f"{i}. {insight}\n"
+            response += "\n"
+        
+        if quantitative_findings:
+            response += "Quantitative Measures:\n"
+            for finding in quantitative_findings[:5]:
+                response += f"• {finding}\n"
+            response += "\n"
+        
+        # General insights from memory
+        if insights:
+            response += "Clinical Context:\n"
+            for insight in insights[:3]:
+                response += f"• {insight}\n"
+            response += "\n"
+        
+        # Imaging analysis framework
+        response += "Imaging Analysis Framework:\n"
+        response += "1. Technical Quality Assessment: Evaluate image acquisition parameters, artifacts, and diagnostic quality\n"
+        response += "2. Morphological Analysis: Assess structural changes, volumes, and anatomical variations\n"
+        response += "3. Signal Characteristics: Analyze intensity patterns, contrast enhancement, and tissue characteristics\n"
+        response += "4. Comparative Analysis: Compare with prior studies and normal population ranges\n"
+        response += "5. Clinical Correlation: Integrate findings with clinical presentation and laboratory data\n\n"
+        
+        response += "Recommendations:\n"
+        response += "• Correlate imaging findings with clinical symptoms and examination\n"
+        response += "• Consider follow-up imaging if indicated by clinical course\n"
+        response += "• Quantitative analysis may provide additional diagnostic value\n"
+        response += "• Multidisciplinary review recommended for complex cases"
+        
         return response
 
     def _generate_deductive_response(self, context: ReasoningContext, insights: List[str]) -> str:
@@ -438,6 +503,110 @@ class LiveReasoningAgent:
         if not self.audit_chain:
             return []
         return self.audit_chain.get_entity_audit_trail("agent_session", self.session_id, limit)
+
+    def store_imaging_insight(self, insight_data: Dict[str, Any]):
+        """
+        Store an imaging insight in the agent's memory.
+        
+        Args:
+            insight_data: Dictionary with imaging insight information.
+                         Should contain 'content', and optionally 'importance', 'metadata'
+        """
+        try:
+            # Ensure this is marked as an imaging insight
+            memory_data = {
+                "content": insight_data.get("content", ""),
+                "type": "imaging_insight",
+                "importance": insight_data.get("importance", 0.7),
+                "metadata": insight_data.get("metadata", {})
+            }
+            
+            memory_id = self.memory_store.store_memory(
+                agent_id=self.agent_id,
+                **memory_data
+            )
+            
+            logger.info(f"Stored imaging insight {memory_id} for agent {self.agent_id}")
+            return memory_id
+            
+        except Exception as e:
+            logger.error(f"Failed to store imaging insight: {e}")
+            return None
+
+    def retrieve_imaging_insights(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Retrieve imaging insights relevant to a query.
+        
+        Args:
+            query: Search query for relevant imaging insights
+            limit: Maximum number of insights to retrieve
+            
+        Returns:
+            List of relevant imaging insights
+        """
+        try:
+            # Retrieve memories with imaging_insight type
+            results = self.memory_store.retrieve_memories(
+                agent_id=self.agent_id,
+                query=query,
+                limit=limit,
+                similarity_threshold=self.similarity_threshold
+            )
+            
+            # Filter for imaging insights specifically
+            imaging_insights = [
+                result for result in results 
+                if result.get('type') == 'imaging_insight'
+            ]
+            
+            logger.info(f"Retrieved {len(imaging_insights)} imaging insights for query: {query}")
+            return imaging_insights
+            
+        except Exception as e:
+            logger.error(f"Failed to retrieve imaging insights: {e}")
+            return []
+
+    def reason_with_imaging_context(self, query: str, 
+                                   imaging_features: Optional[Dict[str, Any]] = None,
+                                   predictions: Optional[Dict[str, Any]] = None) -> ReasoningResult:
+        """
+        Perform reasoning with specific imaging context integration.
+        
+        Args:
+            query: The imaging-related question or analysis request
+            imaging_features: Optional extracted imaging features
+            predictions: Optional ML model predictions on imaging data
+            
+        Returns:
+            ReasoningResult with imaging-enhanced analysis
+        """
+        try:
+            # Store any new imaging insights from current data
+            if imaging_features or predictions:
+                from .imaging_insights import ImagingInsightSummarizer
+                summarizer = ImagingInsightSummarizer(self.memory_store)
+                
+                if predictions and imaging_features:
+                    insight = summarizer.analyze_prediction_results(
+                        predictions, imaging_features, patient_id=None
+                    )
+                elif imaging_features:
+                    insight = summarizer.analyze_brain_mri_features(
+                        imaging_features, patient_id=None
+                    )
+                else:
+                    insight = None
+                
+                if insight:
+                    self.store_imaging_insight(insight.to_memory_dict())
+            
+            # Perform reasoning with imaging analysis type
+            return self.reason_with_context(query, reasoning_type="imaging_analysis")
+            
+        except Exception as e:
+            logger.error(f"Failed to perform imaging-enhanced reasoning: {e}")
+            # Fallback to regular reasoning
+            return self.reason_with_context(query, reasoning_type="general")
 
     def end_session(self):
         """End the agent reasoning session."""
