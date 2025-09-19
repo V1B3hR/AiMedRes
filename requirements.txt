@@ -44,7 +44,7 @@ pydantic>=2.0.0
 websockets>=11.0.0
 
 # Optional dependencies for enhanced features
-# matplotlib>=3.4.0  # For visualization
+matplotlib>=3.4.0  # For visualization
 # plotly>=5.0.0      # For interactive plots
 # streamlit>=1.0.0   # For web dashboard
 

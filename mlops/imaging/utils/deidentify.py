@@ -13,7 +13,6 @@ import tempfile
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
-from cryptography.fernet import Fernet
 import re
 
 # Import medical imaging libraries with fallbacks
