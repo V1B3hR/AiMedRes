@@ -42,16 +42,19 @@ trained_models/
 *.pkl
 *.h5
 *.model
+*.pth
 
 # Security and privacy files (generated during runtime)
 secure_medical_workspace/
 privacy_audit.db
 *.encrypted
+*.db
 
 # Test coverage and pytest
 .coverage
 .pytest_cache/
 htmlcov/
+coverage.xml
 
 # Logs
 *.log
