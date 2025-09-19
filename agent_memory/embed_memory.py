@@ -131,7 +131,7 @@ class AgentMemory(Base):
     # Embedding column (pgvector). If pgvector/sqlalchemy isn't installed, we fallback to a Text column,
     # but note: semantic search won't work without pgvector.
     if PGVECTOR_AVAILABLE:
-        embedding: Mapped[Any] = mapped_column(PGVECTOR(EMBEDDING_DIM), nullable=False)
+        embedding: Mapped[Any] = mapped_column(PGVector(EMBEDDING_DIM), nullable=False)
     else:
         # Fallback storage only (no semantic search). Strongly recommend installing pgvector.
         embedding: Mapped[str] = mapped_column(Text, nullable=False)
