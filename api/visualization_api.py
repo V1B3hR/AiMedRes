@@ -20,8 +20,7 @@ import os
 
 # Import our monitoring systems
 
-import logging
-logger = logging.getLogger(__name__)  # or use your custom name
+logger = logging.getLogger(__name__)
 
 try:
     from security.safety_monitor import SafetyMonitor, SafetyDomain
