@@ -20,8 +20,6 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# Import our monitoring systems
-
 try:
     from security.safety_monitor import SafetyMonitor, SafetyDomain
     from security.monitoring import SecurityMonitor
@@ -37,7 +35,7 @@ except ImportError as e:
     MemoryConsolidator = None
     AgentMemoryStore = None
     CapabilityRegistry = None
-    logger.warning(f"Some monitoring modules not available: {e}")import logging
+    logger.warning(f"Some monitoring modules not available: {e}")
 
 try:
     from security.safety_monitor import SafetyMonitor, SafetyDomain
