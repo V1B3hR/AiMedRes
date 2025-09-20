@@ -18,9 +18,9 @@ import logging
 import json
 import os
 
-# Import our monitoring systems
-
 logger = logging.getLogger(__name__)
+
+# Import our monitoring systems
 
 try:
     from security.safety_monitor import SafetyMonitor, SafetyDomain
