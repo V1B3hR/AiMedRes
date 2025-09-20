@@ -5,12 +5,12 @@ This module contains configuration constants to improve maintainability
 and eliminate magic numbers/strings throughout the codebase.
 """
 
-# Performance Monitoring Constants
-DEFAULT_MONITORING_INTERVAL = 5  # seconds
-MAX_REQUEST_TIMESTAMPS = 1000
-MAX_MEMORY_HISTORY = 100
-MAX_CPU_HISTORY = 100
-THROUGHPUT_WINDOW_SECONDS = 60
+# Performance Monitoring Configuration
+DEFAULT_MONITORING_INTERVAL_SECONDS = 5
+MAX_REQUEST_TIMESTAMPS_STORED = 1000
+MAX_MEMORY_HISTORY_ENTRIES = 100
+MAX_CPU_HISTORY_ENTRIES = 100
+THROUGHPUT_CALCULATION_WINDOW_SECONDS = 60
 
 # Memory and Performance Thresholds
 MEMORY_ALERT_THRESHOLD_MB = 512

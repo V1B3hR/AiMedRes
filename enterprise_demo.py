@@ -56,34 +56,37 @@ def _demonstrate_performance_optimization(engine) -> Dict[str, Any]:
     """Demonstrate performance optimization features"""
     print("\n⚡ Performance Optimization Demo:")
     
-    # Run performance benchmarks
+    # Define test tasks with different complexity levels
     performance_test_tasks = [
         "Quick response test",
         "Medium complexity analysis", 
         "Complex reasoning task"
     ]
     
-    perf_results = []
-    for task in performance_test_tasks:
-        result = engine.safe_think("PerformanceAgent", task)
-        perf_results.append(result['execution_time'])
-        print(f"  📊 Task '{task}': {result['execution_time']:.3f}s")
+    performance_results = []
+    for task_description in performance_test_tasks:
+        result = engine.safe_think("PerformanceAgent", task_description)
+        execution_time = result['execution_time']
+        performance_results.append(execution_time)
+        print(f"  📊 Task '{task_description}': {execution_time:.3f}s")
     
-    # Performance report
-    avg_response_time = sum(perf_results) / len(perf_results)
-    perf_report = {
-        'average_response_time': avg_response_time,
-        'parallel_workers': engine.config.get('workers', ENTERPRISE_MIN_WORKERS),
+    # Calculate performance metrics
+    average_response_time = sum(performance_results) / len(performance_results)
+    worker_count = engine.config.get('workers', ENTERPRISE_MIN_WORKERS)
+    
+    performance_report = {
+        'average_response_time': average_response_time,
+        'parallel_workers': worker_count,
         'performance_metrics': {
-            'average_response_time': avg_response_time,
+            'average_response_time': average_response_time,
             'total_tests': len(performance_test_tasks)
         }
     }
     
-    print(f"  🔧 Parallel workers: {perf_report['parallel_workers']}")
-    print(f"  📊 Average response time: {perf_report['performance_metrics']['average_response_time']:.3f}s")
+    print(f"  🔧 Parallel workers: {performance_report['parallel_workers']}")
+    print(f"  📊 Average response time: {performance_report['performance_metrics']['average_response_time']:.3f}s")
     
-    return perf_report
+    return performance_report
 
 def _generate_deployment_files(config: Dict[str, Any]) -> bool:
     """Generate enterprise deployment files"""

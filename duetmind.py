@@ -1,4 +1,3 @@
-import asyncio
 import multiprocessing as mp
 import threading
 import time
@@ -20,19 +19,16 @@ from datetime import datetime, timedelta
 import hashlib
 import gc
 import sys
-import os
 from functools import wraps, lru_cache
 import yaml
 import pickle
 import gzip
-import queue
 from collections import defaultdict, deque
-import weakref
 
 # Import configuration constants
 from constants import (
-    DEFAULT_MONITORING_INTERVAL, MAX_REQUEST_TIMESTAMPS, MAX_MEMORY_HISTORY,
-    MAX_CPU_HISTORY, THROUGHPUT_WINDOW_SECONDS, DEFAULT_API_PORT,
+    DEFAULT_MONITORING_INTERVAL_SECONDS, MAX_REQUEST_TIMESTAMPS_STORED, MAX_MEMORY_HISTORY_ENTRIES,
+    MAX_CPU_HISTORY_ENTRIES, THROUGHPUT_CALCULATION_WINDOW_SECONDS, DEFAULT_API_PORT,
     DEFAULT_RATE_LIMIT, DEFAULT_MAX_CONCURRENT_REQUESTS
 )
 
@@ -63,14 +59,14 @@ class PerformanceMetrics:
 class PerformanceMonitor:
     """Real-time performance monitoring system"""
     
-    def __init__(self, sample_interval: int = DEFAULT_MONITORING_INTERVAL):
+    def __init__(self, sample_interval: int = DEFAULT_MONITORING_INTERVAL_SECONDS):
         self.metrics = PerformanceMetrics()
         self.sample_interval = sample_interval
         self.monitoring = False
         self.monitor_thread = None
-        self.request_timestamps = deque(maxlen=MAX_REQUEST_TIMESTAMPS)
-        self.memory_history = deque(maxlen=MAX_MEMORY_HISTORY)
-        self.cpu_history = deque(maxlen=MAX_CPU_HISTORY)
+        self.request_timestamps = deque(maxlen=MAX_REQUEST_TIMESTAMPS_STORED)
+        self.memory_history = deque(maxlen=MAX_MEMORY_HISTORY_ENTRIES)
+        self.cpu_history = deque(maxlen=MAX_CPU_HISTORY_ENTRIES)
         
     def start_monitoring(self):
         """Start background performance monitoring"""
@@ -104,7 +100,7 @@ class PerformanceMonitor:
                 
                 # Calculate throughput
                 now = time.time()
-                recent_requests = [ts for ts in self.request_timestamps if now - ts < THROUGHPUT_WINDOW_SECONDS]
+                recent_requests = [ts for ts in self.request_timestamps if now - ts < THROUGHPUT_CALCULATION_WINDOW_SECONDS]
                 self.metrics.throughput_per_second = len(recent_requests) / 60.0
                 
                 # Update metrics
