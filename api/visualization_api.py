@@ -18,6 +18,11 @@ import logging
 import json
 import os
 
+# ---- Logging Setup ----
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 try:
@@ -513,7 +518,7 @@ class VisualizationAPI:
                         {
                             'id': 'memory_consolidator',
                             'type': 'memory',
-                            'state': 'consolidating' if self.memory_consolidator and self.memory_consolidator.running else 'idle',
+                            'state': 'consolidating' if self.memory_consolidator and getattr(self.memory_consolidator, "running", False) else 'idle',
                             'cpu_percent': 0.8,
                             'memory_mb': 64,
                             'pending_tasks': 0,
