@@ -1,7 +1,0 @@
-Defaulting to user installation because normal site-packages is not writeable
-Collecting joblib
-  Downloading joblib-1.5.2-py3-none-any.whl.metadata (5.6 kB)
-Downloading joblib-1.5.2-py3-none-any.whl (308 kB)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 308.4/308.4 kB 7.4 MB/s eta 0:00:00
-Installing collected packages: joblib
-Successfully installed joblib-1.5.2
