@@ -7,6 +7,13 @@ scipy>=1.7.0
 watchdog
 seaborn
 
+# ... existing package list ...
+jwt
+kagglehub
+psutil
+mlflow
+redis
+
 # Web Framework and API
 flask>=2.0.0
 flask-cors>=4.0.0
