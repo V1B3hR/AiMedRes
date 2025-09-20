@@ -40,7 +40,9 @@ except ImportError as e:
     MemoryConsolidator = None
     AgentMemoryStore = None
     CapabilityRegistry = None
-    logger.warning(f"Some monitoring modules not available: {e}")
+    # Use logging module directly as backup in case logger is not accessible
+    import logging
+    logging.getLogger(__name__).warning(f"Some monitoring modules not available: {e}")
 
 
 class VisualizationAPI:
