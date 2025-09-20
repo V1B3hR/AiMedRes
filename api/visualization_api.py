@@ -18,10 +18,12 @@ import logging
 import json
 import os
 
-# Import our monitoring systems
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# ---- Logging Setup ----
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 try:
     from security.safety_monitor import SafetyMonitor, SafetyDomain
@@ -31,7 +33,6 @@ try:
     from agent_memory.embed_memory import AgentMemoryStore
     from agent_memory.agent_extensions import CapabilityRegistry
 except ImportError as e:
-    # Fallback for when modules are not available
     SafetyMonitor = None
     SafetyDomain = None
     SecurityMonitor = None
@@ -39,9 +40,9 @@ except ImportError as e:
     MemoryConsolidator = None
     AgentMemoryStore = None
     CapabilityRegistry = None
-    logger.warning(f"Some monitoring modules not available: {e}")
-
-logger = logging.getLogger('duetmind.visualization.api')
+    # Use logging module directly as backup in case logger is not accessible
+    import logging
+    logging.getLogger(__name__).warning(f"Some monitoring modules not available: {e}")
 
 
 class VisualizationAPI:
@@ -519,7 +520,7 @@ class VisualizationAPI:
                         {
                             'id': 'memory_consolidator',
                             'type': 'memory',
-                            'state': 'consolidating' if self.memory_consolidator and self.memory_consolidator.running else 'idle',
+                            'state': 'consolidating' if self.memory_consolidator and getattr(self.memory_consolidator, "running", False) else 'idle',
                             'cpu_percent': 0.8,
                             'memory_mb': 64,
                             'pending_tasks': 0,

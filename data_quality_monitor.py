@@ -9,9 +9,18 @@ import numpy as np
 import logging
 from typing import Dict, List, Any, Tuple, Optional
 import warnings
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
+
+# Optional visualization imports
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    VISUALIZATION_AVAILABLE = True
+except ImportError as e:
+    plt = None
+    sns = None
+    VISUALIZATION_AVAILABLE = False
+    logging.getLogger(__name__).warning(f"Visualization libraries not available: {e}")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
