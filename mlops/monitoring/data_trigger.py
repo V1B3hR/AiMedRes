@@ -497,7 +497,7 @@ class DataDrivenRetrainingTrigger:
                     event.error_message = result.stderr
                     return False
             else:
-                # Alternative: trigger via GitHub Actions API or other CI/CD
+                # Alternative: trigger via external CI/CD pipeline
                 logger.info("Would trigger retraining via CI/CD pipeline")
                 return True  # Simulate success
                 
