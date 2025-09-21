@@ -33,7 +33,6 @@ The MLOps architecture is designed in three incremental phases, each building up
 
 **Components**:
 - **Vector Memory**: pgvector-based agent memory storage
-- **CI/CD Pipeline**: GitHub Actions automated retraining workflow
 - **Drift Detection**: Framework for data and model drift monitoring
 - **Agent Memory**: Semantic embedding storage for agent reasoning
 - **Production Monitoring**: Performance and quality metrics tracking
@@ -66,9 +65,6 @@ scripts/
 
 agent_memory/
 └── embed_memory.py      # Vector memory for agent reasoning
-
-.github/workflows/
-└── retrain.yml         # CI/CD pipeline definition
 ```
 
 ## Data Flow Architecture
@@ -218,21 +214,6 @@ make format            # Auto-format code
 ```
 
 ## Production Deployment
-
-### CI/CD Pipeline
-
-The GitHub Actions workflow automatically:
-1. **Validates** data schemas and code quality
-2. **Detects** data drift using reference datasets
-3. **Trains** models with current configuration
-4. **Evaluates** performance against thresholds
-5. **Registers** approved models in production registry
-6. **Monitors** deployment health and performance
-
-**Pipeline Triggers**:
-- Push to main branch (code changes)
-- Weekly schedule (Sunday 2 AM UTC)
-- Manual dispatch (force retraining)
 
 ### Model Promotion Process
 

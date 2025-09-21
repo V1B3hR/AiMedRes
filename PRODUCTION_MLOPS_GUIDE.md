@@ -145,11 +145,12 @@ def custom_retrain_handler(trigger_type, reason):
     """Custom handler for retraining events."""
     import subprocess
     
-    # Trigger GitHub Actions workflow
+    # Trigger your preferred CI/CD system
+    # Example: Webhook, API call, or local script execution
     result = subprocess.run([
-        "gh", "workflow", "run", "retrain.yml",
-        "-f", f"trigger_type={trigger_type}",
-        "-f", f"reason={reason}"
+        "python", "scripts/trigger_retraining.py",
+        "--trigger-type", trigger_type,
+        "--reason", reason
     ])
     
     return result.returncode == 0
