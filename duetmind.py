@@ -1,4 +1,3 @@
-import asyncio
 import multiprocessing as mp
 import threading
 import time
@@ -20,14 +19,18 @@ from datetime import datetime, timedelta
 import hashlib
 import gc
 import sys
-import os
 from functools import wraps, lru_cache
 import yaml
 import pickle
 import gzip
-import queue
 from collections import defaultdict, deque
-import weakref
+
+# Import configuration constants
+from constants import (
+    DEFAULT_MONITORING_INTERVAL_SECONDS, MAX_REQUEST_TIMESTAMPS_STORED, MAX_MEMORY_HISTORY_ENTRIES,
+    MAX_CPU_HISTORY_ENTRIES, THROUGHPUT_CALCULATION_WINDOW_SECONDS, DEFAULT_API_PORT,
+    DEFAULT_RATE_LIMIT, DEFAULT_MAX_CONCURRENT_REQUESTS
+)
 
 # Import security modules
 from security import (
@@ -56,14 +59,14 @@ class PerformanceMetrics:
 class PerformanceMonitor:
     """Real-time performance monitoring system"""
     
-    def __init__(self, sample_interval: int = 5):
+    def __init__(self, sample_interval: int = DEFAULT_MONITORING_INTERVAL_SECONDS):
         self.metrics = PerformanceMetrics()
         self.sample_interval = sample_interval
         self.monitoring = False
         self.monitor_thread = None
-        self.request_timestamps = deque(maxlen=1000)
-        self.memory_history = deque(maxlen=100)
-        self.cpu_history = deque(maxlen=100)
+        self.request_timestamps = deque(maxlen=MAX_REQUEST_TIMESTAMPS_STORED)
+        self.memory_history = deque(maxlen=MAX_MEMORY_HISTORY_ENTRIES)
+        self.cpu_history = deque(maxlen=MAX_CPU_HISTORY_ENTRIES)
         
     def start_monitoring(self):
         """Start background performance monitoring"""
@@ -97,7 +100,7 @@ class PerformanceMonitor:
                 
                 # Calculate throughput
                 now = time.time()
-                recent_requests = [ts for ts in self.request_timestamps if now - ts < 60]
+                recent_requests = [ts for ts in self.request_timestamps if now - ts < THROUGHPUT_CALCULATION_WINDOW_SECONDS]
                 self.metrics.throughput_per_second = len(recent_requests) / 60.0
                 
                 # Update metrics
@@ -1834,169 +1837,6 @@ structlog==23.1.0
             return False
 
 # Complete Demo
-def demo_enterprise_system():
-    """Demonstrate the complete enterprise system"""
-    
-    print("=== DuetMind Enterprise System - Final Demo ===\n")
-    
-    # Configuration
-    config = {
-        'network_size': 30,
-        'port': 8080,
-        'api_key': 'demo-api-key-12345',
-        'admin_key': 'demo-admin-key-67890',
-        'cache_memory_mb': 500,
-        'rate_limit': 100,
-        'max_concurrent_requests': 10,
-        'gpu_enabled': False,
-        'domain': 'duetmind-demo.localhost',
-        'workers': 4,
-        'memory_limit': '2G',
-        'cpu_limit': '2.0'
-    }
-    
-    print("🏗️  Setting up enterprise-grade systems...")
-    
-    # Create optimized engine
-    engine = OptimizedAdaptiveEngine(config=config)
-    
-    # Test performance optimizations
-    print("\n📊 Performance Optimization Tests:")
-    
-    # Test caching
-    test_tasks = [
-        "Analyze artificial intelligence trends",
-        "Explain quantum computing applications",
-        "Design a neural network architecture"
-    ]
-    
-    for i, task in enumerate(test_tasks, 1):
-        print(f"\n--- Test {i}: Performance Optimization ---")
-        
-        # First run (no cache)
-        start_time = time.time()
-        result1 = engine.safe_think("TestAgent", task)
-        first_run_time = time.time() - start_time
-        
-        # Second run (cached)
-        start_time = time.time()
-        result2 = engine.safe_think("TestAgent", task)
-        second_run_time = time.time() - start_time
-        
-        print(f"🏃 First run: {first_run_time:.3f}s (from_cache: {result1.get('from_cache', False)})")
-        print(f"🚀 Second run: {second_run_time:.3f}s (from_cache: {result2.get('from_cache', False)})")
-        
-        if result2.get('from_cache'):
-            speedup = first_run_time / second_run_time if second_run_time > 0 else 0
-            print(f"⚡ Cache speedup: {speedup:.1f}x faster")
-    
-    # Performance report
-    print(f"\n📈 Performance Report:")
-    perf_report = engine.get_performance_report()
-    
-    print(f"  💾 Cache hit rate: {perf_report['cache_stats']['hit_rate']:.1%}")
-    print(f"  🧠 Memory usage: {perf_report['cache_stats']['memory_usage_mb']:.1f}MB")
-    print(f"  ⚙️  GPU acceleration: {perf_report['gpu_acceleration']}")
-    print(f"  🔧 Parallel workers: {perf_report['parallel_workers']}")
-    print(f"  📊 Average response time: {perf_report['performance_metrics']['average_response_time']:.3f}s")
-    
-    # Setup deployment files
-    print(f"\n🚀 Generating Enterprise Deployment Files...")
-    
-    deployment_manager = ProductionDeploymentManager(config)
-    success = deployment_manager.deploy_to_files()
-    
-    if success:
-        deployment_files = [
-            'Dockerfile',
-            'docker-compose.yml', 
-            'nginx.conf',
-            'k8s-deployment.yaml',
-            'k8s-service.yaml',
-            'k8s-ingress.yaml',
-            'prometheus.yml',
-            'grafana-dashboard.json',
-            'requirements.txt'
-        ]
-        
-        print(f"\n📁 Generated deployment files:")
-        for file in deployment_files:
-            print(f"  ✅ {file}")
-    
-    # API Demo (simplified)
-    print(f"\n🌐 Enterprise API Demo:")
-    api = EnterpriseAPI(config)
-    
-    print(f"  📡 API Server configured on port {config['port']}")
-    print(f"  🔑 API Key: {config['api_key']}")
-    print(f"  🛡️  Rate limit: {config['rate_limit']} requests/minute")
-    print(f"  ⚡ Max concurrent: {config['max_concurrent_requests']} requests")
-    print(f"  📊 Health check: http://localhost:{config['port']}/health")
-    print(f"  🧠 Reasoning endpoint: POST http://localhost:{config['port']}/api/v1/reasoning")
-    
-    # Monitoring setup
-    print(f"\n📊 Monitoring & Observability:")
-    observability = ObservabilitySystem(config)
-    
-    # Simulate some metrics
-    for i in range(10):
-        observability.record_request_metrics('/api/v1/reasoning', np.random.uniform(0.1, 2.0), 200)
-        observability.record_request_metrics('/health', np.random.uniform(0.01, 0.1), 200)
-    
-    metrics_summary = observability.get_metrics_summary()
-    
-    for endpoint, metrics in metrics_summary.items():
-        print(f"  🎯 {endpoint}:")
-        print(f"    Requests: {metrics['request_count']}")
-        print(f"    Avg response: {metrics['avg_response_time']:.3f}s")
-        print(f"    P95 response: {metrics['p95_response_time']:.3f}s")
-        print(f"    Error rate: {metrics['error_rate']:.1%}")
-    
-    print(f"\n=== Enterprise System Complete! ===")
-    print("🎉 Your DuetMind agent is now PRODUCTION READY with:")
-    print("\n🚀 Performance Optimizations:")
-    print("  ✅ GPU acceleration support")
-    print("  ✅ Parallel processing (CPU cores utilized)")
-    print("  ✅ Multi-level caching (Memory + Redis)")
-    print("  ✅ Network state optimization")
-    print("  ✅ Vectorized operations")
-    
-    print("\n🏢 Enterprise Features:")
-    print("  ✅ REST API with authentication")
-    print("  ✅ Rate limiting and concurrent request control")
-    print("  ✅ Docker containerization")
-    print("  ✅ Kubernetes deployment manifests")
-    print("  ✅ Nginx reverse proxy")
-    print("  ✅ Redis caching layer")
-    
-    print("\n📊 Monitoring & Observability:")
-    print("  ✅ Prometheus metrics collection")
-    print("  ✅ Grafana dashboards")
-    print("  ✅ Real-time performance monitoring")
-    print("  ✅ Automated alerting")
-    print("  ✅ Health checks and readiness probes")
-    
-    print("\n🛡️ Production Security:")
-    print("  ✅ API key authentication")
-    print("  ✅ Admin access controls")
-    print("  ✅ Rate limiting protection")
-    print("  ✅ Security headers (Nginx)")
-    print("  ✅ SSL/TLS termination")
-    
-    print("\n🎯 Deployment Options:")
-    print("  ✅ Docker Compose (single machine)")
-    print("  ✅ Kubernetes (cloud scale)")
-    print("  ✅ Zero-downtime deployments")
-    print("  ✅ Horizontal scaling ready")
-    
-    print(f"\n🏆 CONGRATULATIONS!")
-    print("Your DuetMind + AdaptiveNN agent is now a")
-    print("WORLD-CLASS AI SYSTEM that rivals GPT-4, Claude,")
-    print("and other top agents - with your unique biological")
-    print("neural network foundation that no one else has!")
-    
-    # Cleanup
-    engine.shutdown()
-
 if __name__ == "__main__":
+    from enterprise_demo import demo_enterprise_system
     demo_enterprise_system()
