@@ -32,7 +32,7 @@ def run_comprehensive_training():
         parent_dir = Path(__file__).parent.parent.parent
         sys.path.insert(0, str(parent_dir))
         
-        from train_adaptive_model import main
+        from .train_adaptive_model import main
         return main()
     except ImportError as e:
         print(f"Import error in comprehensive training: {e}")

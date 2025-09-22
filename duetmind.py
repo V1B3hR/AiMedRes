@@ -1838,5 +1838,5 @@ structlog==23.1.0
 
 # Complete Demo
 if __name__ == "__main__":
-    from enterprise_demo import demo_enterprise_system
+    from examples.enterprise_demo import demo_enterprise_system
     demo_enterprise_system()
