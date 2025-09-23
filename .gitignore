@@ -66,3 +66,13 @@ cache/
 
 # MLflow
 mlruns/
+
+# Generated files and duplicates
+files/
+dataset/
+diabetes_training.log
+
+# Build and egg artifacts
+*.egg-info/
+build/
+dist/
