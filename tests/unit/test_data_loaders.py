@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import tempfile
 import os
 
-from data_loaders import (
+from scripts.data_loaders import (
     DataLoader, KaggleDataLoader, CSVDataLoader, MockDataLoader, 
     create_data_loader
 )

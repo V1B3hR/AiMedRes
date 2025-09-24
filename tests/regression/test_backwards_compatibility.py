@@ -6,8 +6,8 @@ import pandas as pd
 import os
 import tempfile
 
-from training import AlzheimerTrainer
-from data_loaders import MockDataLoader
+from training.training import AlzheimerTrainer
+from scripts.data_loaders import MockDataLoader
 
 
 class TestBackwardsCompatibility:

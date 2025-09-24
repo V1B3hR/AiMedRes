@@ -29,6 +29,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DuetMindTraining")
 
 
+def create_test_alzheimer_data(n_samples: int = 100) -> pd.DataFrame:
+    """Create synthetic test data for Alzheimer's classification"""
+    np.random.seed(42)
+    
+    # Create synthetic features similar to real Alzheimer's data
+    age = np.random.normal(75, 10, n_samples)
+    cognitive_score = np.random.normal(25, 5, n_samples)  # MMSE-like score
+    brain_volume = np.random.normal(1200, 150, n_samples)
+    glucose_metabolism = np.random.normal(100, 20, n_samples)
+    
+    # Create correlation between features and label
+    # Lower cognitive scores and brain volumes increase risk
+    risk_score = (30 - cognitive_score) / 10 + (1300 - brain_volume) / 500 + age / 100
+    labels = (risk_score + np.random.normal(0, 0.5, n_samples)) > 1.5
+    
+    df = pd.DataFrame({
+        'age': age,
+        'cognitive_score': cognitive_score, 
+        'brain_volume': brain_volume,
+        'glucose_metabolism': glucose_metabolism,
+        'diagnosis': labels.astype(int)  # 0 = Normal, 1 = Alzheimer's
+    })
+    
+    return df
+
+
 class TrainingConfig:
     """Configuration class for deterministic training"""
     

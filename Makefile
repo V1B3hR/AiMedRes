@@ -81,7 +81,7 @@ test:
 
 test-coverage:
 	@echo "Running tests with coverage..."
-	pytest tests/ -v --cov=. --cov-report=html
+	pytest -v --cov=. --cov-report=term-missing
 
 lint:
 	@echo "Running linting..."
