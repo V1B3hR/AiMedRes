@@ -90,4 +90,115 @@ For details, see PRs:
 - [#45: Implement Production-Ready MLOps Pipeline](https://github.com/V1B3hR/duetmind_adaptive/pull/45)
 - [#46: Implement Clinical Decision Support System](https://github.com/V1B3hR/duetmind_adaptive/pull/46)
 
-...
+---
+
+## 🚀 Installation & Setup
+
+### Requirements
+- **Python**: 3.10 or higher  
+- **System**: Linux, macOS, or Windows with WSL2
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/V1B3hR/duetmind_adaptive.git
+cd duetmind_adaptive
+
+# Basic installation
+pip install -e .
+
+# Development installation (includes testing, linting, formatting tools)
+pip install -e .[dev]
+
+# Full installation with all features
+pip install -e .[all]
+```
+
+### Installation Options
+
+| Option | Command | Includes |
+|--------|---------|----------|
+| **Basic** | `pip install -e .` | Core functionality only |
+| **Development** | `pip install -e .[dev]` | Core + testing & linting tools |  
+| **Visualization** | `pip install -e .[viz]` | Core + plotting & dashboard tools |
+| **Medical Imaging** | `pip install -e .[imaging]` | Core + DICOM, NIfTI, BIDS support |
+| **MLOps** | `pip install -e .[mlops]` | Core + MLflow, DVC, monitoring |
+| **Everything** | `pip install -e .[all]` | All optional features included |
+
+### Using Make Commands
+
+```bash
+# Setup development environment  
+make setup-env
+
+# Install development dependencies only
+make install-dev  
+
+# Setup medical imaging pipeline
+make imaging-setup
+
+# Run tests
+make test
+
+# Run linting
+make lint
+
+# Format code
+make format
+
+# Run full CI pipeline (lint + test + validate)
+make ci-pipeline
+```
+
+### Verifying Installation
+
+```bash
+# Run basic tests
+python -m pytest tests/test_safety_basic.py -v
+
+# Check CLI tools are installed
+duetmind --help
+duetmind-train --help  
+duetmind-api --help
+```
+
+### Configuration
+
+All Python dependencies and versions are centrally managed in `pyproject.toml`. 
+
+For backward compatibility, a minimal `requirements.txt` is maintained but `pyproject.toml` is the authoritative source.
+
+---
+
+## 🔧 Development
+
+### Code Quality Tools
+
+All configured in `pyproject.toml`:
+- **Testing**: pytest with coverage
+- **Formatting**: black (line length: 100)
+- **Import sorting**: isort  
+- **Linting**: flake8
+- **Type checking**: mypy
+
+### Running Development Tasks
+
+```bash
+# Format code
+black .
+isort .
+
+# Run linting
+flake8 --max-line-length=100 --ignore=E203,W503 .
+
+# Run tests with coverage
+pytest --cov=. --cov-report=term-missing
+
+# Type checking  
+mypy --ignore-missing-imports .
+```
+
+### Continuous Integration
+
+The project uses GitHub Actions for CI/CD. See `.github/workflows/ci.yml` for the complete pipeline that runs on Python 3.10, 3.11, and 3.12.

@@ -4,36 +4,177 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "duetmind-adaptive"
-version = "0.1.0"
-description = "DuetMind Adaptive - Agent Memory Store"
+version = "1.0.0"
+description = "Hybrid AI framework combining Adaptive Neural Networks with DuetMind cognitive agents"
 readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "DuetMind Team", email = "team@duetmind.ai"}
+]
 requires-python = ">=3.10"
+keywords = ["ai", "machine learning", "neural networks", "medical ai", "adaptive systems"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+# Core dependencies - essential for basic functionality
 dependencies = [
-  "SQLAlchemy>=2.0.20",
-  "psycopg2-binary>=2.9.9",
-  "pgvector>=0.2.5",
-  "sentence-transformers>=3.0.0",
-  "PyYAML>=6.0.1",
+    # AI and Machine Learning
+    "numpy>=1.21.0",
+    "pandas>=1.3.0", 
+    "scikit-learn>=1.0.0",
+    "scipy>=1.7.0",
+    "joblib>=1.0.0",
+    "threadpoolctl>=3.1.0",
+    
+    # Data Storage and Processing
+    "SQLAlchemy>=2.0.20",
+    "psycopg2-binary>=2.9.9",
+    "pgvector>=0.2.5",
+    "sentence-transformers>=3.0.0",
+    "PyYAML>=6.0.1",
+    
+    # Web Framework and API
+    "flask>=2.0.0",
+    "flask-cors>=4.0.0",
+    "werkzeug>=2.0.0",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "websockets>=11.0.0",
+    
+    # System and Performance
+    "psutil>=5.8.0",
+    "watchdog>=2.1.0",
+    "tqdm>=4.62.0",
+    "redis>=4.0.0",
+    
+    # Security and Authentication
+    "cryptography>=3.4.0",
+    "bcrypt>=3.2.0",
+    "pyjwt>=2.0.0",
+    "jwt",
+    
+    # Data Science and Visualization
+    "matplotlib>=3.4.0",
+    "seaborn>=0.11.0",
+    
+    # ML Operations
+    "mlflow>=2.0.0",
+    "kagglehub>=0.3.0",
 ]
 
 [project.optional-dependencies]
+# Development dependencies
 dev = [
-  "pytest>=8.2.0",
-  "black>=24.8.0",
-  "isort>=5.13.2",
-  "mypy>=1.11.1",
+    "pytest>=6.2.0",
+    "pytest-cov>=2.12.0", 
+    "pytest-mock>=3.6.0",
+    "black>=21.0.0",
+    "flake8>=3.9.0",
+    "isort>=5.9.0",
+    "mypy>=0.910",
+    "pre-commit>=2.15.0",
 ]
+
+# Visualization dependencies  
+viz = [
+    "plotly>=5.0.0",
+    "streamlit>=1.0.0",
+]
+
+# Medical imaging dependencies
+imaging = [
+    # Medical image formats and I/O
+    "nibabel>=5.0.0",       # NIfTI, ANALYZE, and other neuroimaging formats
+    "pydicom>=2.4.0",      # DICOM file format support
+    "simpleitk>=2.3.0",    # Medical image processing
+    
+    # Neuroimaging analysis
+    "nilearn>=0.10.0",     # Machine learning for neuroimaging
+    "nipype>=1.8.0",       # Neuroimaging pipelines
+    
+    # BIDS (Brain Imaging Data Structure) support  
+    "bids-validator>=1.13.0",  # BIDS dataset validation
+    "pybids>=0.15.0",      # BIDS dataset management
+    
+    # Radiomics and feature extraction (using compatible version)
+    "pyradiomics>=3.1.0",  # Radiomics feature extraction
+    
+    # Image processing utilities
+    "scikit-image>=0.21.0",
+    "opencv-python>=4.8.0",
+    "pillow>=10.0.0",
+]
+
+# MLOps and infrastructure dependencies
+mlops = [
+    "mlflow>=3.3.0",
+    "dvc>=2.0.0",
+    "pandera>=0.15.0",
+    "alembic>=1.8.0",
+    "minio>=7.0.0",
+    "python-dotenv>=0.19.0",
+    "evidently>=0.2.0",
+    "boto3>=1.28.0",
+]
+
+# All optional dependencies combined
+all = [
+    "duetmind-adaptive[dev,viz,imaging,mlops]"
+]
+
+[project.scripts]
+duetmind = "duetmind_adaptive.main:main"
+duetmind-train = "duetmind_adaptive.training.cli:train_cli"  
+duetmind-api = "duetmind_adaptive.api.server:run_server"
+
+[project.urls]
+Homepage = "https://github.com/V1B3hR/duetmind_adaptive"
+Repository = "https://github.com/V1B3hR/duetmind_adaptive"
+Documentation = "https://github.com/V1B3hR/duetmind_adaptive/blob/main/README.md"
+"Bug Reports" = "https://github.com/V1B3hR/duetmind_adaptive/issues"
 
 [tool.black]
 line-length = 100
-target-version = ["py310"]
+target-version = ["py310", "py311", "py312"]
 
-[tool.isort]
+[tool.isort] 
 profile = "black"
 line_length = 100
 
 [tool.mypy]
 python_version = "3.10"
 warn_unused_configs = true
-disallow_untyped_defs = true
+disallow_untyped_defs = true  
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.2"
+addopts = "-v --tb=short"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"] 
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["src", "."]
+omit = ["tests/*", "setup.py", "build/*", "dist/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError", 
+    "raise NotImplementedError",
+]

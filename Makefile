@@ -21,13 +21,12 @@ help:
 # Environment setup
 setup-env:
 	@echo "Setting up development environment..."
-	pip install -r requirements.txt
-	pip install -r requirements-dev.txt
+	pip install -e .
+	pip install -e .[dev]
 	pre-commit install
 
 install-dev:
-	pip install -r requirements-dev.txt
-	pip install mlflow dvc pandera alembic psycopg2-binary minio python-dotenv evidently
+	pip install -e .[dev,mlops]
 
 # Data pipeline commands
 data:
