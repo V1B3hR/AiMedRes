@@ -33,23 +33,32 @@ def create_test_alzheimer_data(n_samples: int = 100) -> pd.DataFrame:
     """Create synthetic test data for Alzheimer's classification"""
     np.random.seed(42)
     
-    # Create synthetic features similar to real Alzheimer's data
+    # Create synthetic features matching expected schema
     age = np.random.normal(75, 10, n_samples)
-    cognitive_score = np.random.normal(25, 5, n_samples)  # MMSE-like score
-    brain_volume = np.random.normal(1200, 150, n_samples)
-    glucose_metabolism = np.random.normal(100, 20, n_samples)
+    gender = np.random.choice(['M', 'F'], n_samples)
+    education_level = np.random.randint(8, 20, n_samples)
+    mmse_score = np.random.normal(25, 5, n_samples)  # MMSE cognitive score
+    cdr_score = np.random.choice([0.0, 0.5, 1.0, 2.0], n_samples)  # Clinical Dementia Rating
+    apoe_genotype = np.random.choice(['E2/E2', 'E2/E3', 'E3/E3', 'E3/E4', 'E4/E4'], n_samples)
     
     # Create correlation between features and label
-    # Lower cognitive scores and brain volumes increase risk
-    risk_score = (30 - cognitive_score) / 10 + (1300 - brain_volume) / 500 + age / 100
-    labels = (risk_score + np.random.normal(0, 0.5, n_samples)) > 1.5
+    # Lower MMSE scores and higher CDR scores increase risk
+    risk_score = (30 - mmse_score) / 10 + cdr_score + (age - 65) / 20
+    # APOE E4 carriers have higher risk
+    e4_carriers = [genotype for genotype in apoe_genotype if 'E4' in genotype]
+    risk_score += np.where(np.isin(apoe_genotype, ['E3/E4', 'E4/E4']), 0.5, 0)
+    
+    labels = (risk_score + np.random.normal(0, 0.3, n_samples)) > 1.2
+    diagnosis_labels = ['Dementia' if label else 'Normal' for label in labels]
     
     df = pd.DataFrame({
-        'age': age,
-        'cognitive_score': cognitive_score, 
-        'brain_volume': brain_volume,
-        'glucose_metabolism': glucose_metabolism,
-        'diagnosis': labels.astype(int)  # 0 = Normal, 1 = Alzheimer's
+        'age': age.astype(int),
+        'gender': gender,
+        'education_level': education_level,
+        'mmse_score': mmse_score.astype(int), 
+        'cdr_score': cdr_score,
+        'apoe_genotype': apoe_genotype,
+        'diagnosis': diagnosis_labels
     })
     
     return df
