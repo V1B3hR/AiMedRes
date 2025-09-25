@@ -1,2 +1,0 @@
-# Installs the package from the current directory with all extras declared in pyproject.toml
-.[all]
