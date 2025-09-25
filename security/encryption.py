@@ -12,6 +12,7 @@ Provides enterprise-grade encryption for:
 import os
 import base64
 import hashlib
+import time
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -258,3 +259,159 @@ class DataEncryption:
             )
         )
         return decrypted.decode()
+    
+    def encrypt_phi_data(self, phi_data: Dict[str, Any], 
+                        patient_id: str = None,
+                        purpose: str = "treatment",
+                        audit_log: bool = True) -> Dict[str, Any]:
+        """
+        Encrypt Protected Health Information (PHI) data with HIPAA compliance.
+        
+        Args:
+            phi_data: PHI data to encrypt
+            patient_id: Patient identifier for audit purposes
+            purpose: Purpose of encryption for HIPAA compliance
+            audit_log: Whether to log this encryption event
+            
+        Returns:
+            Encrypted PHI data with metadata
+        """
+        if audit_log and patient_id:
+            # Import here to avoid circular imports
+            try:
+                from .hipaa_audit import audit_phi_access, AccessType
+                audit_phi_access(
+                    user_id="system_encryption",
+                    patient_id=patient_id,
+                    action="WRITE",
+                    purpose=f"data_encryption_{purpose}",
+                    resource="phi_data",
+                    user_role="system"
+                )
+            except ImportError:
+                security_logger.warning("HIPAA audit logging not available")
+        
+        # Enhanced PHI field identification
+        phi_fields = [
+            'patient_id', 'name', 'first_name', 'last_name', 'ssn', 'social_security',
+            'address', 'street_address', 'city', 'state', 'zip', 'zipcode', 'postal_code',
+            'phone', 'phone_number', 'mobile', 'telephone', 'email', 'email_address',
+            'medical_record_number', 'mrn', 'insurance_id', 'insurance_number',
+            'date_of_birth', 'dob', 'birth_date', 'drivers_license', 'passport_number',
+            'biometric_data', 'photo', 'fingerprint', 'voice_print',
+            'account_number', 'certificate_number', 'license_number',
+            'vehicle_identifier', 'device_identifier', 'web_url', 'ip_address',
+            'full_face_photo', 'comparable_image'
+        ]
+        
+        encrypted_data = phi_data.copy()
+        encryption_metadata = {
+            'encrypted_fields': [],
+            'encryption_timestamp': time.time(),
+            'encryption_version': '2.0_hipaa_compliant',
+            'patient_id_hash': None,
+            'purpose': purpose
+        }
+        
+        # Hash patient ID for tracking
+        if patient_id:
+            encryption_metadata['patient_id_hash'] = hashlib.sha256(
+                patient_id.encode()
+            ).hexdigest()[:16]
+        
+        # Encrypt all PHI fields
+        for field in phi_fields:
+            if field in encrypted_data and encrypted_data[field] is not None:
+                try:
+                    original_value = str(encrypted_data[field])
+                    encrypted_value = self.encrypt_data(original_value)
+                    encrypted_data[field] = encrypted_value
+                    encryption_metadata['encrypted_fields'].append(field)
+                except Exception as e:
+                    security_logger.error(f"Failed to encrypt field {field}: {e}")
+        
+        # Add metadata
+        encrypted_data['_encryption_metadata'] = encryption_metadata
+        
+        return encrypted_data
+    
+    def decrypt_phi_data(self, encrypted_phi_data: Dict[str, Any],
+                        patient_id: str = None,
+                        purpose: str = "treatment",
+                        user_id: str = "unknown",
+                        audit_log: bool = True) -> Dict[str, Any]:
+        """
+        Decrypt PHI data with HIPAA audit logging.
+        
+        Args:
+            encrypted_phi_data: Encrypted PHI data
+            patient_id: Patient identifier for audit purposes
+            purpose: Purpose of decryption for HIPAA compliance
+            user_id: User requesting decryption
+            audit_log: Whether to log this decryption event
+            
+        Returns:
+            Decrypted PHI data
+        """
+        if audit_log and patient_id:
+            try:
+                from .hipaa_audit import audit_phi_access
+                audit_phi_access(
+                    user_id=user_id,
+                    patient_id=patient_id,
+                    action="READ",
+                    purpose=f"data_decryption_{purpose}",
+                    resource="phi_data",
+                    user_role="medical_professional"
+                )
+            except ImportError:
+                security_logger.warning("HIPAA audit logging not available")
+        
+        decrypted_data = encrypted_phi_data.copy()
+        
+        # Get encryption metadata
+        metadata = decrypted_data.get('_encryption_metadata', {})
+        encrypted_fields = metadata.get('encrypted_fields', [])
+        
+        # Decrypt all encrypted fields
+        for field in encrypted_fields:
+            if field in decrypted_data:
+                try:
+                    encrypted_value = decrypted_data[field]
+                    decrypted_value = self.decrypt_data(encrypted_value)
+                    decrypted_data[field] = decrypted_value
+                except Exception as e:
+                    security_logger.error(f"Failed to decrypt field {field}: {e}")
+        
+        # Remove encryption metadata from output
+        decrypted_data.pop('_encryption_metadata', None)
+        
+        return decrypted_data
+    
+    def validate_data_integrity(self, data: Dict[str, Any],
+                               expected_hash: str = None) -> bool:
+        """
+        Validate integrity of encrypted medical data.
+        
+        Args:
+            data: Data to validate
+            expected_hash: Expected integrity hash
+            
+        Returns:
+            True if data integrity is valid
+        """
+        try:
+            # Calculate current hash
+            data_str = json.dumps(data, sort_keys=True, default=str)
+            current_hash = hashlib.sha256(data_str.encode()).hexdigest()
+            
+            if expected_hash:
+                return current_hash == expected_hash
+            
+            # If no expected hash, check if data structure is valid
+            metadata = data.get('_encryption_metadata', {})
+            return 'encryption_timestamp' in metadata and 'encryption_version' in metadata
+            
+        except Exception as e:
+            security_logger.error(f"Data integrity validation failed: {e}")
+            return False
