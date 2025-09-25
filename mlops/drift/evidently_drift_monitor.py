@@ -14,6 +14,21 @@ import json
 import os
 from scipy import stats
 
+# Import drift detection constants
+try:
+    from constants import (
+        DRIFT_DETECTION_KS_THRESHOLD, DRIFT_DETECTION_WASSERSTEIN_THRESHOLD,
+        DRIFT_DETECTION_TV_THRESHOLD, DRIFT_DETECTION_JS_THRESHOLD, 
+        DRIFT_DETECTION_CHI2_THRESHOLD
+    )
+except ImportError:
+    # Fallback constants if import fails
+    DRIFT_DETECTION_KS_THRESHOLD = 0.05
+    DRIFT_DETECTION_WASSERSTEIN_THRESHOLD = 0.1
+    DRIFT_DETECTION_TV_THRESHOLD = 0.2
+    DRIFT_DETECTION_JS_THRESHOLD = 0.1
+    DRIFT_DETECTION_CHI2_THRESHOLD = 0.05
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -391,14 +406,14 @@ class DriftMonitor:
         
         # Implement sophisticated statistical tests
         ks_stat, ks_p_value = stats.ks_2samp(ref_clean, cur_clean)
-        ks_drift = ks_p_value < 0.05  # Significant if p < 0.05
+        ks_drift = ks_p_value < DRIFT_DETECTION_KS_THRESHOLD  # Significant if p < threshold
         
         # Wasserstein distance (Earth Mover's Distance)
         wasserstein_distance = stats.wasserstein_distance(ref_clean, cur_clean)
         # Normalize by the range for threshold comparison
         data_range = max(ref_clean.max(), cur_clean.max()) - min(ref_clean.min(), cur_clean.min())
         normalized_wasserstein = wasserstein_distance / (data_range + 1e-8)
-        wasserstein_drift = normalized_wasserstein > 0.1  # 10% of data range
+        wasserstein_drift = normalized_wasserstein > DRIFT_DETECTION_WASSERSTEIN_THRESHOLD
         
         # Combined drift decision using majority vote
         drift_tests = [mean_shift_drift, ks_drift, wasserstein_drift]
@@ -462,7 +477,7 @@ class DriftMonitor:
         
         # Calculate Total Variation Distance
         tv_distance = 0.5 * np.sum(np.abs(ref_aligned - cur_aligned))
-        tv_drift = tv_distance > 0.2  # 20% threshold
+        tv_drift = tv_distance > DRIFT_DETECTION_TV_THRESHOLD  # Threshold from constants
         
         # Implement chi-square test for categorical drift
         try:
@@ -481,7 +496,7 @@ class DriftMonitor:
             
             # Perform chi-square test
             chi2_stat, chi2_p_value, dof, expected = stats.chi2_contingency(contingency_table)
-            chi2_drift = chi2_p_value < 0.05  # Significant if p < 0.05
+            chi2_drift = chi2_p_value < DRIFT_DETECTION_CHI2_THRESHOLD  # Significant if p < threshold
             
         except (ValueError, ZeroDivisionError) as e:
             logger.warning(f"Chi-square test failed for {feature_name}: {e}")
@@ -491,7 +506,7 @@ class DriftMonitor:
         try:
             # Calculate JS divergence
             js_div = self._jensen_shannon_divergence(ref_aligned.values, cur_aligned.values)
-            js_drift = js_div > 0.1  # 10% threshold
+            js_drift = js_div > DRIFT_DETECTION_JS_THRESHOLD  # Threshold from constants
         except Exception as e:
             logger.warning(f"JS divergence calculation failed for {feature_name}: {e}")
             js_div, js_drift = 0, False
