@@ -16,7 +16,7 @@ import numpy as np
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from training.train_alzheimers import AlzheimerTrainingPipeline
+from files.training.train_alzheimers import AlzheimerTrainingPipeline
 
 
 class TestAlzheimersSmallDatasetDefaults:

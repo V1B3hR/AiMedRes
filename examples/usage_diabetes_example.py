@@ -6,9 +6,9 @@ showing how the implementation meets the problem statement requirements.
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from training.train_diabetes import DiabetesTrainingPipeline
+from files.training.train_diabetes import DiabetesTrainingPipeline
 
 def main():
     print("🩺 Diabetes Classification Example")
