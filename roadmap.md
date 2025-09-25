@@ -12,7 +12,7 @@
 - **Clinical Scenario Builder:** ✅ Complete clinical scenario validation system with medical safety rules, contraindication checking, and timeline logic validation.
 - **Federated Learning:** ✅ Privacy-preserving federated learning implemented with differential privacy, secure aggregation, and multi-client simulation capabilities.
 
-3. Automation & Scalability
+3. Automation & Scalability 
 - **AutoML Integration:** Not confirmed done.
 - **Pipeline Customization:** Not confirmed done.
 - **Scalable Orchestration:** Not confirmed done.
