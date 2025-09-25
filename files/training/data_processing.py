@@ -100,7 +100,7 @@ def add_medical_features(df: pd.DataFrame) -> pd.DataFrame:
     # Age-related features
     if 'age' in df.columns:
         df['age_group'] = pd.cut(df['age'], bins=[0, 65, 75, 85, 100], 
-                                labels=['young', 'elderly', 'very_elderly', 'advanced'])
+                                labels=[0, 1, 2, 3])  # Use numeric labels
         df['age_squared'] = df['age'] ** 2
     
     # Cognitive assessment ratios
