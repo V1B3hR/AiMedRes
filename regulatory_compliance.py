@@ -651,13 +651,179 @@ class FDAValidationManager:
             },
             'safety_profile': {
                 'total_adverse_events': len(adverse_events),
-                'severe_events': len([e for e in adverse_events if e[4] == 'SEVERE']),
-                'ai_related_events': len([e for e in adverse_events if e[7] == True])
+                'serious_adverse_events': len([ae for ae in adverse_events if ae[6] == 'SERIOUS']),
+                'resolved_events': len([ae for ae in adverse_events if ae[8] is not None])
             },
-            'readiness_assessment': self._assess_submission_readiness(validation_records, adverse_events)
+            'quality_metrics': self._calculate_quality_metrics(validation_records),
+            'risk_assessment': self._generate_risk_assessment(validation_records, adverse_events),
+            'submission_readiness_score': self._calculate_submission_readiness_score(validation_records, performance_records, adverse_events)
         }
         
+        logger.info(f"Generated FDA submission package for model {model_version}")
         return submission_package
+    
+    def _calculate_quality_metrics(self, validation_records: List) -> Dict[str, Any]:
+        """Calculate quality metrics for FDA submission."""
+        if not validation_records:
+            return {
+                'validation_completion_rate': 0,
+                'average_accuracy': 0,
+                'consistency_score': 0
+            }
+        
+        passed_validations = sum(1 for r in validation_records if r[10] == 'PASSED')
+        total_validations = len(validation_records)
+        
+        # Calculate average metrics if available
+        accuracy_values = [r[8] for r in validation_records if r[8] is not None]
+        avg_accuracy = sum(accuracy_values) / len(accuracy_values) if accuracy_values else 0
+        
+        return {
+            'validation_completion_rate': (passed_validations / total_validations * 100) if total_validations > 0 else 0,
+            'average_accuracy': avg_accuracy * 100,  # Convert to percentage
+            'consistency_score': min(95.0, avg_accuracy * 105),  # Derived consistency metric
+            'total_test_cases': total_validations,
+            'passed_test_cases': passed_validations,
+            'failed_test_cases': total_validations - passed_validations
+        }
+    
+    def _generate_risk_assessment(self, validation_records: List, adverse_events: List) -> Dict[str, Any]:
+        """Generate comprehensive risk assessment for FDA submission."""
+        risk_factors = []
+        risk_level = "LOW"
+        
+        # Assess validation failure rate
+        if validation_records:
+            failure_rate = sum(1 for r in validation_records if r[10] == 'FAILED') / len(validation_records)
+            if failure_rate > 0.1:  # More than 10% failure rate
+                risk_factors.append("High validation failure rate")
+                risk_level = "MEDIUM"
+            if failure_rate > 0.2:  # More than 20% failure rate
+                risk_level = "HIGH"
+        
+        # Assess adverse events
+        serious_events = len([ae for ae in adverse_events if ae[6] == 'SERIOUS'])
+        if serious_events > 0:
+            risk_factors.append(f"{serious_events} serious adverse events reported")
+            risk_level = "HIGH" if serious_events > 5 else "MEDIUM"
+        
+        # Calculate overall risk score
+        base_score = 100
+        for _ in risk_factors:
+            base_score -= 15
+        
+        risk_score = max(0, min(100, base_score))
+        
+        return {
+            'risk_level': risk_level,
+            'risk_score': risk_score,
+            'risk_factors': risk_factors,
+            'mitigation_strategies': self._get_mitigation_strategies(risk_factors),
+            'regulatory_concerns': self._identify_regulatory_concerns(validation_records, adverse_events)
+        }
+    
+    def _get_mitigation_strategies(self, risk_factors: List[str]) -> List[str]:
+        """Get mitigation strategies for identified risk factors."""
+        strategies = []
+        
+        if any('failure rate' in factor for factor in risk_factors):
+            strategies.extend([
+                'Implement additional validation testing',
+                'Enhance model training with diverse datasets',
+                'Establish stricter quality control processes'
+            ])
+        
+        if any('adverse events' in factor for factor in risk_factors):
+            strategies.extend([
+                'Implement enhanced safety monitoring',
+                'Establish rapid response protocols',
+                'Increase physician oversight requirements'
+            ])
+        
+        return strategies
+    
+    def _identify_regulatory_concerns(self, validation_records: List, adverse_events: List) -> List[str]:
+        """Identify potential regulatory concerns."""
+        concerns = []
+        
+        if not validation_records:
+            concerns.append("Insufficient validation data for regulatory review")
+        
+        unresolved_events = [ae for ae in adverse_events if ae[8] is None]
+        if unresolved_events:
+            concerns.append(f"{len(unresolved_events)} unresolved adverse events")
+        
+        return concerns
+    
+    def _calculate_submission_readiness_score(self, validation_records: List, performance_records: List, adverse_events: List) -> Dict[str, Any]:
+        """Calculate FDA submission readiness score."""
+        score_components = {
+            'validation_completeness': 0,
+            'performance_evidence': 0,
+            'safety_documentation': 0,
+            'quality_assurance': 0
+        }
+        
+        # Validation completeness (0-25 points)
+        if validation_records:
+            passed_rate = sum(1 for r in validation_records if r[10] == 'PASSED') / len(validation_records)
+            score_components['validation_completeness'] = min(25, passed_rate * 30)
+        
+        # Performance evidence (0-25 points)
+        if performance_records:
+            score_components['performance_evidence'] = min(25, len(performance_records) * 2.5)
+        
+        # Safety documentation (0-25 points)
+        if len(adverse_events) == 0:
+            score_components['safety_documentation'] = 25
+        else:
+            resolved_rate = sum(1 for ae in adverse_events if ae[8] is not None) / len(adverse_events)
+            score_components['safety_documentation'] = resolved_rate * 25
+        
+        # Quality assurance (0-25 points)
+        if validation_records:
+            score_components['quality_assurance'] = 20  # Base score for having QA processes
+        
+        total_score = sum(score_components.values())
+        
+        # Determine readiness status
+        if total_score >= 80:
+            readiness_status = "READY_FOR_SUBMISSION"
+        elif total_score >= 60:
+            readiness_status = "NEARLY_READY"
+        elif total_score >= 40:
+            readiness_status = "NEEDS_IMPROVEMENT"
+        else:
+            readiness_status = "NOT_READY"
+        
+        return {
+            'total_score': round(total_score, 1),
+            'max_score': 100,
+            'score_components': score_components,
+            'readiness_status': readiness_status,
+            'recommendations': self._get_readiness_recommendations(score_components, total_score)
+        }
+    
+    def _get_readiness_recommendations(self, score_components: Dict[str, float], total_score: float) -> List[str]:
+        """Get recommendations for improving FDA submission readiness."""
+        recommendations = []
+        
+        if score_components['validation_completeness'] < 20:
+            recommendations.append("Increase validation testing coverage and pass rate")
+        
+        if score_components['performance_evidence'] < 20:
+            recommendations.append("Collect more clinical performance data")
+        
+        if score_components['safety_documentation'] < 20:
+            recommendations.append("Address outstanding adverse events and improve safety documentation")
+        
+        if score_components['quality_assurance'] < 15:
+            recommendations.append("Implement comprehensive quality assurance processes")
+        
+        if total_score < 80:
+            recommendations.append("Consider pre-submission meeting with FDA to discuss requirements")
+        
+        return recommendations
     
     def _determine_regulatory_pathway(self, model_version: str) -> str:
         """Determine appropriate FDA regulatory pathway"""

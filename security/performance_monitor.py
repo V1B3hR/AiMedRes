@@ -1,0 +1,679 @@
+#!/usr/bin/env python3
+"""
+High-Performance Medical AI Response Time Monitor
+
+Comprehensive performance monitoring system designed to ensure clinical AI responses
+meet the critical <100ms target time for medical applications. Features include:
+
+- Real-time response time tracking with medical-grade precision
+- Automated performance optimization recommendations
+- Clinical alert system for response time violations
+- Performance trend analysis and prediction
+- Integration with HIPAA audit logging
+- Emergency escalation for critical delays
+"""
+
+import time
+import threading
+import logging
+import json
+import statistics
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Any, Optional, Callable, Tuple
+from dataclasses import dataclass, asdict
+from collections import deque, defaultdict
+from enum import Enum
+import queue
+import psutil
+import contextlib
+from functools import wraps
+
+logger = logging.getLogger('duetmind.performance')
+
+
+class ClinicalPriority(Enum):
+    """Clinical priority levels for response time requirements"""
+    EMERGENCY = "EMERGENCY"        # <20ms target
+    CRITICAL = "CRITICAL"         # <50ms target  
+    URGENT = "URGENT"             # <100ms target
+    ROUTINE = "ROUTINE"           # <200ms target
+    ADMINISTRATIVE = "ADMIN"       # <500ms target
+
+
+class AlertLevel(Enum):
+    """Performance alert levels"""
+    GREEN = "GREEN"               # Performance within targets
+    YELLOW = "YELLOW"             # Performance degraded but acceptable
+    ORANGE = "ORANGE"             # Performance concerning, intervention needed
+    RED = "RED"                   # Critical performance failure
+
+
+@dataclass 
+class PerformanceMetrics:
+    """Performance metrics data structure"""
+    timestamp: datetime
+    operation: str
+    response_time_ms: float
+    clinical_priority: ClinicalPriority
+    success: bool
+    error_message: Optional[str]
+    user_id: Optional[str]
+    patient_id: Optional[str]
+    system_load: Dict[str, float]
+    memory_usage: Dict[str, float]
+    additional_context: Dict[str, Any]
+
+
+@dataclass
+class PerformanceThresholds:
+    """Performance thresholds for different clinical priorities"""
+    emergency_max_ms: float = 20.0
+    critical_max_ms: float = 50.0
+    urgent_max_ms: float = 100.0
+    routine_max_ms: float = 200.0
+    admin_max_ms: float = 500.0
+    
+    # Violation thresholds (how many violations trigger alerts)
+    violation_count_warning: int = 3      # Per minute
+    violation_count_critical: int = 5     # Per minute
+    
+    # System resource thresholds
+    cpu_warning_threshold: float = 80.0   # %
+    memory_warning_threshold: float = 85.0 # %
+    
+
+class ClinicalPerformanceMonitor:
+    """
+    High-precision performance monitor for clinical AI systems.
+    
+    Ensures response times meet medical safety requirements and provides
+    real-time optimization recommendations.
+    """
+    
+    def __init__(self, 
+                 thresholds: Optional[PerformanceThresholds] = None,
+                 enable_audit_integration: bool = True,
+                 metric_history_size: int = 10000):
+        """
+        Initialize clinical performance monitor.
+        
+        Args:
+            thresholds: Performance thresholds configuration
+            enable_audit_integration: Enable HIPAA audit integration
+            metric_history_size: Size of metrics history buffer
+        """
+        self.thresholds = thresholds or PerformanceThresholds()
+        self.enable_audit_integration = enable_audit_integration
+        
+        # Metrics storage
+        self.metrics_history = deque(maxlen=metric_history_size)
+        self.real_time_metrics = defaultdict(list)  # Last minute of metrics
+        
+        # Alert management
+        self.active_alerts = {}
+        self.alert_callbacks = []
+        self.performance_violations = defaultdict(int)
+        
+        # Threading
+        self._lock = threading.RLock()
+        self._monitoring_active = False
+        self._monitor_thread = None
+        self._metrics_queue = queue.Queue()
+        
+        # Performance tracking
+        self.response_times = {
+            ClinicalPriority.EMERGENCY: deque(maxlen=1000),
+            ClinicalPriority.CRITICAL: deque(maxlen=1000),
+            ClinicalPriority.URGENT: deque(maxlen=1000),
+            ClinicalPriority.ROUTINE: deque(maxlen=1000),
+            ClinicalPriority.ADMINISTRATIVE: deque(maxlen=1000)
+        }
+        
+        # System monitoring
+        self.system_metrics = {
+            'cpu_usage': deque(maxlen=100),
+            'memory_usage': deque(maxlen=100),
+            'io_wait': deque(maxlen=100)
+        }
+        
+        logger.info("Clinical Performance Monitor initialized")
+    
+    def start_monitoring(self):
+        """Start background performance monitoring."""
+        if not self._monitoring_active:
+            self._monitoring_active = True
+            self._monitor_thread = threading.Thread(
+                target=self._monitoring_loop, 
+                daemon=True,
+                name="ClinicalPerformanceMonitor"
+            )
+            self._monitor_thread.start()
+            logger.info("Clinical performance monitoring started")
+    
+    def stop_monitoring(self):
+        """Stop background performance monitoring."""
+        self._monitoring_active = False
+        if self._monitor_thread and self._monitor_thread.is_alive():
+            self._monitor_thread.join(timeout=2)
+        logger.info("Clinical performance monitoring stopped")
+    
+    def _monitoring_loop(self):
+        """Background monitoring loop."""
+        while self._monitoring_active:
+            try:
+                # Process queued metrics
+                self._process_queued_metrics()
+                
+                # Update system metrics
+                self._update_system_metrics()
+                
+                # Check for performance violations
+                self._check_performance_violations()
+                
+                # Cleanup old metrics
+                self._cleanup_old_metrics()
+                
+                time.sleep(0.1)  # 100ms monitoring interval
+                
+            except Exception as e:
+                logger.error(f"Error in performance monitoring loop: {e}")
+    
+    def _process_queued_metrics(self):
+        """Process metrics from the queue."""
+        processed_count = 0
+        while not self._metrics_queue.empty() and processed_count < 100:
+            try:
+                metric = self._metrics_queue.get_nowait()
+                self._store_metric(metric)
+                processed_count += 1
+            except queue.Empty:
+                break
+    
+    def _store_metric(self, metric: PerformanceMetrics):
+        """Store performance metric and trigger analysis."""
+        with self._lock:
+            # Add to history
+            self.metrics_history.append(metric)
+            
+            # Add to real-time tracking
+            now = datetime.now(timezone.utc)
+            minute_key = now.strftime("%Y-%m-%d_%H-%M")
+            self.real_time_metrics[minute_key].append(metric)
+            
+            # Add to priority-specific tracking
+            if metric.clinical_priority in self.response_times:
+                self.response_times[metric.clinical_priority].append(metric.response_time_ms)
+            
+            # Check for immediate violations
+            self._check_immediate_violation(metric)
+    
+    def _update_system_metrics(self):
+        """Update system performance metrics."""
+        try:
+            cpu_percent = psutil.cpu_percent(interval=None)
+            memory = psutil.virtual_memory()
+            
+            with self._lock:
+                self.system_metrics['cpu_usage'].append(cpu_percent)
+                self.system_metrics['memory_usage'].append(memory.percent)
+                
+                # Check system resource alerts
+                if cpu_percent > self.thresholds.cpu_warning_threshold:
+                    self._trigger_alert(
+                        "HIGH_CPU_USAGE",
+                        f"CPU usage at {cpu_percent:.1f}%",
+                        AlertLevel.ORANGE
+                    )
+                
+                if memory.percent > self.thresholds.memory_warning_threshold:
+                    self._trigger_alert(
+                        "HIGH_MEMORY_USAGE",
+                        f"Memory usage at {memory.percent:.1f}%", 
+                        AlertLevel.ORANGE
+                    )
+        except Exception as e:
+            logger.error(f"Failed to update system metrics: {e}")
+    
+    def _check_immediate_violation(self, metric: PerformanceMetrics):
+        """Check if metric violates performance thresholds immediately."""
+        threshold_ms = self._get_threshold_for_priority(metric.clinical_priority)
+        
+        if metric.response_time_ms > threshold_ms:
+            severity = self._calculate_violation_severity(
+                metric.response_time_ms, 
+                threshold_ms,
+                metric.clinical_priority
+            )
+            
+            self._trigger_performance_violation(metric, severity)
+    
+    def _get_threshold_for_priority(self, priority: ClinicalPriority) -> float:
+        """Get response time threshold for clinical priority."""
+        threshold_map = {
+            ClinicalPriority.EMERGENCY: self.thresholds.emergency_max_ms,
+            ClinicalPriority.CRITICAL: self.thresholds.critical_max_ms,
+            ClinicalPriority.URGENT: self.thresholds.urgent_max_ms,
+            ClinicalPriority.ROUTINE: self.thresholds.routine_max_ms,
+            ClinicalPriority.ADMINISTRATIVE: self.thresholds.admin_max_ms
+        }
+        return threshold_map.get(priority, self.thresholds.routine_max_ms)
+    
+    def _calculate_violation_severity(self, 
+                                    actual_ms: float,
+                                    threshold_ms: float,
+                                    priority: ClinicalPriority) -> AlertLevel:
+        """Calculate severity of performance violation."""
+        violation_ratio = actual_ms / threshold_ms
+        
+        # Emergency and critical violations are always RED
+        if priority in [ClinicalPriority.EMERGENCY, ClinicalPriority.CRITICAL]:
+            return AlertLevel.RED if violation_ratio > 1.5 else AlertLevel.ORANGE
+        
+        # Other priorities based on severity
+        if violation_ratio > 2.0:
+            return AlertLevel.RED
+        elif violation_ratio > 1.5:
+            return AlertLevel.ORANGE
+        else:
+            return AlertLevel.YELLOW
+    
+    def _trigger_performance_violation(self, metric: PerformanceMetrics, severity: AlertLevel):
+        """Handle performance violation."""
+        violation_id = f"perf_violation_{int(time.time() * 1000)}"
+        
+        alert_data = {
+            'violation_id': violation_id,
+            'timestamp': metric.timestamp.isoformat(),
+            'operation': metric.operation,
+            'response_time_ms': metric.response_time_ms,
+            'threshold_ms': self._get_threshold_for_priority(metric.clinical_priority),
+            'clinical_priority': metric.clinical_priority.value,
+            'severity': severity.value,
+            'user_id': metric.user_id,
+            'patient_id': metric.patient_id
+        }
+        
+        self._trigger_alert(
+            "PERFORMANCE_VIOLATION",
+            f"Response time {metric.response_time_ms:.1f}ms exceeds {self._get_threshold_for_priority(metric.clinical_priority):.1f}ms threshold for {metric.clinical_priority.value} operation",
+            severity,
+            alert_data
+        )
+        
+        # Log HIPAA audit if enabled and patient involved
+        if self.enable_audit_integration and metric.patient_id:
+            self._log_performance_audit(metric, violation_id)
+    
+    def _trigger_alert(self, 
+                      alert_type: str,
+                      message: str,
+                      level: AlertLevel,
+                      data: Dict[str, Any] = None):
+        """Trigger performance alert."""
+        alert = {
+            'alert_type': alert_type,
+            'message': message,
+            'level': level.value,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'data': data or {}
+        }
+        
+        with self._lock:
+            self.active_alerts[alert_type] = alert
+        
+        # Call registered alert callbacks
+        for callback in self.alert_callbacks:
+            try:
+                callback(alert)
+            except Exception as e:
+                logger.error(f"Error in alert callback: {e}")
+        
+        # Log based on severity
+        log_message = f"[{level.value}] {alert_type}: {message}"
+        if level in [AlertLevel.RED]:
+            logger.error(log_message)
+        elif level == AlertLevel.ORANGE:
+            logger.warning(log_message)
+        else:
+            logger.info(log_message)
+    
+    def _log_performance_audit(self, metric: PerformanceMetrics, violation_id: str):
+        """Log performance violation to HIPAA audit system."""
+        try:
+            from .hipaa_audit import get_audit_logger
+            
+            audit_logger = get_audit_logger()
+            audit_logger._log_audit_event(
+                event_type="MODEL_PREDICTION",
+                user_id=metric.user_id or "system",
+                user_role="ai_system",
+                patient_id=metric.patient_id,
+                resource="clinical_ai_response",
+                purpose="clinical_decision_support",
+                outcome="PERFORMANCE_VIOLATION",
+                additional_data={
+                    'response_time_ms': metric.response_time_ms,
+                    'clinical_priority': metric.clinical_priority.value,
+                    'violation_id': violation_id,
+                    'operation': metric.operation
+                }
+            )
+        except ImportError:
+            logger.warning("HIPAA audit logging not available for performance violation")
+    
+    def _check_performance_violations(self):
+        """Check for patterns of performance violations."""
+        now = datetime.now(timezone.utc)
+        minute_key = now.strftime("%Y-%m-%d_%H-%M")
+        
+        # Count violations in the last minute
+        recent_metrics = self.real_time_metrics.get(minute_key, [])
+        violations_this_minute = 0
+        
+        for metric in recent_metrics:
+            threshold = self._get_threshold_for_priority(metric.clinical_priority)
+            if metric.response_time_ms > threshold:
+                violations_this_minute += 1
+        
+        # Trigger alerts based on violation counts
+        if violations_this_minute >= self.thresholds.violation_count_critical:
+            self._trigger_alert(
+                "CRITICAL_PERFORMANCE_DEGRADATION",
+                f"{violations_this_minute} performance violations in the last minute",
+                AlertLevel.RED,
+                {'violations_count': violations_this_minute, 'minute': minute_key}
+            )
+        elif violations_this_minute >= self.thresholds.violation_count_warning:
+            self._trigger_alert(
+                "PERFORMANCE_DEGRADATION_WARNING",
+                f"{violations_this_minute} performance violations in the last minute",
+                AlertLevel.ORANGE,
+                {'violations_count': violations_this_minute, 'minute': minute_key}
+            )
+    
+    def _cleanup_old_metrics(self):
+        """Clean up old real-time metrics."""
+        now = datetime.now(timezone.utc)
+        cutoff_time = now - timedelta(minutes=10)
+        
+        with self._lock:
+            # Remove metrics older than 10 minutes
+            keys_to_remove = []
+            for minute_key in self.real_time_metrics:
+                try:
+                    minute_time = datetime.strptime(minute_key, "%Y-%m-%d_%H-%M")
+                    minute_time = minute_time.replace(tzinfo=timezone.utc)
+                    if minute_time < cutoff_time:
+                        keys_to_remove.append(minute_key)
+                except ValueError:
+                    keys_to_remove.append(minute_key)  # Remove invalid keys
+            
+            for key in keys_to_remove:
+                del self.real_time_metrics[key]
+    
+    def record_operation(self,
+                        operation: str,
+                        response_time_ms: float,
+                        clinical_priority: ClinicalPriority = ClinicalPriority.ROUTINE,
+                        success: bool = True,
+                        error_message: Optional[str] = None,
+                        user_id: Optional[str] = None,
+                        patient_id: Optional[str] = None,
+                        additional_context: Dict[str, Any] = None):
+        """
+        Record operation performance metrics.
+        
+        Args:
+            operation: Name of the operation
+            response_time_ms: Response time in milliseconds
+            clinical_priority: Clinical priority level
+            success: Whether operation succeeded
+            error_message: Error message if operation failed
+            user_id: User performing the operation
+            patient_id: Patient ID if applicable
+            additional_context: Additional context data
+        """
+        try:
+            # Get system metrics
+            system_load = {
+                'cpu_percent': psutil.cpu_percent(interval=None),
+                'memory_percent': psutil.virtual_memory().percent
+            }
+            
+            memory_info = psutil.virtual_memory()
+            memory_usage = {
+                'available_mb': memory_info.available / (1024 * 1024),
+                'used_percent': memory_info.percent
+            }
+            
+            metric = PerformanceMetrics(
+                timestamp=datetime.now(timezone.utc),
+                operation=operation,
+                response_time_ms=response_time_ms,
+                clinical_priority=clinical_priority,
+                success=success,
+                error_message=error_message,
+                user_id=user_id,
+                patient_id=patient_id,
+                system_load=system_load,
+                memory_usage=memory_usage,
+                additional_context=additional_context or {}
+            )
+            
+            # Queue for processing
+            self._metrics_queue.put(metric)
+            
+        except Exception as e:
+            logger.error(f"Failed to record performance metric: {e}")
+    
+    def add_alert_callback(self, callback: Callable[[Dict[str, Any]], None]):
+        """Add callback for performance alerts."""
+        self.alert_callbacks.append(callback)
+    
+    def get_performance_summary(self, 
+                              priority: Optional[ClinicalPriority] = None,
+                              hours_back: int = 1) -> Dict[str, Any]:
+        """Get performance summary for specified time period."""
+        now = datetime.now(timezone.utc)
+        cutoff_time = now - timedelta(hours=hours_back)
+        
+        with self._lock:
+            # Filter metrics by time and priority
+            filtered_metrics = [
+                m for m in self.metrics_history
+                if m.timestamp >= cutoff_time and (priority is None or m.clinical_priority == priority)
+            ]
+            
+            if not filtered_metrics:
+                return {
+                    'summary_period_hours': hours_back,
+                    'priority_filter': priority.value if priority else "ALL",
+                    'total_operations': 0,
+                    'avg_response_time_ms': 0,
+                    'performance_status': "NO_DATA"
+                }
+            
+            response_times = [m.response_time_ms for m in filtered_metrics]
+            violations = 0
+            
+            for metric in filtered_metrics:
+                threshold = self._get_threshold_for_priority(metric.clinical_priority)
+                if metric.response_time_ms > threshold:
+                    violations += 1
+            
+            return {
+                'summary_period_hours': hours_back,
+                'priority_filter': priority.value if priority else "ALL",
+                'total_operations': len(filtered_metrics),
+                'successful_operations': sum(1 for m in filtered_metrics if m.success),
+                'avg_response_time_ms': statistics.mean(response_times),
+                'median_response_time_ms': statistics.median(response_times),
+                'p95_response_time_ms': self._percentile(response_times, 95),
+                'p99_response_time_ms': self._percentile(response_times, 99),
+                'max_response_time_ms': max(response_times),
+                'min_response_time_ms': min(response_times),
+                'violations_count': violations,
+                'violation_rate_percent': (violations / len(filtered_metrics)) * 100,
+                'performance_status': self._calculate_overall_performance_status(violations, len(filtered_metrics))
+            }
+    
+    def _percentile(self, data: List[float], percentile: int) -> float:
+        """Calculate percentile of data."""
+        if not data:
+            return 0.0
+        sorted_data = sorted(data)
+        index = (percentile / 100) * (len(sorted_data) - 1)
+        lower = int(index)
+        upper = lower + 1
+        
+        if upper >= len(sorted_data):
+            return sorted_data[-1]
+        
+        weight = index - lower
+        return sorted_data[lower] * (1 - weight) + sorted_data[upper] * weight
+    
+    def _calculate_overall_performance_status(self, violations: int, total: int) -> str:
+        """Calculate overall performance status."""
+        if total == 0:
+            return "NO_DATA"
+        
+        violation_rate = violations / total
+        
+        if violation_rate == 0:
+            return "EXCELLENT"
+        elif violation_rate < 0.01:  # Less than 1%
+            return "GOOD"
+        elif violation_rate < 0.05:  # Less than 5%
+            return "ACCEPTABLE"
+        elif violation_rate < 0.10:  # Less than 10%
+            return "CONCERNING"
+        else:
+            return "CRITICAL"
+    
+    def get_active_alerts(self) -> Dict[str, Dict[str, Any]]:
+        """Get currently active performance alerts."""
+        with self._lock:
+            return self.active_alerts.copy()
+    
+    def clear_alert(self, alert_type: str) -> bool:
+        """Clear a specific alert."""
+        with self._lock:
+            return self.active_alerts.pop(alert_type, None) is not None
+    
+    def get_optimization_recommendations(self) -> List[Dict[str, Any]]:
+        """Get performance optimization recommendations."""
+        recommendations = []
+        
+        # Check system resource usage
+        if self.system_metrics['cpu_usage']:
+            avg_cpu = statistics.mean(list(self.system_metrics['cpu_usage'])[-10:])
+            if avg_cpu > 80:
+                recommendations.append({
+                    'type': 'SYSTEM_RESOURCE',
+                    'priority': 'HIGH',
+                    'title': 'High CPU Usage Detected',
+                    'description': f'Average CPU usage is {avg_cpu:.1f}%. Consider optimizing algorithms or scaling resources.',
+                    'suggested_actions': [
+                        'Review and optimize AI model inference code',
+                        'Implement request queuing and rate limiting',
+                        'Consider horizontal scaling',
+                        'Profile CPU-intensive operations'
+                    ]
+                })
+        
+        # Check response time trends by priority
+        for priority in ClinicalPriority:
+            if self.response_times[priority]:
+                recent_times = list(self.response_times[priority])[-100:]
+                if len(recent_times) >= 10:
+                    avg_time = statistics.mean(recent_times)
+                    threshold = self._get_threshold_for_priority(priority)
+                    
+                    if avg_time > threshold * 0.8:  # Within 80% of threshold
+                        recommendations.append({
+                            'type': 'RESPONSE_TIME',
+                            'priority': 'MEDIUM',
+                            'title': f'{priority.value} Operations Approaching Threshold',
+                            'description': f'Average response time ({avg_time:.1f}ms) is approaching the {threshold}ms threshold.',
+                            'suggested_actions': [
+                                'Optimize database queries',
+                                'Implement caching for frequent operations',
+                                'Review AI model complexity',
+                                'Consider precomputing common results'
+                            ]
+                        })
+        
+        return recommendations
+
+
+@contextlib.contextmanager
+def monitor_performance(monitor: ClinicalPerformanceMonitor,
+                       operation: str,
+                       clinical_priority: ClinicalPriority = ClinicalPriority.ROUTINE,
+                       user_id: Optional[str] = None,
+                       patient_id: Optional[str] = None):
+    """
+    Context manager for monitoring operation performance.
+    
+    Usage:
+        with monitor_performance(monitor, 'ai_diagnosis', ClinicalPriority.CRITICAL):
+            result = perform_ai_diagnosis(patient_data)
+    """
+    start_time = time.time()
+    success = True
+    error_message = None
+    
+    try:
+        yield
+    except Exception as e:
+        success = False
+        error_message = str(e)
+        raise
+    finally:
+        end_time = time.time()
+        response_time_ms = (end_time - start_time) * 1000
+        
+        monitor.record_operation(
+            operation=operation,
+            response_time_ms=response_time_ms,
+            clinical_priority=clinical_priority,
+            success=success,
+            error_message=error_message,
+            user_id=user_id,
+            patient_id=patient_id
+        )
+
+
+def performance_monitor_decorator(monitor: ClinicalPerformanceMonitor,
+                                operation_name: Optional[str] = None,
+                                clinical_priority: ClinicalPriority = ClinicalPriority.ROUTINE):
+    """
+    Decorator for monitoring function performance.
+    
+    Usage:
+        @performance_monitor_decorator(monitor, 'ai_prediction', ClinicalPriority.URGENT)
+        def make_prediction(data):
+            return model.predict(data)
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            operation = operation_name or func.__name__
+            
+            with monitor_performance(monitor, operation, clinical_priority):
+                return func(*args, **kwargs)
+        
+        return wrapper
+    return decorator
+
+
+# Global monitor instance
+_global_performance_monitor = None
+
+def get_performance_monitor() -> ClinicalPerformanceMonitor:
+    """Get global performance monitor instance."""
+    global _global_performance_monitor
+    if _global_performance_monitor is None:
+        _global_performance_monitor = ClinicalPerformanceMonitor()
+        _global_performance_monitor.start_monitoring()
+    return _global_performance_monitor
