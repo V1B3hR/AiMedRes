@@ -13,7 +13,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from training.training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
+from files.training.training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
 from neuralnet import AliveLoopNode, ResourceRoom
 
 
@@ -58,7 +58,7 @@ class TestAlzheimerTrainer(unittest.TestCase):
         
         try:
             # Use the new data loader API
-            from data_loaders import CSVDataLoader
+            from scripts.data_loaders import CSVDataLoader
             csv_loader = CSVDataLoader(temp_path)
             trainer = AlzheimerTrainer(data_loader=csv_loader)
             df = trainer.load_data()
