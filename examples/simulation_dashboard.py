@@ -124,11 +124,193 @@ class InterventionRequest(BaseModel):
 
 # Core Dashboard Components
 
+class ClinicalScenarioValidator:
+    """Validates clinical scenarios for medical accuracy and safety"""
+    
+    def __init__(self):
+        self.validation_rules = self._initialize_validation_rules()
+        self.medical_constraints = self._initialize_medical_constraints()
+    
+    def _initialize_validation_rules(self) -> List[Dict[str, Any]]:
+        """Initialize clinical validation rules"""
+        return [
+            {
+                'name': 'age_vitals_consistency',
+                'validator': self._validate_age_vitals_consistency,
+                'severity': 'high'
+            },
+            {
+                'name': 'medication_contraindications',
+                'validator': self._validate_medication_contraindications,
+                'severity': 'critical'
+            },
+            {
+                'name': 'lab_value_ranges',
+                'validator': self._validate_lab_ranges,
+                'severity': 'medium'
+            },
+            {
+                'name': 'timeline_medical_logic',
+                'validator': self._validate_timeline_logic,
+                'severity': 'high'
+            }
+        ]
+    
+    def _initialize_medical_constraints(self) -> Dict[str, Any]:
+        """Initialize medical constraints and normal ranges"""
+        return {
+            'vitals': {
+                'systolic_bp': {'min': 70, 'max': 250, 'normal_min': 90, 'normal_max': 140},
+                'diastolic_bp': {'min': 40, 'max': 150, 'normal_min': 60, 'normal_max': 90},
+                'heart_rate': {'min': 30, 'max': 200, 'normal_min': 60, 'normal_max': 100},
+                'temperature': {'min': 32.0, 'max': 44.0, 'normal_min': 36.1, 'normal_max': 37.2},
+                'respiratory_rate': {'min': 6, 'max': 60, 'normal_min': 12, 'normal_max': 20}
+            },
+            'lab_values': {
+                'glucose': {'min': 20, 'max': 800, 'normal_min': 70, 'normal_max': 100},
+                'hemoglobin': {'min': 3.0, 'max': 20.0, 'normal_min': 12.0, 'normal_max': 16.0},
+                'white_blood_cells': {'min': 1.0, 'max': 100.0, 'normal_min': 4.0, 'normal_max': 11.0},
+                'creatinine': {'min': 0.1, 'max': 15.0, 'normal_min': 0.6, 'normal_max': 1.2}
+            },
+            'medication_contraindications': {
+                'warfarin': ['ibuprofen', 'aspirin', 'clopidogrel'],
+                'ace_inhibitors': ['potassium_supplements'],
+                'beta_blockers': ['verapamil', 'diltiazem'],
+                'metformin': []  # Special handling for kidney function
+            }
+        }
+    
+    def validate_scenario(self, scenario: SimulationScenario) -> Dict[str, Any]:
+        """Validate complete clinical scenario"""
+        validation_results = {
+            'valid': True,
+            'errors': [],
+            'warnings': [],
+            'recommendations': []
+        }
+        
+        # Run all validation rules
+        for rule in self.validation_rules:
+            try:
+                result = rule['validator'](scenario)
+                
+                if not result['valid']:
+                    validation_results['valid'] = False
+                    
+                    if rule['severity'] == 'critical':
+                        validation_results['errors'].extend(result['messages'])
+                    elif rule['severity'] == 'high':
+                        validation_results['errors'].extend(result['messages'])
+                    else:
+                        validation_results['warnings'].extend(result['messages'])
+                
+                if 'recommendations' in result:
+                    validation_results['recommendations'].extend(result['recommendations'])
+                    
+            except Exception as e:
+                validation_results['errors'].append(f"Validation rule {rule['name']} failed: {str(e)}")
+                validation_results['valid'] = False
+        
+        return validation_results
+    
+    def _validate_age_vitals_consistency(self, scenario: SimulationScenario) -> Dict[str, Any]:
+        """Validate that vitals are consistent with patient age"""
+        result = {'valid': True, 'messages': [], 'recommendations': []}
+        
+        age = scenario.patient_profile.age
+        vitals = scenario.patient_profile.vitals
+        
+        # Age-specific vital sign validation
+        if age < 18:  # Pediatric
+            if vitals.get('heart_rate', 80) < 70:
+                result['valid'] = False
+                result['messages'].append(f"Heart rate too low for pediatric patient (age {age})")
+        elif age > 80:  # Geriatric
+            if vitals.get('systolic_bp', 120) > 180:
+                result['warnings'] = result.get('warnings', [])
+                result['warnings'].append(f"High blood pressure in geriatric patient - consider medication review")
+        
+        return result
+    
+    def _validate_medication_contraindications(self, scenario: SimulationScenario) -> Dict[str, Any]:
+        """Validate medication combinations for safety"""
+        result = {'valid': True, 'messages': [], 'recommendations': []}
+        
+        medications = scenario.patient_profile.medications
+        contraindications = self.medical_constraints['medication_contraindications']
+        
+        for med in medications:
+            if med in contraindications:
+                contraindicated_meds = contraindications[med]
+                for other_med in medications:
+                    if other_med in contraindicated_meds:
+                        result['valid'] = False
+                        result['messages'].append(
+                            f"Contraindicated medication combination: {med} + {other_med}"
+                        )
+                        result['recommendations'].append(
+                            f"Consider alternative to {other_med} or discontinue {med}"
+                        )
+        
+        return result
+    
+    def _validate_lab_ranges(self, scenario: SimulationScenario) -> Dict[str, Any]:
+        """Validate laboratory values are within acceptable ranges"""
+        result = {'valid': True, 'messages': [], 'recommendations': []}
+        
+        lab_values = scenario.patient_profile.lab_values
+        lab_constraints = self.medical_constraints['lab_values']
+        
+        for lab_name, value in lab_values.items():
+            if lab_name in lab_constraints:
+                constraints = lab_constraints[lab_name]
+                
+                if value < constraints['min'] or value > constraints['max']:
+                    result['valid'] = False
+                    result['messages'].append(
+                        f"{lab_name} value {value} outside acceptable range "
+                        f"({constraints['min']}-{constraints['max']})"
+                    )
+                elif value < constraints['normal_min'] or value > constraints['normal_max']:
+                    result['recommendations'].append(
+                        f"{lab_name} value {value} outside normal range - monitor closely"
+                    )
+        
+        return result
+    
+    def _validate_timeline_logic(self, scenario: SimulationScenario) -> Dict[str, Any]:
+        """Validate timeline events for medical logic"""
+        result = {'valid': True, 'messages': [], 'recommendations': []}
+        
+        events = sorted(scenario.timeline_events, key=lambda e: e.timestamp)
+        
+        # Check for medically impossible sequences
+        for i in range(len(events) - 1):
+            current_event = events[i]
+            next_event = events[i + 1]
+            
+            # Check time intervals for medication changes
+            if (current_event.event_type == 'medication_change' and 
+                next_event.event_type == 'medication_change'):
+                
+                time_diff = (next_event.timestamp - current_event.timestamp).total_seconds()
+                if time_diff < 3600:  # Less than 1 hour
+                    result['messages'].append(
+                        f"Medication changes too close in time: {time_diff/3600:.1f} hours"
+                    )
+                    result['recommendations'].append(
+                        "Consider spacing medication changes by at least 1 hour"
+                    )
+        
+        return result
+
+
 class ScenarioBuilder:
     """Compose patient profile + timeline events and parameter sweeps"""
     
     def __init__(self, db_path: str = "simulation_scenarios.db"):
         self.db_path = db_path
+        self.validator = ClinicalScenarioValidator()
         self._init_database()
     
     def _init_database(self):
@@ -149,8 +331,8 @@ class ScenarioBuilder:
         conn.commit()
         conn.close()
     
-    def create_scenario(self, scenario_data: SimulationScenarioModel, user_id: str) -> str:
-        """Create a new simulation scenario"""
+    def create_scenario(self, scenario_data: SimulationScenarioModel, user_id: str) -> Dict[str, Any]:
+        """Create a new simulation scenario with validation"""
         scenario_id = str(uuid.uuid4())
         
         patient_profile = PatientProfile(**scenario_data.patient_profile.model_dump())
@@ -166,6 +348,18 @@ class ScenarioBuilder:
             created_by=user_id,
             created_at=datetime.now()
         )
+        
+        # Validate scenario before storing
+        validation_result = self.validator.validate_scenario(scenario)
+        
+        if not validation_result['valid']:
+            return {
+                'status': 'validation_failed',
+                'scenario_id': None,
+                'validation_errors': validation_result['errors'],
+                'validation_warnings': validation_result['warnings'],
+                'recommendations': validation_result['recommendations']
+            }
         
         # Store in database
         conn = sqlite3.connect(self.db_path)
@@ -185,7 +379,12 @@ class ScenarioBuilder:
         conn.close()
         
         logger.info(f"Created scenario {scenario_id}: {scenario.name}")
-        return scenario_id
+        return {
+            'status': 'success',
+            'scenario_id': scenario_id,
+            'validation_warnings': validation_result.get('warnings', []),
+            'recommendations': validation_result.get('recommendations', [])
+        }
     
     def get_scenario(self, scenario_id: str) -> Optional[SimulationScenario]:
         """Retrieve a simulation scenario"""

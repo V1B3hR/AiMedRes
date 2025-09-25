@@ -516,31 +516,301 @@ class PsychiatristAgent(SpecializedMedicalAgent):
         return risk_factors
 
 
+class SafetyValidator:
+    """Safety validation system for multi-agent medical decisions"""
+    
+    def __init__(self):
+        self.safety_rules = self._initialize_safety_rules()
+        self.risk_thresholds = {
+            'high_risk': 0.8,
+            'medium_risk': 0.6,
+            'low_risk': 0.3
+        }
+    
+    def _initialize_safety_rules(self) -> List[Dict[str, Any]]:
+        """Initialize medical safety rules"""
+        return [
+            {
+                'name': 'high_confidence_disagreement',
+                'condition': lambda assessments: self._check_high_confidence_disagreement(assessments),
+                'action': 'flag_for_review',
+                'severity': 'high'
+            },
+            {
+                'name': 'extreme_age_outlier',
+                'condition': lambda patient_data: patient_data.get('Age', 70) > 95 or patient_data.get('Age', 70) < 18,
+                'action': 'require_specialist_review',
+                'severity': 'medium'
+            },
+            {
+                'name': 'missing_critical_data',
+                'condition': lambda patient_data: self._check_missing_critical_data(patient_data),
+                'action': 'request_additional_data',
+                'severity': 'medium'
+            }
+        ]
+    
+    def validate_consensus(self, patient_data: Dict[str, Any], assessments: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Validate consensus for safety issues"""
+        safety_flags = []
+        
+        for rule in self.safety_rules:
+            if rule['condition'](assessments) if 'assessments' in rule['condition'].__code__.co_varnames else rule['condition'](patient_data):
+                safety_flags.append({
+                    'rule': rule['name'],
+                    'action': rule['action'],
+                    'severity': rule['severity'],
+                    'timestamp': datetime.now().isoformat()
+                })
+        
+        return {
+            'safe_to_proceed': len([f for f in safety_flags if f['severity'] == 'high']) == 0,
+            'safety_flags': safety_flags,
+            'recommended_actions': [f['action'] for f in safety_flags]
+        }
+    
+    def _check_high_confidence_disagreement(self, assessments: List[Dict[str, Any]]) -> bool:
+        """Check for high confidence disagreement between agents"""
+        if len(assessments) < 2:
+            return False
+            
+        predictions = [a.get('prediction') for a in assessments if a.get('confidence', 0) > 0.8]
+        if len(predictions) < 2:
+            return False
+            
+        unique_predictions = set(predictions)
+        return len(unique_predictions) > 1
+    
+    def _check_missing_critical_data(self, patient_data: Dict[str, Any]) -> bool:
+        """Check for missing critical medical data"""
+        critical_fields = ['Age', 'MMSE', 'CDR']
+        missing_fields = [field for field in critical_fields if field not in patient_data]
+        return len(missing_fields) > 0
+
+
+class ExplainabilityEngine:
+    """Engine for generating explainable AI outputs for medical decisions"""
+    
+    def __init__(self):
+        self.explanation_templates = self._initialize_templates()
+        
+    def _initialize_templates(self) -> Dict[str, str]:
+        """Initialize explanation templates"""
+        return {
+            'consensus_explanation': """
+            Based on analysis from {num_specialists} specialist agents:
+            - {specialist_summary}
+            - Consensus reached with {agreement_level}% agreement
+            - Primary factors: {key_factors}
+            - Confidence level: {confidence_level}
+            """,
+            'disagreement_explanation': """
+            Specialists show disagreement in their assessments:
+            - {disagreement_details}
+            - Recommended action: {recommended_action}
+            """,
+            'risk_explanation': """
+            Risk assessment based on:
+            {risk_factors_detail}
+            Overall risk level: {risk_level}
+            """
+        }
+    
+    def generate_consensus_explanation(self, consensus_result: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate human-readable explanation of consensus decision"""
+        
+        assessments = consensus_result.get('individual_assessments', [])
+        metrics = consensus_result.get('consensus_metrics', {})
+        
+        # Calculate agreement level
+        agreement_score = metrics.get('agreement_score', 0) * 100
+        
+        # Summarize specialist opinions
+        specialist_summary = self._summarize_specialist_opinions(assessments)
+        
+        # Extract key factors
+        key_factors = self._extract_key_factors(assessments)
+        
+        # Generate explanation
+        explanation = {
+            'summary': f"Consensus: {consensus_result.get('consensus_prediction', 'Unknown')}",
+            'detailed_explanation': self.explanation_templates['consensus_explanation'].format(
+                num_specialists=len(assessments),
+                specialist_summary=specialist_summary,
+                agreement_level=f"{agreement_score:.1f}",
+                key_factors=', '.join(key_factors[:3]),  # Top 3 factors
+                confidence_level=f"{consensus_result.get('consensus_confidence', 0):.2f}"
+            ),
+            'key_evidence': key_factors,
+            'specialist_contributions': self._detail_specialist_contributions(assessments),
+            'uncertainty_factors': self._identify_uncertainty_factors(metrics)
+        }
+        
+        return explanation
+    
+    def _summarize_specialist_opinions(self, assessments: List[Dict[str, Any]]) -> str:
+        """Summarize specialist opinions"""
+        if not assessments:
+            return "No specialist assessments available"
+            
+        opinions = {}
+        for assessment in assessments:
+            specialist = assessment.get('specialization', 'unknown')
+            prediction = assessment.get('prediction', 'unknown')
+            confidence = assessment.get('confidence', 0)
+            
+            if specialist not in opinions:
+                opinions[specialist] = []
+            opinions[specialist].append(f"{prediction} (confidence: {confidence:.2f})")
+        
+        return "; ".join([f"{spec}: {', '.join(preds)}" for spec, preds in opinions.items()])
+    
+    def _extract_key_factors(self, assessments: List[Dict[str, Any]]) -> List[str]:
+        """Extract key factors from assessments"""
+        all_factors = []
+        for assessment in assessments:
+            risk_factors = assessment.get('risk_factors', [])
+            all_factors.extend(risk_factors)
+        
+        # Count frequency and return most common
+        factor_counts = {}
+        for factor in all_factors:
+            factor_counts[factor] = factor_counts.get(factor, 0) + 1
+        
+        return sorted(factor_counts.keys(), key=factor_counts.get, reverse=True)
+    
+    def _detail_specialist_contributions(self, assessments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Detail individual specialist contributions"""
+        contributions = []
+        for assessment in assessments:
+            contribution = {
+                'specialist': assessment.get('specialization', 'unknown'),
+                'prediction': assessment.get('prediction', 'unknown'),
+                'confidence': assessment.get('confidence', 0),
+                'key_findings': assessment.get('risk_factors', [])[:2],  # Top 2 findings
+                'reasoning': assessment.get('reasoning', 'Not provided')
+            }
+            contributions.append(contribution)
+        return contributions
+    
+    def _identify_uncertainty_factors(self, metrics: Dict[str, Any]) -> List[str]:
+        """Identify factors contributing to uncertainty"""
+        uncertainty_factors = []
+        
+        if metrics.get('diversity_index', 0) > 0.5:
+            uncertainty_factors.append("High diversity in specialist opinions")
+        
+        if metrics.get('agreement_score', 1.0) < 0.7:
+            uncertainty_factors.append("Low agreement between specialists")
+        
+        if metrics.get('confidence_weighted_score', 1.0) < 0.6:
+            uncertainty_factors.append("Low overall confidence in assessments")
+        
+        return uncertainty_factors
+
+
+class AgentCommunicationProtocol:
+    """Protocol for secure agent-to-agent communication"""
+    
+    def __init__(self):
+        self.communication_log = []
+        self.security_validator = self._initialize_security_validator()
+    
+    def _initialize_security_validator(self):
+        """Initialize security validation for communications"""
+        return {
+            'max_message_size': 10000,  # bytes
+            'allowed_message_types': ['assessment_request', 'assessment_response', 'consensus_update', 'clarification_request'],
+            'encryption_required': True
+        }
+    
+    def send_message(self, sender_agent: str, receiver_agent: str, message_type: str, content: Dict[str, Any]) -> Dict[str, Any]:
+        """Send secure message between agents"""
+        
+        # Validate message
+        validation_result = self._validate_message(message_type, content)
+        if not validation_result['valid']:
+            return {'status': 'error', 'message': validation_result['error']}
+        
+        # Create communication record
+        communication = {
+            'id': str(len(self.communication_log) + 1),
+            'timestamp': datetime.now().isoformat(),
+            'sender': sender_agent,
+            'receiver': receiver_agent,
+            'message_type': message_type,
+            'content': content,
+            'status': 'sent'
+        }
+        
+        self.communication_log.append(communication)
+        
+        return {'status': 'success', 'communication_id': communication['id']}
+    
+    def _validate_message(self, message_type: str, content: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate message security and format"""
+        
+        # Check message type
+        if message_type not in self.security_validator['allowed_message_types']:
+            return {'valid': False, 'error': f'Unauthorized message type: {message_type}'}
+        
+        # Check message size
+        content_size = len(str(content).encode('utf-8'))
+        if content_size > self.security_validator['max_message_size']:
+            return {'valid': False, 'error': 'Message too large'}
+        
+        # Check for potential security issues
+        if self._contains_sensitive_data(content):
+            return {'valid': False, 'error': 'Contains potentially sensitive data'}
+        
+        return {'valid': True}
+    
+    def _contains_sensitive_data(self, content: Dict[str, Any]) -> bool:
+        """Check if content contains sensitive medical data that shouldn't be transmitted"""
+        sensitive_patterns = ['ssn', 'social_security', 'patient_id', 'mrn']
+        content_str = str(content).lower()
+        
+        return any(pattern in content_str for pattern in sensitive_patterns)
+    
+    def get_communication_history(self, agent_name: str) -> List[Dict[str, Any]]:
+        """Get communication history for an agent"""
+        return [
+            comm for comm in self.communication_log
+            if comm['sender'] == agent_name or comm['receiver'] == agent_name
+        ]
+
+
 class ConsensusManager:
-    """Manages consensus building between specialized agents"""
+    """Manages consensus building between specialized agents with enhanced communication and safety"""
     
     def __init__(self):
         self.consensus_history = []
+        self.agent_communications = []
+        self.safety_validator = SafetyValidator()
+        self.explainability_engine = ExplainabilityEngine()
+        self.communication_protocol = AgentCommunicationProtocol()
         
     def build_consensus(self, agents: List[SpecializedMedicalAgent], 
                        patient_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Build consensus from multiple specialized agent assessments"""
+        """Build consensus from multiple specialized agent assessments with enhanced safety and explainability"""
         
-        # Get individual assessments
-        assessments = []
-        for agent in agents:
-            try:
-                assessment = agent.get_specialized_assessment(patient_data)
-                assessment['agent_name'] = agent.name
-                assessment['specialization'] = agent.specialization
-                assessment['expertise_weight'] = agent.get_expertise_weight("cognitive_assessment")
-                assessments.append(assessment)
-            except Exception as e:
-                logger.warning(f"Assessment failed for {agent.name}: {e}")
-                continue
+        # Validate safety before proceeding
+        safety_check = self.safety_validator.validate_consensus(patient_data, [])
+        if not safety_check['safe_to_proceed']:
+            return {
+                'status': 'safety_hold',
+                'safety_flags': safety_check['safety_flags'],
+                'recommended_actions': safety_check['recommended_actions']
+            }
+        
+        # Enable agent-to-agent communication for complex cases
+        assessments = self._conduct_collaborative_assessment(agents, patient_data)
         
         if not assessments:
             return {"error": "No valid assessments obtained"}
+        
+        # Validate assessments with safety rules
+        post_assessment_safety = self.safety_validator.validate_consensus(patient_data, assessments)
         
         # Extract predictions and confidences
         predictions = []
@@ -583,13 +853,130 @@ class ConsensusManager:
                 'risk_assessment': consensus_metrics.risk_assessment
             },
             'specialist_insights': self._compile_specialist_insights(assessments),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat(),
+            'safety_validation': post_assessment_safety,
+            'communication_log': self.communication_protocol.communication_log
         }
+        
+        # Generate explainable AI output
+        explanation = self.explainability_engine.generate_consensus_explanation(consensus_result)
+        consensus_result['explanation'] = explanation
         
         # Store for learning
         self.consensus_history.append(consensus_result)
         
         return consensus_result
+    
+    def _conduct_collaborative_assessment(self, agents: List[SpecializedMedicalAgent], patient_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Conduct collaborative assessment with agent-to-agent communication"""
+        assessments = []
+        
+        # First round: individual assessments
+        for agent in agents:
+            try:
+                assessment = agent.get_specialized_assessment(patient_data)
+                assessment['agent_name'] = agent.name
+                assessment['specialization'] = agent.specialization
+                assessment['expertise_weight'] = agent.get_expertise_weight("cognitive_assessment")
+                assessments.append(assessment)
+            except Exception as e:
+                logger.warning(f"Assessment failed for {agent.name}: {e}")
+                continue
+        
+        # Second round: peer review and clarification if needed
+        if len(assessments) > 1:
+            assessments = self._enable_peer_review(agents, assessments, patient_data)
+        
+        return assessments
+    
+    def _enable_peer_review(self, agents: List[SpecializedMedicalAgent], initial_assessments: List[Dict[str, Any]], patient_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Enable peer review between agents for complex cases"""
+        
+        # Check if peer review is needed (high disagreement or low confidence)
+        needs_review = self._assess_need_for_peer_review(initial_assessments)
+        
+        if not needs_review:
+            return initial_assessments
+        
+        logger.info("Enabling peer review due to disagreement or low confidence")
+        
+        # Enable agent communications
+        for i, agent in enumerate(agents):
+            for j, other_agent in enumerate(agents):
+                if i != j:
+                    # Send assessment for peer review
+                    message_content = {
+                        'patient_summary': self._create_patient_summary(patient_data),
+                        'peer_assessment': initial_assessments[j] if j < len(initial_assessments) else None,
+                        'request_type': 'peer_review'
+                    }
+                    
+                    self.communication_protocol.send_message(
+                        sender_agent=agent.name,
+                        receiver_agent=other_agent.name,
+                        message_type='assessment_request',
+                        content=message_content
+                    )
+        
+        # Simulate peer review responses (in a real system, agents would respond)
+        refined_assessments = []
+        for assessment in initial_assessments:
+            # Simulate refinement based on peer input
+            refined_assessment = assessment.copy()
+            
+            # Adjust confidence based on peer agreement
+            peer_predictions = [a['prediction'] for a in initial_assessments if a['agent_name'] != assessment['agent_name']]
+            if peer_predictions:
+                agreement_ratio = sum(1 for p in peer_predictions if p == assessment['prediction']) / len(peer_predictions)
+                refined_assessment['confidence'] *= (0.7 + 0.3 * agreement_ratio)  # Adjust confidence
+                refined_assessment['peer_reviewed'] = True
+                refined_assessment['peer_agreement_ratio'] = agreement_ratio
+            
+            refined_assessments.append(refined_assessment)
+        
+        return refined_assessments
+    
+    def _assess_need_for_peer_review(self, assessments: List[Dict[str, Any]]) -> bool:
+        """Assess if peer review is needed"""
+        if len(assessments) < 2:
+            return False
+        
+        # Check for disagreement
+        predictions = [a['prediction'] for a in assessments]
+        unique_predictions = set(predictions)
+        has_disagreement = len(unique_predictions) > 1
+        
+        # Check for low confidence
+        avg_confidence = np.mean([a.get('confidence', 0) for a in assessments])
+        low_confidence = avg_confidence < 0.7
+        
+        return has_disagreement or low_confidence
+    
+    def _create_patient_summary(self, patient_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create anonymized patient summary for peer review"""
+        # Remove any identifying information and create summary
+        summary = {
+            'demographics': {
+                'age_range': self._categorize_age(patient_data.get('Age', 70)),
+                'gender': patient_data.get('M/F', 1)
+            },
+            'cognitive_scores': {
+                k: v for k, v in patient_data.items() 
+                if k in ['MMSE', 'CDR', 'eTIV', 'nWBV', 'ASF', 'EDUC', 'SES']
+            }
+        }
+        return summary
+    
+    def _categorize_age(self, age: int) -> str:
+        """Categorize age for privacy"""
+        if age < 65:
+            return 'under_65'
+        elif age < 75:
+            return '65_to_75'
+        elif age < 85:
+            return '75_to_85'
+        else:
+            return 'over_85'
     
     def _calculate_consensus_metrics(self, predictions: List[int], 
                                    confidences: List[float], 
