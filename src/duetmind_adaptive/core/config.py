@@ -253,6 +253,72 @@ class DuetMindConfig:
         if env_value:
             return env_value
         
-        # TODO: Add support for HashiCorp Vault, AWS Secrets Manager, etc.
-        logger.warning(f"Secret {key} not found in environment")
+        # Try HashiCorp Vault if configured
+        vault_secret = self._get_vault_secret(key)
+        if vault_secret:
+            return vault_secret
+        
+        # Try AWS Secrets Manager if configured
+        aws_secret = self._get_aws_secret(key)
+        if aws_secret:
+            return aws_secret
+        
+        logger.warning(f"Secret {key} not found in any configured source")
         return None
+    
+    def _get_vault_secret(self, key: str) -> Optional[str]:
+        """Get secret from HashiCorp Vault"""
+        try:
+            import hvac
+            
+            vault_url = os.getenv('VAULT_URL')
+            vault_token = os.getenv('VAULT_TOKEN')
+            vault_path = os.getenv('VAULT_SECRET_PATH', 'duetmind')
+            
+            if not vault_url or not vault_token:
+                return None
+            
+            client = hvac.Client(url=vault_url, token=vault_token)
+            if not client.is_authenticated():
+                logger.warning("Vault authentication failed")
+                return None
+            
+            response = client.secrets.kv.v2.read_secret_version(path=vault_path)
+            secrets = response['data']['data']
+            return secrets.get(key)
+            
+        except ImportError:
+            logger.debug("hvac library not installed, skipping Vault")
+            return None
+        except Exception as e:
+            logger.warning(f"Failed to retrieve secret from Vault: {e}")
+            return None
+    
+    def _get_aws_secret(self, key: str) -> Optional[str]:
+        """Get secret from AWS Secrets Manager"""
+        try:
+            import boto3
+            from botocore.exceptions import ClientError
+            
+            secret_name = os.getenv('AWS_SECRET_NAME', 'duetmind/secrets')
+            region_name = os.getenv('AWS_REGION', 'us-east-1')
+            
+            session = boto3.session.Session()
+            client = session.client(
+                service_name='secretsmanager',
+                region_name=region_name
+            )
+            
+            get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+            secrets = json.loads(get_secret_value_response['SecretString'])
+            return secrets.get(key)
+            
+        except ImportError:
+            logger.debug("boto3 library not installed, skipping AWS Secrets Manager")
+            return None
+        except ClientError as e:
+            logger.warning(f"Failed to retrieve secret from AWS Secrets Manager: {e}")
+            return None
+        except Exception as e:
+            logger.warning(f"Error accessing AWS Secrets Manager: {e}")
+            return None

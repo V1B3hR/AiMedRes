@@ -975,70 +975,105 @@ class EnterpriseAPI:
             - Retention policy enforcement
             """
             try:
-                data = request.get_json()
+                # Validate input data
+                data, validation_error = self._validate_medical_input()
+                if validation_error:
+                    return validation_error
                 
-                # Validate medical data format
-                is_valid, errors = self.input_validator.validate_medical_data(data)
-                if not is_valid:
-                    return jsonify({
-                        'error': 'Medical data validation failed',
-                        'details': errors,
-                        'request_id': g.request_id
-                    }), 400
+                # Generate unique data ID and anonymize
+                data_id, anonymized_data = self._prepare_medical_data(data)
                 
-                # Generate unique data ID for tracking
-                data_id = f"medical_{g.user_info['user_id']}_{int(time.time())}"
+                # Register for retention and log access
+                self._register_and_log_medical_data(data_id)
                 
-                # Anonymize medical data for processing
-                anonymized_data = self.data_encryption.anonymize_medical_data(data)
+                # Process the medical data
+                processing_result = self._process_medical_data(data_id, anonymized_data)
                 
-                # Register for retention tracking
-                self.privacy_manager.register_data_for_retention(data_id, 'medical_data')
-                
-                # Log medical data access
-                self.privacy_manager.log_data_access(
-                    user_id=g.user_info['user_id'],
-                    data_type='medical_data',
-                    action='process',
-                    data_id=data_id,
-                    purpose='medical_analysis',
-                    legal_basis='healthcare_provision'
-                )
-                
-                # Process medical data (placeholder for actual ML processing)
-                processing_result = {
-                    'data_id': data_id,
-                    'processed': True,
-                    'anonymized': True,
-                    'retention_registered': True
-                }
-                
-                return jsonify({
-                    'success': True,
-                    'result': processing_result,
-                    'processing_time': time.time() - g.start_time,
-                    'request_id': g.request_id,
-                    'privacy_compliant': True
-                })
+                return self._create_medical_success_response(processing_result, data_id)
                 
             except Exception as e:
-                error_id = str(uuid.uuid4())
-                logging.error(f"Medical processing error [{error_id}]: {e}")
-                
-                self.security_monitor.log_security_event(
-                    'medical_processing_error',
-                    {'error_id': error_id},
-                    severity='warning',
-                    user_id=g.user_info.get('user_id'),
-                    ip_address=request.remote_addr
-                )
-                
-                return jsonify({
-                    'success': False,
-                    'error': 'Medical data processing error',
-                    'error_id': error_id,
+                return self._handle_medical_processing_error(e)
+        
+        def _validate_medical_input(self) -> Tuple[Optional[Dict], Optional[Any]]:
+            """Validate medical data input."""
+            data = request.get_json()
+            
+            # Validate medical data format
+            is_valid, errors = self.input_validator.validate_medical_data(data)
+            if not is_valid:
+                error_response = jsonify({
+                    'error': 'Medical data validation failed',
+                    'details': errors,
                     'request_id': g.request_id
-                }), 500
+                }), 400
+                return None, error_response
+            
+            return data, None
+        
+        def _prepare_medical_data(self, data: Dict) -> Tuple[str, Dict]:
+            """Generate data ID and anonymize medical data."""
+            # Generate unique data ID for tracking
+            data_id = f"medical_{g.user_info['user_id']}_{int(time.time())}"
+            
+            # Anonymize medical data for processing
+            anonymized_data = self.data_encryption.anonymize_medical_data(data)
+            
+            return data_id, anonymized_data
+        
+        def _register_and_log_medical_data(self, data_id: str) -> None:
+            """Register data for retention and log access."""
+            # Register for retention tracking
+            self.privacy_manager.register_data_for_retention(data_id, 'medical_data')
+            
+            # Log medical data access
+            self.privacy_manager.log_data_access(
+                user_id=g.user_info['user_id'],
+                data_type='medical_data',
+                action='process',
+                data_id=data_id,
+                purpose='medical_analysis',
+                legal_basis='healthcare_provision'
+            )
+        
+        def _process_medical_data(self, data_id: str, anonymized_data: Dict) -> Dict:
+            """Process the anonymized medical data."""
+            # Process medical data (placeholder for actual ML processing)
+            return {
+                'data_id': data_id,
+                'processed': True,
+                'anonymized': True,
+                'retention_registered': True
+            }
+        
+        def _create_medical_success_response(self, processing_result: Dict, data_id: str) -> Any:
+            """Create successful response for medical data processing."""
+            return jsonify({
+                'success': True,
+                'result': processing_result,
+                'processing_time': time.time() - g.start_time,
+                'request_id': g.request_id,
+                'privacy_compliant': True
+            })
+        
+        def _handle_medical_processing_error(self, error: Exception) -> Any:
+            """Handle and log medical data processing errors."""
+            error_id = str(uuid.uuid4())
+            logging.error(f"Medical processing error [{error_id}]: {error}")
+            
+            self.security_monitor.log_security_event(
+                'medical_processing_error',
+                {'error_id': error_id},
+                severity='warning',
+                user_id=g.user_info.get('user_id'),
+                ip_address=request.remote_addr
+            )
+            
+            return jsonify({
+                'success': False,
+                'error': 'Medical data processing error',
+                'error_id': error_id,
+                'request_id': g.request_id
+            }), 500
         
         @self.app.route('/api/v1/metrics', methods=['GET'])
         @require_admin
