@@ -59,3 +59,23 @@ DEFAULT_RISK_THRESHOLD = 0.8
 ENTERPRISE_MIN_WORKERS = 4
 ENTERPRISE_MAX_WORKERS = 16
 ENTERPRISE_SCALING_FACTOR = 2.0
+
+# Input Validation Constants
+MAX_TASK_LENGTH = 2000  # Maximum characters for task input
+MAX_QUERY_LENGTH = 500  # Maximum characters for search query
+MAX_KNOWLEDGE_SEARCH_RESULTS = 50  # Maximum search results returned
+DEFAULT_KNOWLEDGE_SEARCH_LIMIT = 10  # Default number of search results
+
+# API Processing Constants
+DEFAULT_MEMORY_LIMIT_MB = 500  # Default memory limit for caching
+VECTOR_SEARCH_BATCH_THRESHOLD = 100  # Threshold for parallel processing
+DEFAULT_NETWORK_SIZE = 50  # Default neural network size
+NODE_BATCH_PROCESSING_THRESHOLD = 10  # Minimum nodes for batch processing
+DEFAULT_NODE_ENERGY = 10.0  # Default energy value for nodes
+
+# Drift Detection Constants  
+DRIFT_DETECTION_KS_THRESHOLD = 0.05  # P-value threshold for KS test
+DRIFT_DETECTION_WASSERSTEIN_THRESHOLD = 0.1  # Normalized Wasserstein threshold
+DRIFT_DETECTION_TV_THRESHOLD = 0.2  # Total Variation distance threshold
+DRIFT_DETECTION_JS_THRESHOLD = 0.1  # Jensen-Shannon divergence threshold
+DRIFT_DETECTION_CHI2_THRESHOLD = 0.05  # P-value threshold for chi-square test

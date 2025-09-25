@@ -12,6 +12,22 @@ from datetime import datetime, timedelta
 import yaml
 import json
 import os
+from scipy import stats
+
+# Import drift detection constants
+try:
+    from constants import (
+        DRIFT_DETECTION_KS_THRESHOLD, DRIFT_DETECTION_WASSERSTEIN_THRESHOLD,
+        DRIFT_DETECTION_TV_THRESHOLD, DRIFT_DETECTION_JS_THRESHOLD, 
+        DRIFT_DETECTION_CHI2_THRESHOLD
+    )
+except ImportError:
+    # Fallback constants if import fails
+    DRIFT_DETECTION_KS_THRESHOLD = 0.05
+    DRIFT_DETECTION_WASSERSTEIN_THRESHOLD = 0.1
+    DRIFT_DETECTION_TV_THRESHOLD = 0.2
+    DRIFT_DETECTION_JS_THRESHOLD = 0.1
+    DRIFT_DETECTION_CHI2_THRESHOLD = 0.05
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -386,18 +402,43 @@ class DriftMonitor:
         
         # Simple drift detection using mean shift
         mean_shift = abs(cur_stats['mean'] - ref_stats['mean']) / (ref_stats['std'] + 1e-8)
-        drift_detected = mean_shift > 2.0  # 2 standard deviations
+        mean_shift_drift = mean_shift > 2.0  # 2 standard deviations
         
-        # TODO: Implement more sophisticated tests (KS test, Wasserstein distance, etc.)
+        # Implement sophisticated statistical tests
+        ks_stat, ks_p_value = stats.ks_2samp(ref_clean, cur_clean)
+        ks_drift = ks_p_value < DRIFT_DETECTION_KS_THRESHOLD  # Significant if p < threshold
+        
+        # Wasserstein distance (Earth Mover's Distance)
+        wasserstein_distance = stats.wasserstein_distance(ref_clean, cur_clean)
+        # Normalize by the range for threshold comparison
+        data_range = max(ref_clean.max(), cur_clean.max()) - min(ref_clean.min(), cur_clean.min())
+        normalized_wasserstein = wasserstein_distance / (data_range + 1e-8)
+        wasserstein_drift = normalized_wasserstein > DRIFT_DETECTION_WASSERSTEIN_THRESHOLD
+        
+        # Combined drift decision using majority vote
+        drift_tests = [mean_shift_drift, ks_drift, wasserstein_drift]
+        drift_detected = sum(drift_tests) >= 2  # Majority vote
+        
+        # Combined drift score as weighted average
+        drift_score = (mean_shift * 0.3 + (1 - ks_p_value) * 0.4 + normalized_wasserstein * 0.3)
         
         return {
             'drift_detected': drift_detected,
-            'drift_score': mean_shift,
-            'method': 'mean_shift',
+            'drift_score': drift_score,
+            'method': 'combined_statistical',
             'statistics': {
                 'reference': ref_stats,
                 'current': cur_stats,
-                'mean_shift': mean_shift
+                'mean_shift': mean_shift,
+                'ks_statistic': ks_stat,
+                'ks_p_value': ks_p_value,
+                'wasserstein_distance': wasserstein_distance,
+                'normalized_wasserstein': normalized_wasserstein,
+                'individual_tests': {
+                    'mean_shift_drift': mean_shift_drift,
+                    'ks_drift': ks_drift,
+                    'wasserstein_drift': wasserstein_drift
+                }
             }
         }
     
@@ -436,22 +477,96 @@ class DriftMonitor:
         
         # Calculate Total Variation Distance
         tv_distance = 0.5 * np.sum(np.abs(ref_aligned - cur_aligned))
-        drift_detected = tv_distance > 0.2  # 20% threshold
+        tv_drift = tv_distance > DRIFT_DETECTION_TV_THRESHOLD  # Threshold from constants
         
-        # TODO: Implement chi-square test or other categorical drift tests
+        # Implement chi-square test for categorical drift
+        try:
+            # Convert distributions to counts for chi-square test
+            # Use minimum sample size for proper chi-square test
+            min_sample_size = min(len(ref_clean), len(cur_clean))
+            ref_counts = (ref_aligned * min_sample_size).round().astype(int)
+            cur_counts = (cur_aligned * min_sample_size).round().astype(int)
+            
+            # Ensure no zero counts (add 1 to avoid division by zero)
+            ref_counts = ref_counts + 1
+            cur_counts = cur_counts + 1
+            
+            # Create contingency table
+            contingency_table = np.array([ref_counts, cur_counts])
+            
+            # Perform chi-square test
+            chi2_stat, chi2_p_value, dof, expected = stats.chi2_contingency(contingency_table)
+            chi2_drift = chi2_p_value < DRIFT_DETECTION_CHI2_THRESHOLD  # Significant if p < threshold
+            
+        except (ValueError, ZeroDivisionError) as e:
+            logger.warning(f"Chi-square test failed for {feature_name}: {e}")
+            chi2_stat, chi2_p_value, chi2_drift = 0, 1, False
+        
+        # Jensen-Shannon divergence as additional test
+        try:
+            # Calculate JS divergence
+            js_div = self._jensen_shannon_divergence(ref_aligned.values, cur_aligned.values)
+            js_drift = js_div > DRIFT_DETECTION_JS_THRESHOLD  # Threshold from constants
+        except Exception as e:
+            logger.warning(f"JS divergence calculation failed for {feature_name}: {e}")
+            js_div, js_drift = 0, False
+        
+        # Combined drift decision using majority vote
+        drift_tests = [tv_drift, chi2_drift, js_drift]
+        drift_detected = sum(drift_tests) >= 2  # Majority vote
+        
+        # Combined drift score as weighted average
+        drift_score = (tv_distance * 0.4 + (1 - chi2_p_value) * 0.3 + js_div * 0.3)
         
         return {
             'drift_detected': drift_detected,
-            'drift_score': tv_distance,
-            'method': 'total_variation',
+            'drift_score': drift_score,
+            'method': 'combined_categorical',
             'statistics': {
                 'reference_distribution': ref_dist.to_dict(),
                 'current_distribution': cur_dist.to_dict(),
                 'tv_distance': tv_distance,
+                'chi2_statistic': chi2_stat,
+                'chi2_p_value': chi2_p_value,
+                'js_divergence': js_div,
+                'individual_tests': {
+                    'tv_drift': tv_drift,
+                    'chi2_drift': chi2_drift,
+                    'js_drift': js_drift
+                },
                 'new_categories': list(set(cur_dist.index) - set(ref_dist.index)),
                 'missing_categories': list(set(ref_dist.index) - set(cur_dist.index))
             }
         }
+    
+    def _jensen_shannon_divergence(self, p: np.ndarray, q: np.ndarray) -> float:
+        """
+        Calculate Jensen-Shannon divergence between two probability distributions.
+        
+        Args:
+            p: First probability distribution
+            q: Second probability distribution
+            
+        Returns:
+            JS divergence value (0 to 1, where 0 means identical distributions)
+        """
+        # Ensure arrays sum to 1
+        p = p / (np.sum(p) + 1e-8)
+        q = q / (np.sum(q) + 1e-8)
+        
+        # Calculate average distribution
+        m = 0.5 * (p + q)
+        
+        # Calculate KL divergences with small epsilon to avoid log(0)
+        eps = 1e-8
+        kl_pm = np.sum(p * np.log((p + eps) / (m + eps)))
+        kl_qm = np.sum(q * np.log((q + eps) / (m + eps)))
+        
+        # JS divergence is the average of the two KL divergences
+        js_div = 0.5 * (kl_pm + kl_qm)
+        
+        # Convert to JS distance (square root of JS divergence)
+        return np.sqrt(js_div)
 
 
 class ModelDriftMonitor:

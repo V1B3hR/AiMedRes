@@ -29,7 +29,10 @@ from collections import defaultdict, deque
 from constants import (
     DEFAULT_MONITORING_INTERVAL_SECONDS, MAX_REQUEST_TIMESTAMPS_STORED, MAX_MEMORY_HISTORY_ENTRIES,
     MAX_CPU_HISTORY_ENTRIES, THROUGHPUT_CALCULATION_WINDOW_SECONDS, DEFAULT_API_PORT,
-    DEFAULT_RATE_LIMIT, DEFAULT_MAX_CONCURRENT_REQUESTS
+    DEFAULT_RATE_LIMIT, DEFAULT_MAX_CONCURRENT_REQUESTS, MAX_TASK_LENGTH, MAX_QUERY_LENGTH,
+    MAX_KNOWLEDGE_SEARCH_RESULTS, DEFAULT_KNOWLEDGE_SEARCH_LIMIT, DEFAULT_MEMORY_LIMIT_MB,
+    VECTOR_SEARCH_BATCH_THRESHOLD, DEFAULT_NETWORK_SIZE, NODE_BATCH_PROCESSING_THRESHOLD,
+    DEFAULT_NODE_ENERGY
 )
 
 # Import security modules
@@ -257,7 +260,7 @@ class ParallelProcessingManager:
     
     def parallel_vector_search(self, query_vector: np.ndarray, document_vectors: List[np.ndarray], top_k: int = 10) -> List[Tuple[int, float]]:
         """Parallel vector similarity search"""
-        if len(document_vectors) < 100:
+        if len(document_vectors) < VECTOR_SEARCH_BATCH_THRESHOLD:
             # Use simple search for small datasets
             return self._simple_vector_search(query_vector, document_vectors, top_k)
         
@@ -295,7 +298,7 @@ class ParallelProcessingManager:
 class AdvancedCacheManager:
     """Multi-level caching with intelligent eviction"""
     
-    def __init__(self, memory_limit_mb: int = 500, redis_url: Optional[str] = None):
+    def __init__(self, memory_limit_mb: int = DEFAULT_MEMORY_LIMIT_MB, redis_url: Optional[str] = None):
         self.memory_limit_mb = memory_limit_mb
         self.memory_cache = {}
         self.cache_stats = {'hits': 0, 'misses': 0, 'evictions': 0}
@@ -403,7 +406,7 @@ class AdvancedCacheManager:
 class OptimizedAdaptiveEngine:
     """High-performance adaptive engine with all optimizations"""
     
-    def __init__(self, network_size: int = 50, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, network_size: int = DEFAULT_NETWORK_SIZE, config: Optional[Dict[str, Any]] = None):
         self.config = config or {}
         self.network_size = network_size
         
@@ -411,7 +414,7 @@ class OptimizedAdaptiveEngine:
         self.performance_monitor = PerformanceMonitor()
         self.parallel_manager = ParallelProcessingManager()
         self.cache_manager = AdvancedCacheManager(
-            memory_limit_mb=self.config.get('cache_memory_mb', 500),
+            memory_limit_mb=self.config.get('cache_memory_mb', DEFAULT_MEMORY_LIMIT_MB),
             redis_url=self.config.get('redis_url')
         )
         
@@ -482,7 +485,7 @@ class OptimizedAdaptiveEngine:
         network_state = self._get_cached_network_state()
         
         # Step 2: Parallel node processing if enabled
-        if self.batch_processing_enabled and len(self.nodes) > 10:
+        if self.batch_processing_enabled and len(self.nodes) > NODE_BATCH_PROCESSING_THRESHOLD:
             node_results = self.parallel_manager.parallel_node_processing(
                 self.nodes, 
                 lambda node: self._process_single_node(node)
@@ -527,7 +530,7 @@ class OptimizedAdaptiveEngine:
         
         for node in self.nodes:
             node_phases.append(getattr(node, 'phase', 'active'))
-            node_energies.append(getattr(node, 'energy', 10.0))
+            node_energies.append(getattr(node, 'energy', DEFAULT_NODE_ENERGY))
         
         # Fast aggregations
         phase_counts = {}
@@ -552,7 +555,7 @@ class OptimizedAdaptiveEngine:
         return {
             'node_id': getattr(node, 'node_id', 0),
             'phase': getattr(node, 'phase', 'active'),
-            'energy': getattr(node, 'energy', 10.0),
+            'energy': getattr(node, 'energy', DEFAULT_NODE_ENERGY),
             'processed': True
         }
     
@@ -701,13 +704,40 @@ class EnterpriseAPI:
         @self.app.before_request
         def before_request():
             """Enhanced security checks before each request."""
-            g.start_time = time.time()
-            g.request_id = str(uuid.uuid4())
+            # Initialize request tracking
+            self._initialize_request()
             
             # Skip auth for health check
             if request.endpoint == 'health_check':
                 return
             
+            # Perform authentication
+            auth_error = self._authenticate_request()
+            if auth_error:
+                return auth_error
+            
+            # Check rate limits
+            rate_limit_error = self._check_request_rate_limit()
+            if rate_limit_error:
+                return rate_limit_error
+            
+            # Check concurrent request limits
+            capacity_error = self._check_server_capacity()
+            if capacity_error:
+                return capacity_error
+            
+            # Validate input data
+            validation_error = self._validate_request_input()
+            if validation_error:
+                return validation_error
+        
+        def _initialize_request(self) -> None:
+            """Initialize request tracking variables."""
+            g.start_time = time.time()
+            g.request_id = str(uuid.uuid4())
+        
+        def _authenticate_request(self) -> Optional[Any]:
+            """Authenticate the request and store user info."""
             # Enhanced authentication with security monitoring
             api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
             is_valid, user_info = self.auth_manager.validate_api_key(api_key)
@@ -723,18 +753,24 @@ class EnterpriseAPI:
             
             # Store user info for request
             g.user_info = user_info
-            
+            return None
+        
+        def _check_request_rate_limit(self) -> Optional[Any]:
+            """Check rate limits for the authenticated user."""
             # Enhanced rate limiting per user
-            if not self._check_enhanced_rate_limit(user_info):
+            if not self._check_enhanced_rate_limit(g.user_info):
                 self.security_monitor.log_security_event(
                     'rate_limit_exceeded',
-                    {'user_id': user_info['user_id'], 'endpoint': request.endpoint},
+                    {'user_id': g.user_info['user_id'], 'endpoint': request.endpoint},
                     severity='warning',
-                    user_id=user_info['user_id'],
+                    user_id=g.user_info['user_id'],
                     ip_address=request.remote_addr
                 )
                 return jsonify({'error': 'Rate limit exceeded', 'request_id': g.request_id}), 429
-            
+            return None
+        
+        def _check_server_capacity(self) -> Optional[Any]:
+            """Check if server has capacity for concurrent requests."""
             # Concurrent request limiting with better resource management
             with self.request_lock:
                 max_concurrent = self.config.get('max_concurrent_requests', 10)
@@ -744,7 +780,10 @@ class EnterpriseAPI:
                         'request_id': g.request_id
                     }), 503
                 self.concurrent_requests += 1
-            
+            return None
+        
+        def _validate_request_input(self) -> Optional[Any]:
+            """Validate JSON input data if present."""
             # Input validation for JSON requests
             if request.is_json:
                 try:
@@ -756,7 +795,7 @@ class EnterpriseAPI:
                                 'input_validation_failure',
                                 {'errors': errors, 'endpoint': request.endpoint},
                                 severity='warning',
-                                user_id=user_info['user_id'],
+                                user_id=g.user_info['user_id'],
                                 ip_address=request.remote_addr
                             )
                             return jsonify({
@@ -769,6 +808,7 @@ class EnterpriseAPI:
                         'error': 'Invalid JSON data',
                         'request_id': g.request_id
                     }), 400
+            return None
         
         @self.app.after_request
         def after_request(response):
@@ -841,66 +881,89 @@ class EnterpriseAPI:
             All requests are logged for security monitoring and privacy compliance.
             """
             try:
-                data = request.get_json()
-                required_fields = ['task']
-                
-                # Enhanced input validation
-                is_valid, errors = self.input_validator.validate_json_request(data, required_fields)
-                if not is_valid:
-                    return jsonify({
-                        'error': 'Input validation failed',
-                        'details': errors,
-                        'request_id': g.request_id
-                    }), 400
-                
-                task = data['task']
-                agent_params = data.get('agent_params', {})
-                
-                # Sanitize task input
-                sanitized_task = self.input_validator.sanitize_string(task, max_length=2000)
+                # Validate and extract input data
+                sanitized_task, agent_params, validation_error = self._validate_reasoning_input()
+                if validation_error:
+                    return validation_error
                 
                 # Log data access for privacy compliance
-                self.privacy_manager.log_data_access(
-                    user_id=g.user_info['user_id'],
-                    data_type='reasoning_request',
-                    action='process',
-                    purpose='ai_reasoning',
-                    legal_basis='service_provision'
-                )
+                self._log_reasoning_access()
                 
-                # Execute reasoning with enhanced error handling
+                # Execute reasoning and create response
                 result = self.agent.generate_reasoning_tree(sanitized_task)
-                
-                # Enhanced response format
-                response = {
-                    'success': True,
-                    'task': sanitized_task,
-                    'result': result['result'],
-                    'agent': result['agent'],
-                    'processing_time': time.time() - g.start_time,
-                    'request_id': g.request_id,
-                    'user_id': g.user_info['user_id'],
-                    'security_validated': True
-                }
+                response = self._create_reasoning_response(sanitized_task, result)
                 
                 return jsonify(response)
                 
             except Exception as e:
-                # Enhanced error handling without information leakage
-                error_id = str(uuid.uuid4())
-                logging.error(f"API reasoning error [{error_id}]: {e}")
-                
-                # Log security event for investigation
-                self.security_monitor.log_security_event(
-                    'reasoning_endpoint_error',
-                    {'error_id': error_id, 'endpoint': 'reasoning'},
-                    severity='warning',
-                    user_id=g.user_info.get('user_id'),
-                    ip_address=request.remote_addr
-                )
-                
-                return jsonify({
-                }), 500
+                return self._handle_reasoning_error(e)
+        
+        def _validate_reasoning_input(self) -> Tuple[Optional[str], Optional[Dict], Optional[Any]]:
+            """Validate and sanitize reasoning endpoint input."""
+            data = request.get_json()
+            required_fields = ['task']
+            
+            # Enhanced input validation
+            is_valid, errors = self.input_validator.validate_json_request(data, required_fields)
+            if not is_valid:
+                error_response = jsonify({
+                    'error': 'Input validation failed',
+                    'details': errors,
+                    'request_id': g.request_id
+                }), 400
+                return None, None, error_response
+            
+            task = data['task']
+            agent_params = data.get('agent_params', {})
+            
+            # Sanitize task input
+            sanitized_task = self.input_validator.sanitize_string(task, max_length=MAX_TASK_LENGTH)
+            
+            return sanitized_task, agent_params, None
+        
+        def _log_reasoning_access(self) -> None:
+            """Log reasoning access for privacy compliance."""
+            self.privacy_manager.log_data_access(
+                user_id=g.user_info['user_id'],
+                data_type='reasoning_request',
+                action='process',
+                purpose='ai_reasoning',
+                legal_basis='service_provision'
+            )
+        
+        def _create_reasoning_response(self, sanitized_task: str, result: Dict) -> Dict:
+            """Create enhanced response format for reasoning endpoint."""
+            return {
+                'success': True,
+                'task': sanitized_task,
+                'result': result['result'],
+                'agent': result['agent'],
+                'processing_time': time.time() - g.start_time,
+                'request_id': g.request_id,
+                'user_id': g.user_info['user_id'],
+                'security_validated': True
+            }
+        
+        def _handle_reasoning_error(self, error: Exception) -> Any:
+            """Handle reasoning endpoint errors with security logging."""
+            error_id = str(uuid.uuid4())
+            logging.error(f"API reasoning error [{error_id}]: {error}")
+            
+            # Log security event for investigation
+            self.security_monitor.log_security_event(
+                'reasoning_endpoint_error',
+                {'error_id': error_id, 'endpoint': 'reasoning'},
+                severity='warning',
+                user_id=g.user_info.get('user_id'),
+                ip_address=request.remote_addr
+            )
+            
+            return jsonify({
+                'success': False,
+                'error': 'Reasoning processing error',
+                'error_id': error_id,
+                'request_id': g.request_id
+            }), 500
         
         @self.app.route('/api/v1/knowledge/search', methods=['POST'])
         @require_auth()
@@ -926,10 +989,10 @@ class EnterpriseAPI:
                 
                 query = data.get('query', '')
                 filters = data.get('filters', {})
-                limit = min(data.get('limit', 10), 50)  # Max 50 results
+                limit = min(data.get('limit', DEFAULT_KNOWLEDGE_SEARCH_LIMIT), MAX_KNOWLEDGE_SEARCH_RESULTS)  # Max results
                 
                 # Sanitize search query
-                sanitized_query = self.input_validator.sanitize_string(query, max_length=500)
+                sanitized_query = self.input_validator.sanitize_string(query, max_length=MAX_QUERY_LENGTH)
                 
                 # Log data access
                 self.privacy_manager.log_data_access(
@@ -975,70 +1038,105 @@ class EnterpriseAPI:
             - Retention policy enforcement
             """
             try:
-                data = request.get_json()
+                # Validate input data
+                data, validation_error = self._validate_medical_input()
+                if validation_error:
+                    return validation_error
                 
-                # Validate medical data format
-                is_valid, errors = self.input_validator.validate_medical_data(data)
-                if not is_valid:
-                    return jsonify({
-                        'error': 'Medical data validation failed',
-                        'details': errors,
-                        'request_id': g.request_id
-                    }), 400
+                # Generate unique data ID and anonymize
+                data_id, anonymized_data = self._prepare_medical_data(data)
                 
-                # Generate unique data ID for tracking
-                data_id = f"medical_{g.user_info['user_id']}_{int(time.time())}"
+                # Register for retention and log access
+                self._register_and_log_medical_data(data_id)
                 
-                # Anonymize medical data for processing
-                anonymized_data = self.data_encryption.anonymize_medical_data(data)
+                # Process the medical data
+                processing_result = self._process_medical_data(data_id, anonymized_data)
                 
-                # Register for retention tracking
-                self.privacy_manager.register_data_for_retention(data_id, 'medical_data')
-                
-                # Log medical data access
-                self.privacy_manager.log_data_access(
-                    user_id=g.user_info['user_id'],
-                    data_type='medical_data',
-                    action='process',
-                    data_id=data_id,
-                    purpose='medical_analysis',
-                    legal_basis='healthcare_provision'
-                )
-                
-                # Process medical data (placeholder for actual ML processing)
-                processing_result = {
-                    'data_id': data_id,
-                    'processed': True,
-                    'anonymized': True,
-                    'retention_registered': True
-                }
-                
-                return jsonify({
-                    'success': True,
-                    'result': processing_result,
-                    'processing_time': time.time() - g.start_time,
-                    'request_id': g.request_id,
-                    'privacy_compliant': True
-                })
+                return self._create_medical_success_response(processing_result, data_id)
                 
             except Exception as e:
-                error_id = str(uuid.uuid4())
-                logging.error(f"Medical processing error [{error_id}]: {e}")
-                
-                self.security_monitor.log_security_event(
-                    'medical_processing_error',
-                    {'error_id': error_id},
-                    severity='warning',
-                    user_id=g.user_info.get('user_id'),
-                    ip_address=request.remote_addr
-                )
-                
-                return jsonify({
-                    'success': False,
-                    'error': 'Medical data processing error',
-                    'error_id': error_id,
+                return self._handle_medical_processing_error(e)
+        
+        def _validate_medical_input(self) -> Tuple[Optional[Dict], Optional[Any]]:
+            """Validate medical data input."""
+            data = request.get_json()
+            
+            # Validate medical data format
+            is_valid, errors = self.input_validator.validate_medical_data(data)
+            if not is_valid:
+                error_response = jsonify({
+                    'error': 'Medical data validation failed',
+                    'details': errors,
                     'request_id': g.request_id
-                }), 500
+                }), 400
+                return None, error_response
+            
+            return data, None
+        
+        def _prepare_medical_data(self, data: Dict) -> Tuple[str, Dict]:
+            """Generate data ID and anonymize medical data."""
+            # Generate unique data ID for tracking
+            data_id = f"medical_{g.user_info['user_id']}_{int(time.time())}"
+            
+            # Anonymize medical data for processing
+            anonymized_data = self.data_encryption.anonymize_medical_data(data)
+            
+            return data_id, anonymized_data
+        
+        def _register_and_log_medical_data(self, data_id: str) -> None:
+            """Register data for retention and log access."""
+            # Register for retention tracking
+            self.privacy_manager.register_data_for_retention(data_id, 'medical_data')
+            
+            # Log medical data access
+            self.privacy_manager.log_data_access(
+                user_id=g.user_info['user_id'],
+                data_type='medical_data',
+                action='process',
+                data_id=data_id,
+                purpose='medical_analysis',
+                legal_basis='healthcare_provision'
+            )
+        
+        def _process_medical_data(self, data_id: str, anonymized_data: Dict) -> Dict:
+            """Process the anonymized medical data."""
+            # Process medical data (placeholder for actual ML processing)
+            return {
+                'data_id': data_id,
+                'processed': True,
+                'anonymized': True,
+                'retention_registered': True
+            }
+        
+        def _create_medical_success_response(self, processing_result: Dict, data_id: str) -> Any:
+            """Create successful response for medical data processing."""
+            return jsonify({
+                'success': True,
+                'result': processing_result,
+                'processing_time': time.time() - g.start_time,
+                'request_id': g.request_id,
+                'privacy_compliant': True
+            })
+        
+        def _handle_medical_processing_error(self, error: Exception) -> Any:
+            """Handle and log medical data processing errors."""
+            error_id = str(uuid.uuid4())
+            logging.error(f"Medical processing error [{error_id}]: {error}")
+            
+            self.security_monitor.log_security_event(
+                'medical_processing_error',
+                {'error_id': error_id},
+                severity='warning',
+                user_id=g.user_info.get('user_id'),
+                ip_address=request.remote_addr
+            )
+            
+            return jsonify({
+                'success': False,
+                'error': 'Medical data processing error',
+                'error_id': error_id,
+                'request_id': g.request_id
+            }), 500
         
         @self.app.route('/api/v1/metrics', methods=['GET'])
         @require_admin
