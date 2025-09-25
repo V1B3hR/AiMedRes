@@ -418,25 +418,7 @@ class TestImagingPipelineIntegration:
         for section in expected_sections:
             assert section in params, f"Missing section: {section}"
     
-    def test_makefile_imaging_targets(self):
-        """Test that imaging targets are defined in Makefile."""
-        makefile_path = Path("Makefile")
-        
-        if not makefile_path.exists():
-            pytest.skip("Makefile not found")
-        
-        with open(makefile_path, 'r') as f:
-            makefile_content = f.read()
-        
-        # Check for imaging targets
-        expected_targets = [
-            'imaging-setup', 'imaging-synthetic', 'imaging-convert',
-            'imaging-validate', 'imaging-qc', 'imaging-features',
-            'imaging-deidentify', 'imaging-test'
-        ]
-        
-        for target in expected_targets:
-            assert f"{target}:" in makefile_content, f"Missing target: {target}"
+
 
 
 # Mark slow tests

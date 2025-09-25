@@ -30,8 +30,7 @@ Ultimately, the project seeks to find new ways to fight brain diseases and contr
 - **Clinical Decision Support**
   - Risk stratification and scenario analysis
   - Explainable AI dashboard
-- **MLOps Pipeline**
-  - Automated retraining, model monitoring, and CI/CD integration
+
 - **EHR Integration**
   - FHIR/HL7 compatibility, real-time data flows
 - **Future Goals**
@@ -79,15 +78,6 @@ from files.training.alzheimer_training_system import load_alzheimer_data
 - Regulatory compliance (HIPAA/FDA), audit trail and adverse event reporting
 - Clinical performance: <100ms response, 92%+ sensitivity, 87%+ specificity
 
-### Production-Ready MLOps Pipeline
-- Automated model retraining with performance/data-driven triggers
-- A/B test infrastructure with statistical analysis and user segmentation
-- Real-time monitoring, drift and quality alerts, REST API dashboard
-- CI/CD workflow with weekly scheduled retraining and manual triggers
-- Business impact: 90% reduction in manual management, sub-minute alerts
 
-For details, see PRs:  
-- [#45: Implement Production-Ready MLOps Pipeline](https://github.com/V1B3hR/duetmind_adaptive/pull/45)
-- [#46: Implement Clinical Decision Support System](https://github.com/V1B3hR/duetmind_adaptive/pull/46)
 
 ...
