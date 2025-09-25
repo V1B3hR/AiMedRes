@@ -1,15 +1,11 @@
 # DuetMind Adaptive - Core Dependencies
 
-# AI and Machine Learning
-numpy>=1.21.0
-pandas>=1.3.0
-scikit-learn>=1.0.0
-scipy>=1.7.0
-joblib>=1.0.0
-threadpoolctl>=3.1.0
-watchdog>=2.1.0
-seaborn>=0.11.0
-matplotlib>=3.4.0
+# Data and ML Infrastructure
+SQLAlchemy>=2.0.20
+psycopg2-binary>=2.9.9
+pgvector>=0.2.5
+sentence-transformers>=3.0.0
+PyYAML>=6.0.1
 
 # Other Machine Learning/AI
 pyjwt>=2.0.0
