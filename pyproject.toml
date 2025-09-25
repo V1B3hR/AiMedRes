@@ -128,41 +128,8 @@ mlops = [
     "boto3>=1.28.0",
 ]
 
-# All optional dependencies combined (explicit union of dev, viz, imaging, mlops)
-all = [
-    # dev
-    "pytest>=6.2.0",
-    "pytest-cov>=2.12.0", 
-    "pytest-mock>=3.6.0",
-    "black>=21.0.0",
-    "flake8>=3.9.0",
-    "isort>=5.9.0",
-    "mypy>=0.910",
-    "pre-commit>=2.15.0",
-    # viz
-    "plotly>=5.0.0",
-    "streamlit>=1.0.0",
-    # imaging
-    "nibabel>=5.0.0",
-    "pydicom>=2.4.0",
-    "simpleitk>=2.3.0",
-    "nilearn>=0.10.0",
-    "nipype>=1.8.0",
-    "bids-validator>=1.13.0",
-    "pybids>=0.15.0",
-    "pyradiomics>=3.1.0",
-    "scikit-image>=0.21.0",
-    "opencv-python>=4.8.0",
-    "pillow>=10.0.0",
-    # mlops
-    "dvc>=2.0.0",
-    "pandera>=0.15.0",
-    "alembic>=1.8.0",
-    "minio>=7.0.0",
-    "python-dotenv>=0.19.0",
-    "evidently>=0.2.0",
-    "boto3>=1.28.0",
-]
+# All optional dependencies combined (reference to dev, viz, imaging, mlops)
+all = ["duetmind-adaptive[dev,viz,imaging,mlops]"]
 
 [project.scripts]
 duetmind = "duetmind_adaptive.main:main"
