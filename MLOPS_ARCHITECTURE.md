@@ -14,8 +14,6 @@ The MLOps architecture is designed in three incremental phases, each building up
 - **Schema Validation**: Pandera-based data contracts and quality checks
 - **Experiment Tracking**: MLflow integration for model versioning and metrics
 - **Feature Hashing**: Deterministic schema consistency verification
-- **DVC Integration**: Data versioning and pipeline orchestration
-- **Developer Tools**: Makefile commands and pre-commit hooks
 
 ### Phase 2: Centralized Metadata & Infrastructure ✅
 **Status**: Implemented

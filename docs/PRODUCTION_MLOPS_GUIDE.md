@@ -97,7 +97,6 @@ monitor = create_production_monitor(
 - Performance-based triggers (accuracy degradation, drift, error rates)
 - Time-based triggers (maximum days without retraining)
 - Configurable constraints and approval workflows
-- Integration with CI/CD pipelines
 - Comprehensive audit trail
 
 ### Quick Start
@@ -135,9 +134,9 @@ history = trigger.get_trigger_history(days=7)
 print(f"Retraining events in last 7 days: {len(history)}")
 ```
 
-### Integration with CI/CD
+### Custom Retraining Integration
 
-The retraining trigger can automatically execute your CI/CD pipeline:
+The retraining trigger can automatically execute custom retraining scripts:
 
 ```python
 # In your retraining configuration
@@ -145,8 +144,8 @@ def custom_retrain_handler(trigger_type, reason):
     """Custom handler for retraining events."""
     import subprocess
     
-    # Trigger your preferred CI/CD system
-    # Example: Webhook, API call, or local script execution
+    # Execute your retraining script
+    # Example: Custom script execution
     result = subprocess.run([
         "python", "scripts/trigger_retraining.py",
         "--trigger-type", trigger_type,

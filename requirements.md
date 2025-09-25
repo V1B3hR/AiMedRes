@@ -8,7 +8,6 @@ Sources used:
 - requirements-dev.txt
 - .env.example
 - mlops/config/.env.example
-- dvc.yaml
 
 ## 1) Supported Platforms
 
@@ -72,7 +71,6 @@ You can use either the extras in setup.py or the pinned tools in requirements-de
   - flake8 >= 3.9.0
   - isort >= 5.9.0
   - mypy >= 0.910
-  - pre-commit >= 2.15.0
 
 - pyproject.toml also defines newer “dev” optional deps:
   - pytest >= 8.2.0
@@ -104,11 +102,10 @@ Recommendation:
     git lfs install
     git lfs pull
     ```
-- Optional MLOps stack (as referenced by dvc.yaml and mlops/config/.env.example):
-  - DVC (Data Version Control)
+- Optional MLOps stack (as referenced by mlops/config/.env.example):
   - MLflow
   - S3-compatible storage (e.g., MinIO) for artifacts
-  - These are optional but required to run the full DVC/MLflow pipelines.
+  - These are optional but required to run the full MLflow pipelines.
 
 ## 7) Environment Configuration
 
@@ -177,20 +174,14 @@ DATABASE_URL=postgresql://<user>:<password>@<host>:<port>/duetmind
 
 3) Ensure network access and credentials match your environment.
 
-## 10) Data and Pipelines (DVC/MLflow)
+## 10) Data and MLflow Tracking
 
-- DVC pipeline stages defined in `dvc.yaml` (e.g., ingest_imaging, preprocess_imaging, extract_features, build_features, train_model).
-- Some outputs are marked with `cache: false`; ensure storage is configured as desired.
-- If using S3/MinIO for artifacts/data:
-  - Set `DVC_REMOTE_URL` and `DVC_REMOTE_ENDPOINT_URL` in `mlops/config/.env`.
-  - Set MLflow env variables for tracking and artifact storage.
+- MLflow is used for experiment tracking and model versioning
+- Set MLflow environment variables for tracking and artifact storage
 
 Basic commands:
 ```bash
 # Configure environment variables (see Section 7)
-# Then run pipeline
-dvc repro
-
 # MLflow UI (optional)
 mlflow ui
 ```
