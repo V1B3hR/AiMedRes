@@ -1,0 +1,65 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: duetmind-api
+  labels:
+    app: duetmind-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: duetmind-api
+  template:
+    metadata:
+      labels:
+        app: duetmind-api
+    spec:
+      containers:
+      - name: duetmind-api
+        image: duetmind-api:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-service:6379/0"
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: duetmind-secrets
+              key: api-key
+        - name: ADMIN_KEY
+          valueFrom:
+            secretKeyRef:
+              name: duetmind-secrets
+              key: admin-key
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: knowledge-base
+          mountPath: /app/knowledge_base
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: knowledge-base
+        persistentVolumeClaim:
+          claimName: knowledge-base-pvc
+      - name: logs
+        emptyDir: {}
