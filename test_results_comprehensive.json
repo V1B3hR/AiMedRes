@@ -1,0 +1,167 @@
+{
+  "performance_tests": {
+    "target_response_time_ms": 100,
+    "test_scenarios": [
+      {
+        "priority": "EMERGENCY",
+        "task": "Emergency cardiac assessment",
+        "avg_response_time_ms": 0.19328594207763672,
+        "max_response_time_ms": 0.5166530609130859,
+        "target_ms": 20,
+        "target_achieved": true,
+        "samples": 10
+      },
+      {
+        "priority": "CRITICAL",
+        "task": "Critical patient diagnosis",
+        "avg_response_time_ms": 0.16045570373535156,
+        "max_response_time_ms": 0.24390220642089844,
+        "target_ms": 50,
+        "target_achieved": true,
+        "samples": 10
+      },
+      {
+        "priority": "URGENT",
+        "task": "Urgent symptom analysis",
+        "avg_response_time_ms": 0.15785694122314453,
+        "max_response_time_ms": 0.209808349609375,
+        "target_ms": 100,
+        "target_achieved": true,
+        "samples": 10
+      },
+      {
+        "priority": "ROUTINE",
+        "task": "Routine health check",
+        "avg_response_time_ms": 0.16198158264160156,
+        "max_response_time_ms": 0.20194053649902344,
+        "target_ms": 200,
+        "target_achieved": true,
+        "samples": 10
+      }
+    ],
+    "avg_response_time_ms": 0.1683950424194336,
+    "target_achieved": true,
+    "optimization_effectiveness": {
+      "caching": {
+        "first_call_ms": 0.23984909057617188,
+        "cached_call_ms": 0.15473365783691406,
+        "speedup_factor": 1.5500770416024654,
+        "cache_effective": false
+      },
+      "fast_mode": {
+        "enabled": true,
+        "frequent_ops_cache_size": 0,
+        "cache_validity_seconds": 0.5
+      }
+    },
+    "engine_performance_report": {
+      "performance_metrics": {
+        "request_count": 0,
+        "average_response_time": 0.0,
+        "throughput_per_second": 0.0,
+        "current_memory_mb": 0.0,
+        "peak_memory_mb": 0.0,
+        "cpu_usage_avg": 0.0,
+        "error_rate": 0.0,
+        "uptime_seconds": 0.0,
+        "concurrent_requests": 0
+      },
+      "cache_stats": {
+        "hit_rate": 0.8809523809523809,
+        "total_hits": 37,
+        "total_misses": 5,
+        "total_evictions": 0,
+        "memory_usage_mb": 0.0020294189453125,
+        "memory_limit_mb": 500,
+        "items_count": 5,
+        "redis_available": false
+      },
+      "gpu_acceleration": false,
+      "parallel_workers": 4,
+      "optimization_settings": {
+        "batch_processing": true,
+        "async_processing": true,
+        "cache_ttl": 3600
+      }
+    }
+  },
+  "bias_detection_tests": {
+    "bias_detection_enabled": true,
+    "statistical_methods_tested": [
+      "demographic",
+      "confidence",
+      "temporal",
+      "outcome"
+    ],
+    "detected_biases": [
+      {
+        "type": "demographic",
+        "test": "age_disparity",
+        "p_value": 8.879152739375095e-16,
+        "significant": true
+      },
+      {
+        "type": "confidence",
+        "test": "LOW_bias",
+        "p_value": 0.00020944460091065764,
+        "significant": true
+      },
+      {
+        "type": "confidence",
+        "test": "HIGH_bias",
+        "p_value": 6.016499705108203e-07,
+        "significant": true
+      },
+      {
+        "type": "confidence",
+        "test": "MINIMAL_bias",
+        "p_value": 0.009901483869693806,
+        "significant": true
+      }
+    ],
+    "recommendations_generated": 12
+  },
+  "adversarial_tests": {
+    "total_tests": 6,
+    "passed_tests": 3,
+    "robustness_score": 0.5,
+    "vulnerabilities_found": [
+      "BOUNDARY_OVERCONFIDENCE",
+      "BOUNDARY_OVERCONFIDENCE",
+      "DEMOGRAPHIC_BIAS"
+    ],
+    "test_categories": {
+      "input_perturbation": {
+        "passed": 2,
+        "failed": 0
+      },
+      "boundary_condition": {
+        "passed": 0,
+        "failed": 2
+      },
+      "demographic_fairness": {
+        "passed": 1,
+        "failed": 1
+      }
+    }
+  },
+  "data_integrity_tests": {
+    "anonymization_methods_tested": [],
+    "privacy_scores": [],
+    "hipaa_compliance_verified": false,
+    "gdpr_compliance_verified": true,
+    "retention_management_tested": true
+  },
+  "summary": {
+    "timestamp": 1759003611.791625,
+    "overall_success": false,
+    "performance_target_met": true,
+    "bias_detection_operational": true,
+    "adversarial_robustness_score": 0.5,
+    "data_privacy_score": 0.0,
+    "recommendations": [
+      "Bias detected: 4 significant bias patterns found",
+      "Adversarial robustness below threshold: 0.50 < 0.8"
+    ]
+  }
+}
