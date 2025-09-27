@@ -4,33 +4,51 @@ Training module for duetmind_adaptive
 Integrates machine learning training with the existing neural network framework
 """
 
-import numpy as np
-import pandas as pd
+# Essential imports only - heavy libraries imported on demand
 import logging
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from typing import Dict, Any, List, Tuple, Optional
-import pickle
 import os
 from pathlib import Path
-import random
 
-# Import existing components
-from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
-# from files.dataset.create_test_data import create_test_alzheimer_data  # Removed redundant files
-from scripts.data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
-
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DuetMindTraining")
 
+def _lazy_import_sklearn():
+    """Lazy import of sklearn modules to improve startup time"""
+    global np, pd, RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
+    global LogisticRegression, SVC, MLPClassifier, LabelEncoder, StandardScaler
+    global train_test_split, cross_val_score, GridSearchCV, accuracy_score
+    global classification_report, confusion_matrix, pickle, random
+    
+    import numpy as np
+    import pandas as pd
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.svm import SVC
+    from sklearn.neural_network import MLPClassifier
+    from sklearn.preprocessing import LabelEncoder, StandardScaler
+    from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+    from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+    import pickle
+    import random
 
-def create_test_alzheimer_data(n_samples: int = 100) -> pd.DataFrame:
+def _lazy_import_framework():
+    """Lazy import of framework components to improve startup time"""
+    global UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
+    global create_data_loader, DataLoader, CSVDataLoader, MockDataLoader
+    
+    from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
+    from scripts.data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
+
+# Import existing components - using lazy loading
+_framework_loaded = False
+
+
+def create_test_alzheimer_data(n_samples: int = 100):
     """Create synthetic test data for Alzheimer's classification"""
+    _lazy_import_sklearn()  # Import numpy and pandas when needed
+    
     np.random.seed(42)
     
     # Create synthetic features matching expected schema
@@ -81,6 +99,7 @@ class TrainingConfig:
     
     def set_random_seeds(self):
         """Set all random seeds for deterministic behavior"""
+        _lazy_import_sklearn()  # Import numpy/random when needed
         np.random.seed(self.random_seed)
         random.seed(self.random_seed)
 
@@ -89,21 +108,24 @@ class AlzheimerTrainer:
     """Training system for Alzheimer disease prediction integrated with duetmind_adaptive agents"""
     
     def __init__(self, 
-                 data_loader: Optional[DataLoader] = None,
+                 data_loader: Optional['DataLoader'] = None,
                  config: Optional[TrainingConfig] = None):
         self.data_loader = data_loader
         self.config = config or TrainingConfig()
         self.model = None
-        self.label_encoder = LabelEncoder()
-        self.feature_scaler = StandardScaler()
+        self.label_encoder = None  # Initialize lazily
+        self.feature_scaler = None  # Initialize lazily
         self.feature_columns = []
         self.target_column = 'diagnosis'
         
         # Set random seeds for deterministic behavior
         self.config.set_random_seeds()
         
-    def load_data(self) -> pd.DataFrame:
+    def load_data(self):
         """Load Alzheimer dataset using data loader or create test data"""
+        _lazy_import_sklearn()  # Import pandas when needed
+        _lazy_import_framework()  # Import data loader classes when needed
+        
         if self.data_loader:
             logger.info("Loading data using provided data loader")
             df = self.data_loader.load_data()
@@ -114,8 +136,16 @@ class AlzheimerTrainer:
         logger.info(f"Loaded dataset with {len(df)} rows and {len(df.columns)} columns")
         return df
     
-    def preprocess_data(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    def preprocess_data(self, df):
         """Preprocess the data for training"""
+        _lazy_import_sklearn()  # Import numpy, pandas, sklearn when needed
+        
+        # Initialize encoders lazily
+        if self.label_encoder is None:
+            self.label_encoder = LabelEncoder()
+        if self.feature_scaler is None:
+            self.feature_scaler = StandardScaler()
+        
         # Encode categorical variables
         df_processed = df.copy()
         
@@ -149,8 +179,10 @@ class AlzheimerTrainer:
         
         return X_scaled, y_encoded
     
-    def train_model(self, X: np.ndarray, y: np.ndarray) -> Dict[str, Any]:
+    def train_model(self, X, y):
         """Train the Alzheimer prediction model"""
+        _lazy_import_sklearn()  # Import sklearn when needed
+        
         # Ensure deterministic behavior
         self.config.set_random_seeds()
         
@@ -288,35 +320,46 @@ class AlzheimerTrainer:
         }
 
 
-class TrainingIntegratedAgent(UnifiedAdaptiveAgent):
-    """Enhanced agent that can use trained models for reasoning"""
+def create_training_integrated_agent(name: str, style: Dict[str, float], alive_node, resource_room, trainer: AlzheimerTrainer):
+    """Factory function to create TrainingIntegratedAgent with lazy imports"""
+    _lazy_import_framework()  # Import UnifiedAdaptiveAgent when needed
     
-    def __init__(self, name: str, style: Dict[str, float], alive_node: AliveLoopNode, 
-                 resource_room: ResourceRoom, trainer: AlzheimerTrainer):
-        super().__init__(name, style, alive_node, resource_room)
-        self.trainer = trainer
+    class TrainingIntegratedAgent(UnifiedAdaptiveAgent):
+        """Enhanced agent that can use trained models for reasoning"""
         
-    def enhanced_reason_with_ml(self, task: str, patient_features: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Enhanced reasoning that incorporates ML predictions"""
-        # Get base reasoning from parent
-        base_result = self.reason(task)
-        
-        # If we have patient features and a trained model, add ML prediction
-        if patient_features and self.trainer.model is not None:
-            try:
-                ml_prediction = self.trainer.predict(patient_features)
-                base_result['ml_prediction'] = ml_prediction
-                base_result['confidence'] = min(1.0, base_result.get('confidence', 0.5) + 0.2)
-                self.log_event(f"ML prediction: {ml_prediction}")
-            except Exception as e:
-                logger.warning(f"ML prediction failed: {e}")
-                base_result['ml_prediction'] = "Unknown"
-        
-        return base_result
+        def __init__(self, name: str, style: Dict[str, float], alive_node, resource_room, trainer: AlzheimerTrainer):
+            super().__init__(name, style, alive_node, resource_room)
+            self.trainer = trainer
+            
+        def enhanced_reason_with_ml(self, task: str, patient_features: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+            """Enhanced reasoning that incorporates ML predictions"""
+            # Get base reasoning from parent
+            base_result = self.reason(task)
+            
+            # If we have patient features and a trained model, add ML prediction
+            if patient_features and self.trainer.model is not None:
+                try:
+                    ml_prediction = self.trainer.predict(patient_features)
+                    base_result['ml_prediction'] = ml_prediction
+                    base_result['confidence'] = min(1.0, base_result.get('confidence', 0.5) + 0.2)
+                    self.log_event(f"ML prediction: {ml_prediction}")
+                except Exception as e:
+                    logger.warning(f"ML prediction failed: {e}")
+                    base_result['ml_prediction'] = "Unknown"
+            
+            return base_result
+    
+    return TrainingIntegratedAgent(name, style, alive_node, resource_room, trainer)
+
+# For backward compatibility
+TrainingIntegratedAgent = None  # Will be created via factory function
 
 
 def run_training_simulation():
     """Run a complete training simulation with agents"""
+    _lazy_import_framework()  # Import framework components when needed
+    _lazy_import_sklearn()    # Import sklearn when needed
+    
     logger.info("=== DuetMind Adaptive Training Simulation ===")
     
     # Initialize trainer
