@@ -2,13 +2,14 @@
 
 This file provides a clear, actionable sequence for moving each toward ✅ Done status.
 
----
+
 
  Phase 1. Foundation & Stabilization
 
  1. Import Path Migration (95%)
 
 Steps to Green:
+
   a. Finish updating all deprecated `training.*` imports to `files.training.*`
   b. Finalize and run automated migration script across codebase
   c. Review and update documentation/examples for new paths
@@ -16,27 +17,33 @@ Steps to Green:
   e. Validate with zero deprecation warnings
 
  2. Core Engine Stabilization (85%)
+
 Steps to Green:
+
   a. Optimize model/engine for <100ms clinical response (profile, tune, test)
   b. Improve memory handling for large datasets (batching, streaming)
   c. Refine neural network architecture (structure, hyperparameters)
   d. Final system integration test for monitoring, alerting, and performance
 
- 3. Training Pipeline Enhancement (60%)
+ 4. Training Pipeline Enhancement (60%)
+
 Steps to Green:
+
   a. Complete Alzheimer's data preprocessing optimization
   b. Finish model validation framework (unit/integration tests)
   c. Implement cross-validation protocols and automate evaluation
   d. Document new pipeline and add usage examples
 
- 4. Documentation Overhaul
+ 6. Documentation Overhaul
+
 Steps to Green:
+
   a. Audit current docs for out-of-date info
   b. Update for new import paths, pipeline changes
   c. Add new usage and deployment examples
   d. Final review and publish
 
----
+
  Phase 2. Clinical Integration & Validation
 
  1. EHR Connectivity (🟧 IN PROGRESS)
