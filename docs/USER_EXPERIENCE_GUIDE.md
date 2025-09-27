@@ -34,7 +34,7 @@ print(f"Risk assessment: {result['risk_score']}")
 
 ### 1. Alzheimer's Disease Prediction
 ```python
-from training.train_alzheimers import AlzheimerTrainer
+from files.training.train_alzheimers import AlzheimerTrainer
 import pandas as pd
 
 # Load patient data
@@ -57,7 +57,7 @@ print("Alzheimer's risk predictions:", predictions)
 
 ### 2. Medical Image Analysis
 ```python
-from training.train_brain_mri import BrainMRITrainer
+from files.training.train_brain_mri import BrainMRITrainer
 
 # Initialize MRI analysis
 mri_trainer = BrainMRITrainer()
@@ -70,7 +70,7 @@ print(f"Confidence: {result['confidence']:.2f}")
 
 ### 3. Cardiovascular Risk Assessment
 ```python
-from training.train_cardiovascular import CardiovascularTrainer
+from files.training.train_cardiovascular import CardiovascularTrainer
 
 # Load cardiovascular data
 cv_trainer = CardiovascularTrainer()
@@ -307,7 +307,7 @@ Dashboard features:
 
 ### Custom Medical Models
 ```python
-from training.custom_pipeline import CustomPipelineBuilder
+from files.training.custom_pipeline import CustomPipelineBuilder
 
 # Build custom medical analysis pipeline
 builder = CustomPipelineBuilder()
@@ -347,7 +347,7 @@ import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 # Use distributed training
-from training.orchestration import RayTrainer
+from files.training.orchestration import RayTrainer
 trainer = RayTrainer(num_workers=4)
 ```
 

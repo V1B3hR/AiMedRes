@@ -26,7 +26,7 @@ The Automation & Scalability system implements four core components:
 
 **Usage Example**:
 ```python
-from src.duetmind_adaptive.training.automl import create_automl_optimizer
+from src.duetmind_adaptive.files.training.automl import create_automl_optimizer
 
 optimizer = create_automl_optimizer(
     objective_metric='roc_auc',
@@ -58,7 +58,7 @@ print(f"Best algorithm: {results['best_algorithm']}")
 
 **Usage Example**:
 ```python
-from src.duetmind_adaptive.training.custom_pipeline import (
+from src.duetmind_adaptive.files.training.custom_pipeline import (
     create_pipeline_builder, PipelineConfig, PreprocessingConfig, ModelConfig
 )
 
@@ -96,7 +96,7 @@ pipeline = builder.build_complete_pipeline(X)
 
 **Usage Example**:
 ```python
-from src.duetmind_adaptive.training.orchestration import (
+from src.duetmind_adaptive.files.training.orchestration import (
     create_orchestrator, ResourceRequirement
 )
 
@@ -133,7 +133,7 @@ results = orchestrator.run_workflow()
 
 **Usage Example**:
 ```python
-from src.duetmind_adaptive.training.enhanced_drift_monitoring import (
+from src.duetmind_adaptive.files.training.enhanced_drift_monitoring import (
     create_enhanced_drift_monitor, AlertConfig, ResponseConfig
 )
 
@@ -226,7 +226,7 @@ data = pd.DataFrame({
 })
 
 # 2. Setup automation system
-from src.duetmind_adaptive.training.automation_system import setup_complete_system
+from src.duetmind_adaptive.files.training.automation_system import setup_complete_system
 
 baseline_metrics = {'accuracy': 0.85, 'roc_auc': 0.88}
 system = setup_complete_system(data.drop('target', axis=1), baseline_metrics)
@@ -314,8 +314,8 @@ evaluation:
 
 ```python
 # Integrate with existing training
-from training.train_alzheimers import AlzheimerTrainingPipeline
-from src.duetmind_adaptive.training.automation_system import create_automation_system
+from files.training.train_alzheimers import AlzheimerTrainingPipeline
+from src.duetmind_adaptive.files.training.automation_system import create_automation_system
 
 # Setup automation
 system = create_automation_system()
@@ -338,7 +338,7 @@ results = system.run_workflow(workflow_id)
 ```python
 # Integrate with existing MLOps components
 from mlops.monitoring.production_monitor import create_production_monitor
-from src.duetmind_adaptive.training.enhanced_drift_monitoring import create_enhanced_drift_monitor
+from src.duetmind_adaptive.files.training.enhanced_drift_monitoring import create_enhanced_drift_monitor
 
 # Enhanced monitoring setup
 enhanced_monitor = create_enhanced_drift_monitor(

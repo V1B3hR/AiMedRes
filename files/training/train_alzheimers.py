@@ -14,20 +14,53 @@ Features:
 - Model and preprocessing pipeline persistence
 """
 
+# Essential imports only - heavy libraries imported on demand
 import os
 import sys
 import logging
 import warnings
-import pickle
-import json
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
-import numpy as np
-import pandas as pd
 from datetime import datetime
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings('ignore')
+
+def _lazy_import_ml():
+    """Lazy import of ML libraries to improve startup time"""
+    global np, pd, pickle, json
+    global train_test_split, cross_val_score, StratifiedKFold
+    global accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    global classification_report, confusion_matrix
+    global LogisticRegression, RandomForestClassifier, GradientBoostingClassifier, SVC
+    global LabelEncoder, StandardScaler, SimpleImputer
+    global MLPClassifier
+    global kagglehub, requests
+    
+    import numpy as np
+    import pandas as pd
+    import pickle
+    import json
+    
+    from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+    from sklearn.metrics import classification_report, confusion_matrix
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.svm import SVC
+    from sklearn.preprocessing import LabelEncoder, StandardScaler
+    from sklearn.impute import SimpleImputer
+    from sklearn.neural_network import MLPClassifier
+    
+    try:
+        import kagglehub
+    except ImportError:
+        kagglehub = None
+        
+    try:
+        import requests
+    except ImportError:
+        requests = None
 
 # ML Libraries
 from sklearn.model_selection import StratifiedKFold, cross_validate
