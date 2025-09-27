@@ -4,17 +4,27 @@ Enhanced Model Validation Module
 Provides comprehensive model validation and performance assessment with cross-validation
 """
 
-import numpy as np
-import pandas as pd
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_auc_score, precision_recall_curve
-from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve
-from typing import Dict, Any, List, Tuple, Optional
+# Essential imports only - ML libraries loaded lazily
 import time
 import logging
+from typing import Dict, Any, List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
-def validate_performance(model, X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, Any]:
+def _lazy_import_validation():
+    """Lazy import of validation libraries for better startup performance"""
+    global np, pd, accuracy_score, classification_report, confusion_matrix
+    global roc_auc_score, precision_recall_curve, cross_val_score
+    global StratifiedKFold, learning_curve, f1_score, precision_score, recall_score
+    
+    import numpy as np
+    import pandas as pd
+    from sklearn.metrics import (accuracy_score, classification_report, confusion_matrix, 
+                                roc_auc_score, precision_recall_curve, f1_score, 
+                                precision_score, recall_score)
+    from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve
+
+def validate_performance(model, X_test, y_test) -> Dict[str, Any]:
     """
     Enhanced model performance validation with comprehensive metrics
     
@@ -26,6 +36,8 @@ def validate_performance(model, X_test: pd.DataFrame, y_test: pd.Series) -> Dict
     Returns:
         Dictionary containing comprehensive validation metrics
     """
+    _lazy_import_validation()  # Import sklearn when needed
+    
     start_time = time.time()
     
     try:
@@ -48,6 +60,7 @@ def validate_performance(model, X_test: pd.DataFrame, y_test: pd.Series) -> Dict
             try:
                 auc_score = roc_auc_score(y_test, y_pred_proba[:, 1])
             except Exception:
+                pass
                 pass
         
         # Performance benchmarks from roadmap.md
@@ -76,7 +89,7 @@ def validate_performance(model, X_test: pd.DataFrame, y_test: pd.Series) -> Dict
             'timestamp': time.time()
         }
 
-def cross_validate_model(model, X: pd.DataFrame, y: pd.Series, cv_folds: int = 5) -> Dict[str, Any]:
+def cross_validate_model(model, X, y, cv_folds: int = 5) -> Dict[str, Any]:
     """
     Enhanced cross-validation with learning curves and performance analysis
     
@@ -89,6 +102,8 @@ def cross_validate_model(model, X: pd.DataFrame, y: pd.Series, cv_folds: int = 5
     Returns:
         Enhanced cross-validation results
     """
+    _lazy_import_validation()  # Import sklearn when needed
+    
     start_time = time.time()
     
     try:
@@ -109,9 +124,13 @@ def cross_validate_model(model, X: pd.DataFrame, y: pd.Series, cv_folds: int = 5
         cv_results = {
             'cv_scores': cv_scores.tolist(),
             'cv_mean': float(cv_scores.mean()),
+            'mean_score': float(cv_scores.mean()),  # For compatibility
             'cv_std': float(cv_scores.std()),
+            'std_score': float(cv_scores.std()),    # For compatibility
             'cv_min': float(cv_scores.min()),
             'cv_max': float(cv_scores.max()),
+            'execution_time': time.time() - start_time,
+            'performance_target_met': (time.time() - start_time) < 0.1,  # 100ms target
             'learning_curve': {
                 'train_sizes': train_sizes.tolist(),
                 'train_scores_mean': train_scores.mean(axis=1).tolist(),
@@ -175,7 +194,7 @@ def generate_validation_report(model, X_train, y_train, X_test, y_test) -> Dict[
     logger.info(f"Validation report completed - Accuracy: {test_performance.get('accuracy', 0):.3f}")
     return report
 
-def alzheimer_specific_validation(model, X_test: pd.DataFrame, y_test: pd.Series) -> Dict[str, Any]:
+def alzheimer_specific_validation(model, X_test, y_test) -> Dict[str, Any]:
     """
     Alzheimer's disease specific validation metrics
     Focuses on early detection performance
@@ -211,9 +230,156 @@ def alzheimer_specific_validation(model, X_test: pd.DataFrame, y_test: pd.Series
             'error': str(e)
         }
 
+def validate_alzheimer_pipeline(pipeline_func, data_path: Optional[str] = None, 
+                               performance_target_ms: float = 100.0) -> Dict[str, Any]:
+    """
+    Validate the complete Alzheimer's training pipeline with performance benchmarks
+    
+    Args:
+        pipeline_func: Training pipeline function to validate
+        data_path: Path to data file (optional)
+        performance_target_ms: Performance target in milliseconds
+        
+    Returns:
+        Comprehensive validation results
+    """
+    _lazy_import_validation()  # Import dependencies when needed
+    
+    start_time = time.time()
+    logger.info("Starting Alzheimer's pipeline validation...")
+    
+    try:
+        # Run the pipeline
+        if data_path:
+            results = pipeline_func(data_path=data_path)
+        else:
+            results = pipeline_func()
+        
+        total_time = time.time() - start_time
+        performance_met = total_time * 1000 < performance_target_ms
+        
+        validation_summary = {
+            'pipeline_validation': {
+                'status': 'success',
+                'total_execution_time': total_time,
+                'total_execution_time_ms': total_time * 1000,
+                'performance_target_ms': performance_target_ms,
+                'performance_target_met': performance_met,
+                'pipeline_results': results
+            },
+            'performance_analysis': {
+                'speed_grade': 'A' if total_time < 0.05 else 'B' if total_time < 0.1 else 'C',
+                'meets_clinical_requirements': performance_met,
+                'optimization_needed': not performance_met
+            }
+        }
+        
+        logger.info(f"Pipeline validation {'✓' if performance_met else '✗'}: {total_time*1000:.1f}ms (target: {performance_target_ms}ms)")
+        return validation_summary
+        
+    except Exception as e:
+        logger.error(f"Pipeline validation failed: {e}")
+        return {
+            'pipeline_validation': {
+                'status': 'failed',
+                'error': str(e),
+                'execution_time': time.time() - start_time,
+                'performance_target_met': False
+            }
+        }
+
+
+def run_comprehensive_validation_suite() -> Dict[str, Any]:
+    """
+    Run comprehensive validation suite for all training components
+    """
+    logger.info("🧪 Starting Comprehensive Validation Suite")
+    
+    suite_results = {
+        'validation_suite': {
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'performance_target_ms': 100.0,
+            'tests_run': [],
+            'tests_passed': 0,
+            'tests_failed': 0
+        }
+    }
+    
+    # Test 1: Import Performance
+    logger.info("Testing import performance...")
+    start_time = time.time()
+    try:
+        from .training import AlzheimerTrainer
+        import_time = (time.time() - start_time) * 1000
+        test_passed = import_time < 50  # 50ms import target
+        
+        suite_results['import_test'] = {
+            'time_ms': import_time,
+            'passed': test_passed,
+            'target_ms': 50
+        }
+        
+        suite_results['validation_suite']['tests_run'].append('import_performance')
+        if test_passed:
+            suite_results['validation_suite']['tests_passed'] += 1
+        else:
+            suite_results['validation_suite']['tests_failed'] += 1
+            
+    except Exception as e:
+        suite_results['import_test'] = {'error': str(e), 'passed': False}
+        suite_results['validation_suite']['tests_failed'] += 1
+    
+    # Test 2: Basic Training Performance  
+    logger.info("Testing basic training performance...")
+    try:
+        from .training import AlzheimerTrainer
+        trainer = AlzheimerTrainer()
+        
+        start_time = time.time()
+        data = trainer.load_data()
+        load_time = (time.time() - start_time) * 1000
+        
+        start_time = time.time()
+        X, y = trainer.preprocess_data(data)
+        preprocess_time = (time.time() - start_time) * 1000
+        
+        total_time = load_time + preprocess_time
+        test_passed = total_time < 100  # 100ms total target
+        
+        suite_results['training_performance_test'] = {
+            'load_time_ms': load_time,
+            'preprocess_time_ms': preprocess_time,
+            'total_time_ms': total_time,
+            'passed': test_passed,
+            'target_ms': 100
+        }
+        
+        suite_results['validation_suite']['tests_run'].append('training_performance')
+        if test_passed:
+            suite_results['validation_suite']['tests_passed'] += 1
+        else:
+            suite_results['validation_suite']['tests_failed'] += 1
+            
+    except Exception as e:
+        suite_results['training_performance_test'] = {'error': str(e), 'passed': False}
+        suite_results['validation_suite']['tests_failed'] += 1
+    
+    # Calculate overall results
+    total_tests = suite_results['validation_suite']['tests_passed'] + suite_results['validation_suite']['tests_failed']
+    suite_results['validation_suite']['success_rate'] = (
+        suite_results['validation_suite']['tests_passed'] / max(total_tests, 1) * 100
+    )
+    
+    logger.info(f"🎯 Validation Suite Complete: {suite_results['validation_suite']['tests_passed']}/{total_tests} tests passed")
+    
+    return suite_results
+
+
 __all__ = [
     'validate_performance', 
     'cross_validate_model', 
     'generate_validation_report',
-    'alzheimer_specific_validation'
+    'alzheimer_specific_validation',
+    'validate_alzheimer_pipeline',
+    'run_comprehensive_validation_suite'
 ]
