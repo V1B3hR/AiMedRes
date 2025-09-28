@@ -1,16 +1,16 @@
-# 🧠 DuetMind Adaptive
+# 🧠 AiMedRes
 
-> **AdaptiveNN provides the "brain" - dynamic, learning, biological**  
-> **DuetMind provides the "mind" - reasoning, safety, social interaction**  
-> **Together they create truly adaptive, safe, multi-agent systems with emergent intelligence**
+> **Advanced AI Medical Research Assistant**  
+> **Combining adaptive neural networks with intelligent healthcare analytics**  
+> **Creating intelligent, safe, multi-agent systems for medical research**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Development Status](https://img.shields.io/badge/status-active%20development-green.svg)](https://github.com/V1B3hR/duetmind_adaptive)
+[![Development Status](https://img.shields.io/badge/status-active%20development-green.svg)](https://github.com/V1B3hR/aimedres)
 
 ## 🎯 Mission
 
-DuetMind Adaptive accelerates research and development of AI-driven solutions for **neurodegenerative and mental health conditions**. By combining adaptive neural architectures with agent-based collaboration, we're building tools that enhance understanding of disease mechanisms and improve clinical decision support.
+AiMedRes accelerates research and development of AI-driven solutions for **neurodegenerative and mental health conditions**. By combining adaptive neural architectures with agent-based collaboration, we're building tools that enhance understanding of disease mechanisms and improve clinical decision support.
 
 ### 🏥 Primary Focus
 Fighting brain diseases through AI innovation:
@@ -43,7 +43,7 @@ Fighting brain diseases through AI innovation:
 ## 📁 Project Structure
 
 ```
-duetmind_adaptive/
+aimedres/
 ├── files/
 │   ├── training/
 │   │   ├── alzheimer_training_system.py    # Core training pipeline
@@ -73,23 +73,24 @@ duetmind_adaptive/
 └── requirements.txt                        # Dependencies
 ```
 
-## 🚨 Important: Recent Reorganization
+## 🚨 Important: Project Renamed to AiMedRes
 
-**The project structure has been updated!** All training modules moved to maintain better organization:
+**The project has been renamed to AiMedRes!** Import paths updated to use the new package structure:
 
 ### ❌ Old Import Paths (Will Fail)
 ```python
-from training.alzheimer_training_system import load_alzheimer_data
-from training.model_validation import validate_performance
-```
-
-### ✅ New Import Paths (Correct)
-```python
+from duetmind_adaptive.training import alzheimer_training_system
 from files.training.alzheimer_training_system import load_alzheimer_data
 from files.training.model_validation import validate_performance
 ```
 
-If you encounter `ModuleNotFoundError`, update your imports to use the new `files.training.*` structure.
+### ✅ New Import Paths (Correct)
+```python
+from aimedres.training.alzheimer_training_system import load_alzheimer_data
+from aimedres.training.model_validation import validate_performance
+```
+
+If you encounter `ModuleNotFoundError`, update your imports to use the new `aimedres.*` structure.
 
 ## 🛠️ Installation & Setup
 
@@ -108,14 +109,14 @@ cd duetmind_adaptive
 pip install -r requirements.txt
 
 # Verify installation
-python -c "from files.training.alzheimer_training_system import load_alzheimer_data; print('Installation successful!')"
+python -c "from aimedres.training.alzheimer_training_system import load_alzheimer_data; print('Installation successful!')"
 ```
 
 ## 💡 Usage Examples
 
 ### Basic Medical Data Analysis
 ```python
-from files.training.alzheimer_training_system import load_alzheimer_data, train_model
+from aimedres.training.alzheimer_training_system import load_alzheimer_data, train_model
 from files.agents.medical_reasoning import ClinicalDecisionAgent
 
 # Load medical dataset
