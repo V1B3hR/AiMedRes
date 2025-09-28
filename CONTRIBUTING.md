@@ -1,4 +1,4 @@
-# Contributing to DuetMind Adaptive
+# Contributing to AiMedRes
 
 Welcome to the DuetMind Adaptive project! We're excited to have you contribute to advancing AI in healthcare and medical research. This guide will help you get started with contributing to our open-source medical AI platform.
 
@@ -7,8 +7,8 @@ Welcome to the DuetMind Adaptive project! We're excited to have you contribute t
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/yourusername/duetmind_adaptive.git
-   cd duetmind_adaptive
+   git clone https://github.com/yourusername/aimedres.git
+   cd aimedres
    ```
 3. **Create a virtual environment**:
    ```bash

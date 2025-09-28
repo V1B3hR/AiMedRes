@@ -1,4 +1,4 @@
-# DuetMind Adaptive – Verified Development Status (September 2025, latest update)
+# AiMedRes – Verified Development Status (September 2025, latest update)
 
 ### Emoji Legend
 - ✅ Green: Job done
@@ -37,8 +37,8 @@
 - 🟧 Research publication/dissemination (preprints in preparation)
 
 ## Advanced Features & Research
-- 🟦 Python version inconsistency (pyproject.toml vs setup.py) – needs alignment
-- 🟦 Package name standardization (`duetmind-adaptive` vs `duetmind_adaptive`) – needs alignment
+- 🟦 Python version inconsistency (pyproject.toml vs setup.py) – needs alignment  
+- ✅ Package name standardized to `aimedres` – completed
 - 🟧 Expanded disease coverage (Parkinson's, ALS, etc.) – initial modeling planned
 - ✅ Advanced memory consolidation algorithms – implemented, tested, documented
 - 🟧 3D brain visualization tools – prototype in development
@@ -56,6 +56,6 @@
 
 _Last updated: September 28, 2025_
 
-**For details, see [README.md](https://github.com/V1B3hR/duetmind_adaptive/blob/main/README.md) and [roadmap.md](https://github.com/V1B3hR/duetmind_adaptive/blob/main/roadmap.md).**
+**For details, see [README.md](https://github.com/V1B3hR/aimedres/blob/main/README.md) and [roadmap.md](https://github.com/V1B3hR/aimedres/blob/main/roadmap.md).**
 
-_Recent progress includes comprehensive performance optimization and enhanced security features for medical AI systems. For latest commits and details, see: [Commits](https://github.com/V1B3hR/duetmind_adaptive/commits/main)_
+_Recent progress includes comprehensive performance optimization and enhanced security features for medical AI systems. For latest commits and details, see: [Commits](https://github.com/V1B3hR/aimedres/commits/main)_

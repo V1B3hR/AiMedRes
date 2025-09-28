@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Usage Examples for Comprehensive Training and Simulation System
-Demonstrates various ways to use the duetmind_adaptive system
+Demonstrates various ways to use the aimedres system
 """
 
 import sys
@@ -260,7 +260,7 @@ def example_6_custom_scenarios():
 def main():
     """Run all examples"""
     print("COMPREHENSIVE TRAINING AND SIMULATION EXAMPLES")
-    print("duetmind_adaptive - Medical AI Agent System")
+    print("aimedres - Medical AI Agent System")
     print(f"Execution started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     examples = [

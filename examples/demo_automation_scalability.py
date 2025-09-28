@@ -80,7 +80,7 @@ def demonstrate_automl_integration():
     print("="*80)
     
     try:
-        from src.duetmind_adaptive.training.automl import create_automl_optimizer
+        from src.aimedres.training.automl import create_automl_optimizer
         
         print("Creating sample dataset...")
         data = create_sample_dataset(500)  # Smaller for demo
@@ -143,7 +143,7 @@ def demonstrate_pipeline_customization():
     print("="*80)
     
     try:
-        from src.duetmind_adaptive.training.custom_pipeline import (
+        from src.aimedres.training.custom_pipeline import (
             create_pipeline_builder, PipelineRegistry, PipelineConfig,
             PreprocessingConfig, ModelConfig
         )
@@ -233,7 +233,7 @@ def demonstrate_scalable_orchestration():
     print("="*80)
     
     try:
-        from src.duetmind_adaptive.training.orchestration import (
+        from src.aimedres.training.orchestration import (
             create_orchestrator, create_workflow_builder, ResourceRequirement
         )
         
@@ -348,7 +348,7 @@ def demonstrate_enhanced_drift_monitoring():
     print("="*80)
     
     try:
-        from src.duetmind_adaptive.training.enhanced_drift_monitoring import (
+        from src.aimedres.training.enhanced_drift_monitoring import (
             create_enhanced_drift_monitor, create_default_alert_config,
             create_default_response_config, DriftSeverity, ResponseAction
         )
@@ -446,7 +446,7 @@ def demonstrate_integrated_system():
     print("="*80)
     
     try:
-        from src.duetmind_adaptive.training.automation_system import (
+        from src.aimedres.training.automation_system import (
             create_automation_system, setup_complete_system
         )
         

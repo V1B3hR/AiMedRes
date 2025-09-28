@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for duetmind_adaptive tests
+Pytest configuration and fixtures for aimedres tests
 """
 import pytest
 import numpy as np

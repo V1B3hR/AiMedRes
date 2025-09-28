@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DuetMind Adaptive - Setup Configuration
+AiMedRes - Setup Configuration
 """
 
 from setuptools import setup, find_packages
@@ -28,13 +28,13 @@ def read_requirements():
 
 setup(
     name="aimedres",
-    version="1.0.0",
-    description="Hybrid AI framework combining Adaptive Neural Networks with DuetMind cognitive agents",
+    version="0.1.0",
+    description="AiMedRes - AI Medical Research Assistant for advanced healthcare analytics",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
-    author="DuetMind Team",
-    author_email="team@duetmind.ai",
-    url="https://github.com/V1B3hR/duetmind_adaptive",
+    author="AiMedRes Team",
+    author_email="team@aimedres.ai",
+    url="https://github.com/V1B3hR/aimedres",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
@@ -66,9 +66,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'aimedres=duetmind_adaptive.main:main',
-            'aimedres-train=duetmind_adaptive.training.cli:train_cli',
-            'aimedres-api=duetmind_adaptive.api.server:run_server',
+            'aimedres=aimedres.main:main',
+            'aimedres-train=aimedres.training.cli:train_cli',
+            'aimedres-api=aimedres.api.server:run_server',
         ],
     },
     python_requires=">=3.10",
