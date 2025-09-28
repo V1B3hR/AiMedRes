@@ -185,7 +185,7 @@ def cleanup_demo_files():
 
 def main():
     """Run complete Production & Impact demonstration"""
-    print("🎭 DuetMind Adaptive - Production & Impact Demo")
+    print("🎭 AiMedRes - Production & Impact Demo")
     print("=" * 60)
     print("Demonstrating the completed Production & Impact features")
     

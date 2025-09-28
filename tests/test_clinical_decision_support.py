@@ -281,7 +281,7 @@ class TestEHRIntegration:
     @pytest.fixture
     def sample_hl7_message(self):
         """Sample HL7 message for testing"""
-        return """MSH|^~\\&|EHR|HOSPITAL|DuetMind|DUETMIND|20241201120000||ADT^A01|12345|P|2.5
+        return """MSH|^~\\&|EHR|HOSPITAL|AiMedRes|AIMEDRES|20241201120000||ADT^A01|12345|P|2.5
 PID|||PATIENT_001||Doe^Jane||19450515|F||||||||||
 OBX|1|NM|MMSE^Mini Mental State Exam^L||22|score||||F
 OBX|2|NM|CDR^Clinical Dementia Rating^L||0.5|rating||||F"""
@@ -356,7 +356,7 @@ OBX|2|NM|CDR^Clinical Dementia Rating^L||0.5|rating||||F"""
         assert isinstance(ack_message, str)
         assert 'MSH' in ack_message
         assert 'MSA' in ack_message
-        assert 'DuetMind' in ack_message
+        assert 'AiMedRes' in ack_message
     
     def test_data_ingestion_json(self, ehr_connector, sample_patient_data):
         """Test JSON data ingestion"""

@@ -1,8 +1,8 @@
-# DuetMind Adaptive - Refactoring Summary
+# AiMedRes - Refactoring Summary
 
 ## Overview
 
-This document summarizes the refactoring improvements made to the DuetMind Adaptive codebase following established refactoring principles to improve code readability, maintainability, and reduce complexity.
+This document summarizes the refactoring improvements made to the AiMedRes codebase following established refactoring principles to improve code readability, maintainability, and reduce complexity.
 
 ## Refactoring Objectives Met
 
@@ -140,7 +140,7 @@ This document summarizes the refactoring improvements made to the DuetMind Adapt
 
 ## Conclusion
 
-The refactoring successfully improved the DuetMind Adaptive codebase by:
+The refactoring successfully improved the AiMedRes codebase by:
 - Reducing complexity through function decomposition
 - Improving maintainability with better organization
 - Enhancing readability with clearer structure

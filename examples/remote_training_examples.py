@@ -2,7 +2,7 @@
 """
 Remote Secure Training Usage Examples
 
-This script demonstrates how to use the DuetMind remote secure training system
+This script demonstrates how to use the AiMedRes remote secure training system
 in various scenarios including programmatic API usage and CLI examples.
 """
 
@@ -349,27 +349,27 @@ CMD ["python3", "secure_api_server.py", "--host", "0.0.0.0"]'''
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: duetmind-training-api
+  name: aimedres-training-api
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: duetmind-training-api
+      app: aimedres-training-api
   template:
     metadata:
       labels:
-        app: duetmind-training-api
+        app: aimedres-training-api
     spec:
       containers:
       - name: api
-        image: duetmind/training-api:latest
+        image: aimedres/training-api:latest
         ports:
         - containerPort: 5000
         env:
         - name: DUETMIND_MASTER_KEY
           valueFrom:
             secretKeyRef:
-              name: duetmind-secrets
+              name: aimedres-secrets
               key: master-key'''
     
     print(k8s_config)
@@ -392,7 +392,7 @@ spec:
 
 def main():
     """Run all usage examples"""
-    print("🧠 DuetMind Remote Secure Training - Usage Examples")
+    print("🧠 AiMedRes Remote Secure Training - Usage Examples")
     print("=" * 80)
     print("This script demonstrates various ways to use the remote training system.")
     print("All examples run locally without requiring a running API server.")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Data Validation and Quality Monitoring for duetmind_adaptive
+Data Validation and Quality Monitoring for aimedres
 Comprehensive data quality checks and monitoring for training and simulation
 """
 

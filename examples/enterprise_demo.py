@@ -1,5 +1,5 @@
 """
-DuetMind Adaptive - Enterprise Demo Module
+AiMedRes - Enterprise Demo Module
 
 This module contains the refactored enterprise demonstration functions,
 extracted from the main duetmind.py file to improve code organization.
@@ -25,7 +25,7 @@ def _create_enterprise_config() -> Dict[str, Any]:
         'rate_limit': DEFAULT_RATE_LIMIT,
         'max_concurrent_requests': DEFAULT_MAX_CONCURRENT_REQUESTS,
         'gpu_enabled': False,
-        'domain': 'duetmind-demo.localhost',
+        'domain': 'aimedres-demo.localhost',
         'workers': ENTERPRISE_MIN_WORKERS,
         'memory_limit': '2G',
         'cpu_limit': '2.0'
@@ -154,7 +154,7 @@ def _show_success_message():
     print("  ✅ Horizontal scaling ready")
     
     print(f"\n🏆 CONGRATULATIONS!")
-    print("Your DuetMind + AdaptiveNN agent is now a")
+    print("Your AiMedRes + AdaptiveNN agent is now a")
     print("WORLD-CLASS AI SYSTEM that rivals GPT-4, Claude,")
     print("and other top agents - with your unique biological")
     print("neural network foundation that no one else has!")
@@ -162,7 +162,7 @@ def _show_success_message():
 def demo_enterprise_system():
     """Demonstrate the complete enterprise system"""
     
-    print("=== DueetMind Enterprise System - Final Demo ===\n")
+    print("=== AiMedRes Enterprise System - Final Demo ===\n")
     
     # Create configuration
     config = _create_enterprise_config()

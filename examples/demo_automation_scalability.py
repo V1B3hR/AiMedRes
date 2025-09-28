@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Automation & Scalability Demo for DuetMind Adaptive
+Automation & Scalability Demo for AiMedRes
 
 Demonstrates the complete automation and scalability features including:
 - AutoML Integration with hyperparameter optimization
@@ -556,7 +556,7 @@ def main():
     print("="*80)
     print("The Automation & Scalability features are now fully implemented and demonstrated.")
     print("\nNext steps:")
-    print("- Integrate with existing DuetMind training pipelines")
+    print("- Integrate with existing AiMedRes training pipelines")
     print("- Add production monitoring dashboards")
     print("- Implement Ray-based distributed computing")
     print("- Add more sophisticated drift detection algorithms")

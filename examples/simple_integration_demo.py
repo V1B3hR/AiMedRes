@@ -2,7 +2,7 @@
 """
 Simple Integration Demo: Advanced Safety Monitoring with Existing Systems
 
-Shows how the new safety monitoring integrates with existing DuetMind components
+Shows how the new safety monitoring integrates with existing AiMedRes components
 without complex dependencies.
 """
 

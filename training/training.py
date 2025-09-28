@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Training module for duetmind_adaptive
+Training module for aimedres
 Integrates machine learning training with the existing neural network framework
 """
 
@@ -86,7 +86,7 @@ class TrainingConfig:
 
 
 class AlzheimerTrainer:
-    """Training system for Alzheimer disease prediction integrated with duetmind_adaptive agents"""
+    """Training system for Alzheimer disease prediction integrated with aimedres agents"""
     
     def __init__(self, 
                  data_loader: Optional[DataLoader] = None,

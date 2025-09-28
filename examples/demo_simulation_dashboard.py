@@ -278,7 +278,7 @@ def demo_data_contract():
 
 def main():
     """Run the complete simulation dashboard demo"""
-    print("🎯 DuetMind Simulation Dashboard Demo")
+    print("🎯 AiMedRes Simulation Dashboard Demo")
     print("=" * 50)
     print()
     

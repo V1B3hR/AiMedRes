@@ -1,6 +1,6 @@
 # Contributing to AiMedRes
 
-Welcome to the DuetMind Adaptive project! We're excited to have you contribute to advancing AI in healthcare and medical research. This guide will help you get started with contributing to our open-source medical AI platform.
+Welcome to the AiMedRes project! We're excited to have you contribute to advancing AI in healthcare and medical research. This guide will help you get started with contributing to our open-source medical AI platform.
 
 ## 🚀 Quick Start
 
@@ -268,8 +268,8 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ## 📄 License
 
-By contributing to DuetMind Adaptive, you agree that your contributions will be licensed under the same license as the project. See [LICENSE](LICENSE) file for details.
+By contributing to AiMedRes, you agree that your contributions will be licensed under the same license as the project. See [LICENSE](LICENSE) file for details.
 
 ---
 
-Thank you for contributing to DuetMind Adaptive! Together, we're building the future of AI-powered healthcare. 🏥✨
+Thank you for contributing to AiMedRes! Together, we're building the future of AI-powered healthcare. 🏥✨

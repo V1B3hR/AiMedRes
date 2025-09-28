@@ -1,4 +1,4 @@
-# DuetMind Adaptive Test Suite
+# AiMedRes Test Suite
 
 This directory contains a comprehensive, structured test suite for the duetmind_adaptive project using pytest.
 

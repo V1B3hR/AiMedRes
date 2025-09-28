@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Web-Based Simulation Dashboard for DuetMind Adaptive
+Web-Based Simulation Dashboard for AiMedRes
 
 A comprehensive system for clinical scenario simulation that includes:
 - Scenario Builder: Compose patient profiles + timeline events
@@ -780,7 +780,7 @@ class MetricsCollector:
 
 
 # FastAPI Application
-app = FastAPI(title="DuetMind Simulation Dashboard", version="1.0.0")
+app = FastAPI(title="AiMedRes Simulation Dashboard", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -923,7 +923,7 @@ def get_dashboard_html():
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DuetMind Simulation Dashboard</title>
+    <title>AiMedRes Simulation Dashboard</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .header { background: #2c3e50; color: white; padding: 20px; margin: -20px -20px 20px -20px; }
@@ -945,7 +945,7 @@ def get_dashboard_html():
 </head>
 <body>
     <div class="header">
-        <h1>🎯 DuetMind Simulation Dashboard</h1>
+        <h1>🎯 AiMedRes Simulation Dashboard</h1>
         <p>Web-Based Clinical Scenario Simulation Platform</p>
     </div>
 
@@ -1257,7 +1257,7 @@ def get_dashboard_html():
             // Refresh metrics every 10 seconds
             setInterval(loadMetrics, 10000);
             
-            console.log('DuetMind Simulation Dashboard initialized');
+            console.log('AiMedRes Simulation Dashboard initialized');
         }
 
         // Start when page loads
@@ -1277,5 +1277,5 @@ if __name__ == "__main__":
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
-    logger.info("Starting DuetMind Simulation Dashboard")
+    logger.info("Starting AiMedRes Simulation Dashboard")
     uvicorn.run(app, host="0.0.0.0", port=8000)
