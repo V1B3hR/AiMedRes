@@ -1,5 +1,5 @@
 """
-Data loader abstractions for duetmind_adaptive
+Data loader abstractions for aimedres
 Provides mockable interfaces for different data sources
 """
 from abc import ABC, abstractmethod

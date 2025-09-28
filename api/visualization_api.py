@@ -1,5 +1,5 @@
 """
-Enhanced Visualization API for DuetMind Adaptive Safety and Memory Monitoring.
+Enhanced Visualization API for AiMedRes Safety and Memory Monitoring.
 
 Provides REST endpoints for:
 - Enhanced safety monitoring dashboard data
@@ -679,7 +679,7 @@ DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DuetMind Adaptive Monitoring Dashboard</title>
+    <title>AiMedRes Monitoring Dashboard</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
         .header { background: #2c3e50; color: white; padding: 20px; margin: -20px -20px 20px -20px; }
@@ -696,7 +696,7 @@ DASHBOARD_HTML = """
 </head>
 <body>
     <div class="header">
-        <h1>🧠 DuetMind Adaptive Monitoring Dashboard</h1>
+        <h1>🧠 AiMedRes Monitoring Dashboard</h1>
         <p>Real-time safety, security, and performance monitoring</p>
     </div>
     

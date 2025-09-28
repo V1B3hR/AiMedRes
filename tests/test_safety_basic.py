@@ -294,7 +294,7 @@ class TestVisualizationAPIBasic:
         response = client.get('/')
         
         assert response.status_code == 200
-        assert b'DuetMind Adaptive Monitoring Dashboard' in response.data
+        assert b'AiMedRes Monitoring Dashboard' in response.data
     
     def test_safety_summary_no_monitor(self):
         """Test safety summary endpoint when monitor not initialized."""

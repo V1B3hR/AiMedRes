@@ -26,7 +26,7 @@ from typing import Dict, List, Any
 # Add src to path to import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
-from duetmind_adaptive.training.structured_alz_trainer import StructuredAlzTrainer
+from aimedres.training.structured_alz_trainer import StructuredAlzTrainer
 
 # Configure logging
 logging.basicConfig(
@@ -53,7 +53,7 @@ Examples:
   # Custom configuration and seeds
   python scripts/train_alzheimers_structured.py \\
     --data-path data/alzheimer_dataset.csv \\
-    --config src/duetmind_adaptive/training/configs/structured_alz_ensemble.yaml \\
+    --config src/aimedres/training/configs/structured_alz_ensemble.yaml \\
     --override-seeds 42 1337 2025 \\
     --epochs 100 \\
     --batch-size 32
@@ -70,7 +70,7 @@ Examples:
     # Configuration
     parser.add_argument(
         '--config', 
-        default='src/duetmind_adaptive/training/configs/structured_alz_baseline.yaml',
+        default='src/aimedres/training/configs/structured_alz_baseline.yaml',
         help='Path to configuration YAML file (default: baseline config)'
     )
     

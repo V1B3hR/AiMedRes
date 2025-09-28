@@ -1,5 +1,5 @@
 """
-DuetMind Adaptive - Utility Functions
+AiMedRes - Utility Functions
 
 This module contains common utility functions extracted from larger modules
 to improve code reusability and maintainability.

@@ -23,4 +23,4 @@ This directory contains demonstration scripts and usage examples:
 ## Remote Training
 - `remote_training_examples.py` - Remote training examples
 
-These scripts demonstrate various aspects of the DuetMind Adaptive system and can be used as starting points for your own implementations.
+These scripts demonstrate various aspects of the AiMedRes system and can be used as starting points for your own implementations.

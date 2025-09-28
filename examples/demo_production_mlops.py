@@ -531,7 +531,7 @@ def demonstrate_integration():
 
 def main():
     """Run complete production MLOps demonstration."""
-    print("🚀 DuetMind Adaptive - Production MLOps Pipeline Demonstration")
+    print("🚀 AiMedRes - Production MLOps Pipeline Demonstration")
     print("=" * 80)
     print("This demo showcases the complete production-ready MLOps pipeline with:")
     print("• Real-time monitoring and alerting")

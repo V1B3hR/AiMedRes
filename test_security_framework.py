@@ -3,7 +3,7 @@
 Security Framework Integration Test
 
 Demonstrates the complete medical-grade security framework implemented
-for DuetMind Adaptive system with HIPAA compliance features.
+for AiMedRes system with HIPAA compliance features.
 """
 
 import sys
@@ -25,7 +25,7 @@ from datetime import datetime, timezone
 def test_comprehensive_security_framework():
     """Test the complete integrated security framework."""
     
-    print("🛡️  DuetMind Adaptive - Medical-Grade Security Framework Test")
+    print("🛡️  AiMedRes - Medical-Grade Security Framework Test")
     print("=" * 70)
     
     # 1. Test Patient Data Encryption
@@ -116,7 +116,7 @@ def test_comprehensive_security_framework():
     try:
         sso_result = sso.initiate_sso_login(
             provider='epic',
-            redirect_uri='https://duetmind.example.com/auth/callback'
+            redirect_uri='https://aimedres.example.com/auth/callback'
         )
         
         print(f"✅ Healthcare SSO integration ready")

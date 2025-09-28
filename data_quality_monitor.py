@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Data Validation and Quality Monitoring for duetmind_adaptive
+Data Validation and Quality Monitoring for aimedres
 Comprehensive data quality checks and monitoring for training and simulation
 """
 
@@ -393,7 +393,7 @@ Ready for Training: {'Yes' if report['overall_score'] >= 0.7 else 'No - cleaning
 
 def validate_training_data():
     """Standalone function to validate training data"""
-    from files.training.alzheimer_training_system import load_alzheimer_data
+    from aimedres.training.alzheimer_training_system import load_alzheimer_data
     
     logger.info("Loading dataset for quality validation...")
     df = load_alzheimer_data(file_path="alzheimer.csv")

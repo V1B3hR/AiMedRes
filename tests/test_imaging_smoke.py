@@ -1,5 +1,5 @@
 """
-Smoke tests for DuetMind Adaptive Medical Imaging Pipeline
+Smoke tests for AiMedRes Medical Imaging Pipeline
 
 Basic functionality tests to ensure imaging components can be imported
 and instantiated without errors.

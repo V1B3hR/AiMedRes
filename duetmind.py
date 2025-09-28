@@ -710,7 +710,7 @@ class OptimizedAdaptiveEngine:
 # Enterprise REST API
 class EnterpriseAPI:
     """
-    Production-ready REST API for DuetMind agent with enterprise security.
+    Production-ready REST API for AiMedRes agent with enterprise security.
     
     Security Features:
     - Secure authentication and authorization
@@ -800,7 +800,7 @@ class EnterpriseAPI:
             "optimization_level": "enterprise"
         }
         
-        # Would create with your DuetMindAgent class
+        # Would create with your AiMedResAgent class
         class MockAgent:
             def __init__(self, engine, style):
                 self.engine = engine
@@ -1567,7 +1567,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:{config.get('port', 8080)}", "--workers", "{
 version: '3.8'
 
 services:
-  duetmind-api:
+  aimedres-api:
     build: .
     ports:
       - "{config.get('port', 8080)}:{config.get('port', 8080)}"
@@ -1611,7 +1611,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
       - ./ssl:/etc/nginx/ssl
     depends_on:
-      - duetmind-api
+      - aimedres-api
     restart: unless-stopped
 
   prometheus:
@@ -1675,11 +1675,11 @@ class ObservabilitySystem:
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler('duetmind.log'),
+                logging.FileHandler('aimedres.log'),
                 logging.StreamHandler()
             ]
         )
-        return logging.getLogger('duetmind')
+        return logging.getLogger('aimedres')
     
     def _setup_alerting(self):
         """Setup alerting thresholds"""
@@ -1809,8 +1809,8 @@ events {{
 }}
 
 http {{
-    upstream duetmind_backend {{
-        server duetmind-api:{self.config.get('port', 8080)};
+    upstream aimedres_backend {{
+        server aimedres-api:{self.config.get('port', 8080)};
         keepalive 32;
     }}
     
@@ -1829,7 +1829,7 @@ http {{
         location / {{
             limit_req zone=api burst=20 nodelay;
             
-            proxy_pass http://duetmind_backend;
+            proxy_pass http://aimedres_backend;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -1847,7 +1847,7 @@ http {{
         }}
         
         location /health {{
-            proxy_pass http://duetmind_backend/health;
+            proxy_pass http://aimedres_backend/health;
             access_log off;
         }}
     }}
@@ -1860,22 +1860,22 @@ http {{
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: duetmind-api
+  name: aimedres-api
   labels:
-    app: duetmind-api
+    app: aimedres-api
 spec:
   replicas: {self.config.get('k8s_replicas', 3)}
   selector:
     matchLabels:
-      app: duetmind-api
+      app: aimedres-api
   template:
     metadata:
       labels:
-        app: duetmind-api
+        app: aimedres-api
     spec:
       containers:
-      - name: duetmind-api
-        image: duetmind-api:latest
+      - name: aimedres-api
+        image: aimedres-api:latest
         ports:
         - containerPort: {self.config.get('port', 8080)}
         env:
@@ -1929,12 +1929,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: duetmind-api-service
+  name: aimedres-api-service
   labels:
-    app: duetmind-api
+    app: aimedres-api
 spec:
   selector:
-    app: duetmind-api
+    app: aimedres-api
   ports:
   - protocol: TCP
     port: {self.config.get('port', 8080)}
@@ -1948,7 +1948,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: duetmind-api-ingress
+  name: aimedres-api-ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/rate-limit: "{self.config.get('k8s_rate_limit', '100')}"
@@ -1966,7 +1966,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: duetmind-api-service
+            name: aimedres-api-service
             port:
               number: {self.config.get('port', 8080)}
 """
@@ -1978,9 +1978,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'duetmind-api'
+  - job_name: 'aimedres-api'
     static_configs:
-      - targets: ['duetmind-api:8080']
+      - targets: ['aimedres-api:8080']
     metrics_path: '/api/v1/metrics'
     scrape_interval: 30s
 """

@@ -24,7 +24,7 @@ import json
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
 
-from duetmind_adaptive.training.structured_alz_trainer import StructuredAlzTrainer
+from aimedres.training.structured_alz_trainer import StructuredAlzTrainer
 
 
 @pytest.fixture

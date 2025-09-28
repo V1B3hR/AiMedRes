@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Secure API routes for DuetMind Adaptive System
+Secure API routes for AiMedRes System
 
 Provides comprehensive API endpoints for:
 - Remote secure model training
@@ -20,7 +20,7 @@ from datetime import datetime
 from security.auth import require_auth, require_admin
 from remote_training_manager import RemoteTrainingManager
 
-logger = logging.getLogger('duetmind.api')
+logger = logging.getLogger('aimedres.api')
 
 # Create Blueprint for API routes
 api_bp = Blueprint('api', __name__, url_prefix='/api/v1')

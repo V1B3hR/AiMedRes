@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Data Loaders for DuetMind Adaptive
+Data Loaders for AiMedRes
 Base classes and utilities for loading various types of medical data
 """
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Integration Example: DuetMind Adaptive Advanced Safety Monitoring
+Integration Example: AiMedRes Advanced Safety Monitoring
 
 Shows how to integrate the new safety monitoring features with existing
-DuetMind Adaptive components for a complete medical AI safety system.
+AiMedRes components for a complete medical AI safety system.
 """
 
 import sys
