@@ -710,7 +710,7 @@ class OptimizedAdaptiveEngine:
 # Enterprise REST API
 class EnterpriseAPI:
     """
-    Production-ready REST API for DuetMind agent with enterprise security.
+    Production-ready REST API for AiMedRes agent with enterprise security.
     
     Security Features:
     - Secure authentication and authorization
@@ -800,7 +800,7 @@ class EnterpriseAPI:
             "optimization_level": "enterprise"
         }
         
-        # Would create with your DuetMindAgent class
+        # Would create with your AiMedResAgent class
         class MockAgent:
             def __init__(self, engine, style):
                 self.engine = engine

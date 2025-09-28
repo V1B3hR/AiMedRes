@@ -26,7 +26,7 @@ from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, Network
 from scripts.data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("DuetMindTraining")
+logger = logging.getLogger("AiMedResTraining")
 
 
 def create_test_alzheimer_data(n_samples: int = 100) -> pd.DataFrame:
@@ -317,7 +317,7 @@ class TrainingIntegratedAgent(UnifiedAdaptiveAgent):
 
 def run_training_simulation():
     """Run a complete training simulation with agents"""
-    logger.info("=== DuetMind Adaptive Training Simulation ===")
+    logger.info("=== AiMedRes Training Simulation ===")
     
     # Initialize trainer
     trainer = AlzheimerTrainer()
