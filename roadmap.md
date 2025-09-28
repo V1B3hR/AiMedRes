@@ -1,4 +1,4 @@
-# clear progressive roadmap: DuetMind Adaptive Road to Completion
+# clear progressive roadmap: AiMedRes Road to Completion
 
 This file provides a clear, actionable sequence for moving each toward ✅ Done status.
 
