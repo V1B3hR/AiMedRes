@@ -307,7 +307,7 @@ class BrainMRITrainingPipeline:
             mlflow.log_param("optimizer", "Adam")
             mlflow.log_param("learning_rate", 0.001)
             mlflow.log_param("weight_decay", 1e-4)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+            scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
         
         # Training loop
         train_losses = []
@@ -383,43 +383,43 @@ class BrainMRITrainingPipeline:
             
             scheduler.step()
         
-            # Final evaluation
-            logger.info(f"Training completed! Best validation accuracy: {best_val_acc:.2f}%")
-            
-            # Log final metrics to MLflow
-            mlflow.log_metric("best_val_accuracy", best_val_acc)
-            mlflow.log_metric("final_train_accuracy", train_acc)
-            mlflow.log_metric("final_val_accuracy", val_acc)
-            
-            # Save final model
-            torch.save(model.state_dict(), self.output_dir / "models" / "final_brain_mri_model.pth")
-            
-            # Log final model and artifacts to MLflow
-            mlflow.log_artifact(str(self.output_dir / "models" / "final_brain_mri_model.pth"))
-            mlflow.pytorch.log_model(model, "model", registered_model_name="brain_mri_classifier")
-            
-            # Save training metrics
-            metrics = {
-                'epochs': epochs,
-                'best_validation_accuracy': best_val_acc,
-                'final_train_accuracy': train_acc,
-                'final_validation_accuracy': val_acc,
-                'train_losses': train_losses,
-                'val_accuracies': val_accuracies,
-                'num_classes': num_classes,
-                'training_samples': len(train_paths),
-                'validation_samples': len(val_paths),
-                'model_type': '3D_CNN' if use_3d else '2D_CNN'
-            }
-            
-            with open(self.output_dir / "metrics" / "training_metrics.json", 'w') as f:
-                json.dump(metrics, f, indent=2)
-            
-            # Log metrics file to MLflow
-            mlflow.log_artifact(str(self.output_dir / "metrics" / "training_metrics.json"))
-            
-            logger.info(f"Results saved to: {self.output_dir}")
-            return metrics
+        # Final evaluation
+        logger.info(f"Training completed! Best validation accuracy: {best_val_acc:.2f}%")
+        
+        # Log final metrics to MLflow
+        mlflow.log_metric("best_val_accuracy", best_val_acc)
+        mlflow.log_metric("final_train_accuracy", train_acc)
+        mlflow.log_metric("final_val_accuracy", val_acc)
+        
+        # Save final model
+        torch.save(model.state_dict(), self.output_dir / "models" / "final_brain_mri_model.pth")
+        
+        # Log final model and artifacts to MLflow
+        mlflow.log_artifact(str(self.output_dir / "models" / "final_brain_mri_model.pth"))
+        mlflow.pytorch.log_model(model, "model", registered_model_name="brain_mri_classifier")
+        
+        # Save training metrics
+        metrics = {
+            'epochs': epochs,
+            'best_validation_accuracy': best_val_acc,
+            'final_train_accuracy': train_acc,
+            'final_validation_accuracy': val_acc,
+            'train_losses': train_losses,
+            'val_accuracies': val_accuracies,
+            'num_classes': num_classes,
+            'training_samples': len(train_paths),
+            'validation_samples': len(val_paths),
+            'model_type': '3D_CNN' if use_3d else '2D_CNN'
+        }
+        
+        with open(self.output_dir / "metrics" / "training_metrics.json", 'w') as f:
+            json.dump(metrics, f, indent=2)
+        
+        # Log metrics file to MLflow
+        mlflow.log_artifact(str(self.output_dir / "metrics" / "training_metrics.json"))
+        
+        logger.info(f"Results saved to: {self.output_dir}")
+        return metrics
 
 
 def main():
