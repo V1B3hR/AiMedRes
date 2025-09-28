@@ -1,982 +1,1016 @@
 #!/usr/bin/env python3
 """
-ALS (Amyotrophic Lateral Sclerosis) Progression Prediction Training Pipeline
-
-This script implements a comprehensive machine learning pipeline for ALS progression prediction
-using the Kaggle datasets:
-- https://www.kaggle.com/datasets/daniilkrasnoproshin/amyotrophic-lateral-sclerosis-als
-- https://www.kaggle.com/datasets/mpwolke/cusersmarildownloadsbramcsv
+Advanced ALS (Amyotrophic Lateral Sclerosis) Progression Prediction Pipeline
 
 Features:
-- Downloads datasets using kagglehub
-- Comprehensive data preprocessing  
-- Training of both regression and classification models with 5-fold cross-validation
-- Tabular neural network training (MLP) 
-- Detailed metrics reporting for both tasks
-- Model and preprocessing pipeline persistence
+- Unified configuration via dataclass
+- Reproducibility seeding (numpy, random, torch)
+- Automatic target & task detection (regression/classification)
+- Classic ML model suite + optional hyperparameter search
+- Neural network (PyTorch MLP) with:
+  * Device auto-selection (CUDA / MPS / CPU)
+  * Mixed precision (if CUDA)
+  * Early stopping & ReduceLROnPlateau
+  * Gradient clipping
+- Feature engineering & preprocessing with ColumnTransformer
+- One-hot feature name recovery
+- Optional SHAP + tree feature importances
+- Comprehensive logging & structured metrics export
+- Flexible CLI toggles
+- Graceful degradation if optional libs absent
 """
+
+from __future__ import annotations
 
 import os
 import sys
-import logging
-import warnings
-import pickle
 import json
+import time
+import math
+import pickle
+import random
+import logging
+import argparse
+import warnings
+import importlib
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
-from typing import Dict, Any, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Optional
+
 import numpy as np
 import pandas as pd
 from datetime import datetime
 
-# Suppress warnings for cleaner output
-warnings.filterwarnings('ignore')
-
-# ML Libraries
-from sklearn.model_selection import StratifiedKFold, KFold, cross_validate, train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import (
+    StratifiedKFold,
+    KFold,
+    cross_validate,
+    train_test_split,
+    RandomizedSearchCV
+)
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression, LinearRegression, Ridge
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingRegressor
 from sklearn.svm import SVC, SVR
-from sklearn.metrics import (accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score, 
-                            classification_report, mean_squared_error, mean_absolute_error, r2_score)
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import (
+    f1_score,
+    mean_squared_error,
+    mean_absolute_error,
+    r2_score,
+    accuracy_score,
+    balanced_accuracy_score,
+    roc_auc_score
+)
 
-# Advanced ML Libraries
-try:
-    import xgboost as xgb
-    XGBOOST_AVAILABLE = True
-except ImportError:
-    XGBOOST_AVAILABLE = False
+# Silence common spurious warnings (e.g., sklearn future warnings)
+warnings.filterwarnings("ignore")
 
-# Neural Network Libraries
-try:
-    import torch
+# ------------------------- Logging Setup ------------------------- #
+def init_logger(log_file: str = "als_training.log", level: int = logging.INFO) -> logging.Logger:
+    logger = logging.getLogger("ALS_PIPELINE")
+    if logger.handlers:
+        return logger
+    logger.setLevel(level)
+    formatter = logging.Formatter('%(asctime)s | %(levelname)-8s | %(message)s')
+    fh = logging.FileHandler(log_file)
+    fh.setFormatter(formatter)
+    sh = logging.StreamHandler(sys.stdout)
+    sh.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.addHandler(sh)
+    return logger
+
+logger = init_logger()
+
+
+# ------------------------- Optional Imports ------------------------- #
+def _try_import(name: str):
+    try:
+        module = importlib.import_module(name)
+        return module, True
+    except ImportError:
+        return None, False
+
+xgb, XGBOOST_AVAILABLE = _try_import("xgboost")
+torch, PYTORCH_AVAILABLE = _try_import("torch")
+if PYTORCH_AVAILABLE:
     import torch.nn as nn
     import torch.optim as optim
     from torch.utils.data import DataLoader, TensorDataset
-    PYTORCH_AVAILABLE = True
-except ImportError:
-    PYTORCH_AVAILABLE = False
 
-# Data Loading
-try:
-    import kagglehub
-    KAGGLEHUB_AVAILABLE = True
-except ImportError:
-    KAGGLEHUB_AVAILABLE = False
-
-# Visualization
-try:
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    VISUALIZATION_AVAILABLE = True
-except ImportError:
-    VISUALIZATION_AVAILABLE = False
-
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('als_training.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+shap, SHAP_AVAILABLE = _try_import("shap")
+kagglehub, KAGGLEHUB_AVAILABLE = _try_import("kagglehub")
+plt, MPL_AVAILABLE = _try_import("matplotlib.pyplot")
+sns, SEABORN_AVAILABLE = _try_import("seaborn")
 
 
-class ALSMLPRegressor(nn.Module):
-    """
-    Multi-layer perceptron optimized for ALS progression prediction (regression)
-    """
-    
-    def __init__(self, input_size: int):
-        super(ALSMLPRegressor, self).__init__()
-        
-        self.layers = nn.Sequential(
-            # First hidden layer
-            nn.Linear(input_size, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            
-            # Second hidden layer
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            
-            # Third hidden layer
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            
-            # Output layer (single output for regression)
-            nn.Linear(64, 1)
-        )
-    
-    def forward(self, x):
-        return self.layers(x)
+# ------------------------- Configuration Dataclass ------------------------- #
+@dataclass
+class TrainingConfig:
+    output_dir: str = "als_outputs"
+    dataset_choice: str = "als-progression"    # or 'bram-als'
+    task_type: str = "auto"                    # 'regression' | 'classification' | 'auto'
+    target_column: Optional[str] = None
+
+    # Training parameters
+    epochs: int = 80
+    batch_size: int = 32
+    folds: int = 5
+    random_seed: int = 42
+
+    # Neural network toggles
+    nn_enabled: bool = True
+    classical_enabled: bool = True
+    lr: float = 1e-3
+    early_stopping_patience: int = 15
+    lr_reduction_patience: int = 8
+    lr_reduction_factor: float = 0.5
+    grad_clip_norm: float = 5.0
+
+    # Hyperparameter search
+    use_hyperparam_search: bool = False
+    hyperparam_iter: int = 20
+
+    # Optional analysis
+    compute_shap: bool = False
+    plot_importance: bool = True
+    save_feature_matrix: bool = False
+    remove_constant_features: bool = True
+
+    # Model toggles
+    include_xgboost: bool = True
+    include_svm: bool = True
+    include_gradient_boosting: bool = True
+
+    # Device preference
+    prefer_gpu: bool = True
+
+    # Logging verbosity
+    verbose: bool = False
+
+    # Internal metadata
+    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+
+    def to_json(self) -> str:
+        return json.dumps(asdict(self), indent=2)
 
 
-class ALSMLPClassifier(nn.Module):
-    """
-    Multi-layer perceptron optimized for ALS classification
-    """
-    
-    def __init__(self, input_size: int, num_classes: int = 2):
-        super(ALSMLPClassifier, self).__init__()
-        
-        self.layers = nn.Sequential(
-            # First hidden layer
-            nn.Linear(input_size, 256),
-            nn.BatchNorm1d(256),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            
-            # Second hidden layer
-            nn.Linear(256, 128),
-            nn.BatchNorm1d(128),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            
-            # Third hidden layer
-            nn.Linear(128, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            
-            # Output layer
-            nn.Linear(64, num_classes)
-        )
-    
-    def forward(self, x):
-        return self.layers(x)
+# ------------------------- Utility Functions ------------------------- #
+def set_global_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    if PYTORCH_AVAILABLE:
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
 
+
+def rmsle(y_true, y_pred):
+    return math.sqrt(mean_squared_error(np.log1p(y_true), np.log1p(y_pred)))
+
+
+# ------------------------- Neural Network Modules ------------------------- #
+if PYTORCH_AVAILABLE:
+
+    class ALSMLPRegressor(nn.Module):
+        def __init__(self, input_size: int):
+            super().__init__()
+            self.network = nn.Sequential(
+                nn.Linear(input_size, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Dropout(0.30),
+                nn.Linear(256, 128),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Dropout(0.30),
+                nn.Linear(128, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(0.20),
+                nn.Linear(64, 1)
+            )
+
+        def forward(self, x):
+            return self.network(x)
+
+    class ALSMLPClassifier(nn.Module):
+        def __init__(self, input_size: int, num_classes: int):
+            super().__init__()
+            self.network = nn.Sequential(
+                nn.Linear(input_size, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(),
+                nn.Dropout(0.35),
+                nn.Linear(256, 128),
+                nn.BatchNorm1d(128),
+                nn.ReLU(),
+                nn.Dropout(0.35),
+                nn.Linear(128, 64),
+                nn.BatchNorm1d(64),
+                nn.ReLU(),
+                nn.Dropout(0.25),
+                nn.Linear(64, num_classes)
+            )
+
+        def forward(self, x):
+            return self.network(x)
+
+
+# ------------------------- Core Pipeline ------------------------- #
 class ALSTrainingPipeline:
-    """
-    Complete training pipeline for ALS progression prediction
-    """
-    
-    def __init__(self, output_dir: str = "als_outputs"):
-        """
-        Initialize the training pipeline
-        
-        Args:
-            output_dir: Directory to save outputs
-        """
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
-        
-        # Create subdirectories
-        (self.output_dir / "models").mkdir(exist_ok=True)
+    def __init__(self, config: TrainingConfig):
+        self.cfg = config
+        set_global_seed(self.cfg.random_seed)
+
+        # Output directories
+        self.output_dir = Path(self.cfg.output_dir)
+        (self.output_dir / "models").mkdir(parents=True, exist_ok=True)
         (self.output_dir / "metrics").mkdir(exist_ok=True)
         (self.output_dir / "preprocessors").mkdir(exist_ok=True)
         (self.output_dir / "visualizations").mkdir(exist_ok=True)
-        
-        # Initialize components
-        self.data = None
-        self.preprocessor = None
-        self.label_encoder = None
-        self.X_processed = None
-        self.y_processed = None
-        self.feature_names = None
-        self.task_type = None  # 'regression' or 'classification'
-        
-        # Results storage
-        self.regression_results = {}
-        self.classification_results = {}
-        self.neural_results = {}
-        
-        logger.info(f"Initialized ALS Training Pipeline. Outputs will be saved to {self.output_dir}")
+        (self.output_dir / "artifacts").mkdir(exist_ok=True)
 
-    def load_data(self, data_path: str = None, dataset_choice: str = "als-progression") -> pd.DataFrame:
-        """
-        Load ALS disease dataset
-        
-        Args:
-            data_path: Path to local dataset CSV (optional)
-            dataset_choice: Which Kaggle dataset to use ("als-progression" or "bram-als")
-        
-        Returns:
-            Loaded DataFrame
-        """
-        if data_path and os.path.exists(data_path):
-            logger.info(f"Loading data from local path: {data_path}")
+        # Data / artifacts
+        self.data: Optional[pd.DataFrame] = None
+        self.preprocessor: Optional[ColumnTransformer] = None
+        self.label_encoder: Optional[LabelEncoder] = None
+        self.feature_names_raw: List[str] = []
+        self.encoded_feature_names: Optional[List[str]] = None
+
+        self.X_processed: Optional[np.ndarray] = None
+        self.y_processed: Optional[np.ndarray] = None
+        self.task_type: Optional[str] = None
+
+        # Results
+        self.regression_results: Dict[str, Dict[str, float]] = {}
+        self.classification_results: Dict[str, Dict[str, float]] = {}
+        self.neural_results: Dict[str, float] = {}
+
+        if self.cfg.verbose:
+            logger.setLevel(logging.DEBUG)
+
+        logger.info("Initialized Advanced ALS Training Pipeline")
+        logger.debug(f"Config:\n{self.cfg.to_json()}")
+
+    # --------------------- Data Loading --------------------- #
+    def load_data(self, data_path: Optional[str] = None) -> pd.DataFrame:
+        if data_path and os.path.isfile(data_path):
+            logger.info(f"Loading local dataset: {data_path}")
             self.data = pd.read_csv(data_path)
-        elif KAGGLEHUB_AVAILABLE:
-            logger.info(f"Downloading ALS dataset from Kaggle ({dataset_choice})...")
+            return self.data
+
+        if KAGGLEHUB_AVAILABLE:
             try:
-                if dataset_choice == "als-progression":
-                    # Primary ALS dataset
-                    dataset_path = kagglehub.dataset_download("daniilkrasnoproshin/amyotrophic-lateral-sclerosis-als")
-                    csv_files = list(Path(dataset_path).glob("*.csv"))
-                    if csv_files:
-                        self.data = pd.read_csv(csv_files[0])
-                        logger.info(f"Loaded dataset from: {csv_files[0]}")
-                    else:
-                        raise FileNotFoundError("No CSV files found in downloaded dataset")
-                        
-                elif dataset_choice == "bram-als":
-                    # Alternative ALS dataset
-                    dataset_path = kagglehub.dataset_download("mpwolke/cusersmarildownloadsbramcsv")
-                    csv_files = list(Path(dataset_path).glob("*.csv"))
-                    if csv_files:
-                        self.data = pd.read_csv(csv_files[0])
-                        logger.info(f"Loaded dataset from: {csv_files[0]}")
-                    else:
-                        raise FileNotFoundError("No CSV files found in downloaded dataset")
-                        
+                logger.info(f"Downloading dataset from Kaggle: {self.cfg.dataset_choice}")
+                if self.cfg.dataset_choice == "als-progression":
+                    dpath = kagglehub.dataset_download("daniilkrasnoproshin/amyotrophic-lateral-sclerosis-als")
+                else:
+                    dpath = kagglehub.dataset_download("mpwolke/cusersmarildownloadsbramcsv")
+                csvs = list(Path(dpath).glob("*.csv"))
+                if not csvs:
+                    raise FileNotFoundError("No CSV files discovered in Kaggle payload.")
+                self.data = pd.read_csv(csvs[0])
+                logger.info(f"Loaded Kaggle dataset: {csvs[0].name} shape={self.data.shape}")
+                return self.data
             except Exception as e:
-                logger.warning(f"Failed to download from Kaggle: {e}")
-                logger.info("Creating sample ALS dataset for demonstration")
-                self.data = self._create_sample_als_data()
-        else:
-            logger.warning("Kagglehub not available, creating sample dataset")
-            self.data = self._create_sample_als_data()
-        
-        logger.info(f"Dataset loaded successfully. Shape: {self.data.shape}")
-        logger.info(f"Columns: {list(self.data.columns)}")
-        
+                logger.warning(f"Kaggle download failed: {e}. Using synthetic fallback.")
+
+        logger.warning("Using synthetic ALS dataset (for dev/testing).")
+        self.data = self._create_sample_als_data()
+        logger.info(f"Synthetic dataset shape={self.data.shape}")
         return self.data
 
-    def _create_sample_als_data(self) -> pd.DataFrame:
-        """Create sample ALS dataset for demonstration"""
-        np.random.seed(42)
-        
-        n_samples = 1000
-        
-        # ALS-specific features based on clinical assessments
+    def _create_sample_als_data(self, n_samples: int = 800) -> pd.DataFrame:
+        np.random.seed(self.cfg.random_seed)
         data = {
-            # ALSFRS-R (ALS Functional Rating Scale - Revised) components
-            'ALSFRS_R_Total': np.random.randint(0, 48, n_samples),  # Total score 0-48
+            'ALSFRS_R_Total': np.random.randint(0, 48, n_samples),
             'ALSFRS_Speech': np.random.randint(0, 4, n_samples),
             'ALSFRS_Salivation': np.random.randint(0, 4, n_samples),
             'ALSFRS_Swallowing': np.random.randint(0, 4, n_samples),
             'ALSFRS_Handwriting': np.random.randint(0, 4, n_samples),
             'ALSFRS_Walking': np.random.randint(0, 4, n_samples),
             'ALSFRS_Breathing': np.random.randint(0, 4, n_samples),
-            
-            # Vital capacity and respiratory function
-            'FVC_percent': np.random.uniform(20, 100, n_samples),  # Forced Vital Capacity %
-            'FVC_liters': np.random.uniform(1.0, 5.0, n_samples),
-            
-            # Demographics and disease characteristics
-            'Age_at_onset': np.random.uniform(40, 80, n_samples),
-            'Disease_duration_months': np.random.exponential(18, n_samples),
+            'FVC_percent': np.random.uniform(20, 100, n_samples),
+            'FVC_liters': np.random.uniform(1.0, 5.5, n_samples),
+            'Age_at_onset': np.random.uniform(38, 82, n_samples),
+            'Disease_duration_months': np.random.exponential(20, n_samples),
             'Gender': np.random.choice(['Male', 'Female'], n_samples),
-            'Site_of_onset': np.random.choice(['Bulbar', 'Limb'], n_samples, p=[0.25, 0.75]),
-            
-            # Laboratory values
-            'Creatinine': np.random.uniform(0.5, 2.0, n_samples),
-            'Albumin': np.random.uniform(3.0, 5.0, n_samples),
-            'ALT': np.random.uniform(10, 60, n_samples),
-            
-            # BMI and physical measurements
-            'BMI': np.random.normal(25, 4, n_samples),
-            'Weight_kg': np.random.normal(70, 15, n_samples),
-            'Height_cm': np.random.normal(170, 10, n_samples),
-            
-            # Treatment indicators
+            'Site_of_onset': np.random.choice(['Bulbar', 'Limb'], n_samples, p=[0.3, 0.7]),
+            'Creatinine': np.random.uniform(0.4, 2.2, n_samples),
+            'Albumin': np.random.uniform(3.1, 5.1, n_samples),
+            'ALT': np.random.uniform(8, 65, n_samples),
+            'BMI': np.random.normal(25, 4.5, n_samples),
+            'Weight_kg': np.random.normal(72, 13, n_samples),
+            'Height_cm': np.random.normal(170, 9, n_samples),
             'Riluzole': np.random.choice([0, 1], n_samples, p=[0.3, 0.7]),
-            'Edaravone': np.random.choice([0, 1], n_samples, p=[0.8, 0.2]),
-            'NIV_usage': np.random.choice([0, 1], n_samples, p=[0.7, 0.3])  # Non-invasive ventilation
+            'Edaravone': np.random.choice([0, 1], n_samples, p=[0.85, 0.15]),
+            'NIV_usage': np.random.choice([0, 1], n_samples, p=[0.68, 0.32]),
         }
-        
         df = pd.DataFrame(data)
-        
-        # Create progression rate (primary target for regression)
-        # Lower ALSFRS-R, lower FVC, and longer disease duration indicate faster progression
-        progression_score = (
-            (48 - df['ALSFRS_R_Total']) / 48 * 0.4 +
-            (100 - df['FVC_percent']) / 100 * 0.3 +
-            np.clip(df['Disease_duration_months'] / 60, 0, 1) * 0.2 +
-            np.random.normal(0, 0.1, n_samples)
+        progression = (
+            (48 - df['ALSFRS_R_Total']) / 48 * 0.42 +
+            (100 - df['FVC_percent']) / 100 * 0.28 +
+            np.clip(df['Disease_duration_months'] / 72, 0, 1) * 0.21 +
+            np.random.normal(0, 0.08, n_samples)
         )
-        df['Progression_Rate'] = np.clip(progression_score, 0, 1)
-        
-        # Create binary progression status for classification
+        df['Progression_Rate'] = np.clip(progression, 0, 1)
         df['Fast_Progression'] = (df['Progression_Rate'] > 0.6).astype(int)
-        
-        # Create survival months (secondary target for regression)
-        base_survival = np.random.exponential(36, n_samples)  # Base survival ~3 years
-        survival_modifier = 1 - df['Progression_Rate'] * 0.7  # Faster progression = shorter survival
-        df['Survival_Months'] = np.clip(base_survival * survival_modifier, 3, 120)  # 3 months to 10 years
-        
-        # Add patient IDs
-        df['Subject_ID'] = [f'ALS_{i:04d}' for i in range(n_samples)]
-        
+        base_survival = np.random.exponential(40, n_samples)
+        survival_mod = 1 - df['Progression_Rate'] * 0.7
+        df['Survival_Months'] = np.clip(base_survival * survival_mod, 4, 132)
+        df['Subject_ID'] = [f'ALS_{i:05d}' for i in range(n_samples)]
         return df
 
-    def preprocess_data(self, target_column: str = None, task_type: str = 'auto') -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Preprocess the ALS dataset for machine learning
-        
-        Args:
-            target_column: Name of target column (auto-detects if None)
-            task_type: 'regression', 'classification', or 'auto' to detect
-            
-        Returns:
-            Tuple of (X_processed, y_processed)
-        """
+    # --------------------- Preprocessing --------------------- #
+    def preprocess(self):
         if self.data is None:
-            raise ValueError("Data must be loaded first. Call load_data().")
-        
-        logger.info("Starting data preprocessing...")
-        
-        # Auto-detect target column and task type if not specified
-        if target_column is None:
-            if task_type == 'regression' or task_type == 'auto':
-                regression_targets = ['Progression_Rate', 'ALSFRS_R_Total', 'FVC_percent', 'Survival_Months']
-                for col in regression_targets:
-                    if col in self.data.columns:
-                        target_column = col
+            raise ValueError("Data not loaded. Call load_data().")
+        df = self.data.copy()
+        target = self.cfg.target_column
+
+        # Auto-detect target
+        if target is None:
+            if self.cfg.task_type in ("regression", "auto"):
+                for col in ['Progression_Rate', 'ALSFRS_R_Total', 'FVC_percent', 'Survival_Months']:
+                    if col in df.columns:
+                        target = col
                         self.task_type = 'regression'
                         break
-            
-            if target_column is None:  # Still none, try classification
-                classification_targets = ['Fast_Progression', 'status', 'class', 'target', 'label']
-                for col in classification_targets:
-                    if col in self.data.columns:
-                        target_column = col
+            if target is None:
+                for col in ['Fast_Progression', 'status', 'class', 'label', 'target']:
+                    if col in df.columns:
+                        target = col
                         self.task_type = 'classification'
                         break
-            
-            if target_column is None:
-                # Use last numeric column as default
-                numeric_cols = self.data.select_dtypes(include=[np.number]).columns
-                target_column = numeric_cols[-1]
+            if target is None:
+                numeric_cols = df.select_dtypes(include=[np.number]).columns
+                target = numeric_cols[-1]
                 self.task_type = 'regression'
-                logger.warning(f"Could not auto-detect target column. Using: {target_column} for regression")
+                logger.warning(f"Defaulting target to {target} (regression).")
         else:
-            # Determine task type from target column
-            if task_type == 'auto':
-                if target_column in ['Fast_Progression', 'status', 'class', 'label']:
+            if self.cfg.task_type == 'auto':
+                if target in ['Fast_Progression', 'status', 'class', 'label', 'target']:
                     self.task_type = 'classification'
-                elif len(self.data[target_column].unique()) <= 10:
+                elif len(df[target].unique()) <= 10:
                     self.task_type = 'classification'
                 else:
                     self.task_type = 'regression'
             else:
-                self.task_type = task_type
-        
-        logger.info(f"Using target column: {target_column} for {self.task_type}")
-        
-        # Remove non-feature columns
-        feature_df = self.data.copy()
-        
-        non_feature_cols = ['Subject_ID', 'subject_id', 'patient_id', 'id', 'name']
-        for col in non_feature_cols:
-            if col in feature_df.columns:
-                feature_df = feature_df.drop(columns=[col])
-                logger.info(f"Removed non-feature column: {col}")
-        
-        # Separate features and target
-        X = feature_df.drop(columns=[target_column])
-        y = feature_df[target_column]
-        
-        # Store feature names
-        self.feature_names = list(X.columns)
-        
-        # Handle target encoding
+                self.task_type = self.cfg.task_type
+
+        logger.info(f"Target: {target} | Task: {self.task_type}")
+
+        non_feature_cols = {'Subject_ID', 'subject_id', 'patient_id', 'id', 'name'}
+        drop_cols = [c for c in non_feature_cols if c in df.columns and c != target]
+        if drop_cols:
+            df.drop(columns=drop_cols, inplace=True)
+            logger.debug(f"Dropped non-feature columns: {drop_cols}")
+
+        y = df[target]
+        X = df.drop(columns=[target])
+        self.feature_names_raw = list(X.columns)
+
+        # Encode target
         if self.task_type == 'classification':
-            if y.dtype == 'object':
+            if y.dtype == object:
                 self.label_encoder = LabelEncoder()
                 y_processed = self.label_encoder.fit_transform(y)
-                logger.info(f"Encoded target labels: {dict(zip(self.label_encoder.classes_, range(len(self.label_encoder.classes_))))}")
+                logger.info(f"Label classes: {list(self.label_encoder.classes_)}")
             else:
-                y_processed = y.values
-                self.label_encoder = None
-        else:  # regression
-            y_processed = y.values.astype(float)
-            self.label_encoder = None
-        
-        # Identify categorical and numerical columns
-        categorical_features = X.select_dtypes(include=['object', 'category']).columns.tolist()
-        numerical_features = X.select_dtypes(include=['int64', 'float64']).columns.tolist()
-        
-        logger.info(f"Found {len(categorical_features)} categorical and {len(numerical_features)} numerical features")
-        
-        # Create preprocessing pipeline
-        preprocessors = []
-        
-        if numerical_features:
-            numerical_transformer = Pipeline([
-                ('imputer', SimpleImputer(strategy='median')),
-                ('scaler', StandardScaler())
-            ])
-            preprocessors.append(('num', numerical_transformer, numerical_features))
-        
-        if categorical_features:
-            categorical_transformer = Pipeline([
-                ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-                ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
-            ])
-            preprocessors.append(('cat', categorical_transformer, categorical_features))
-        
-        # Create column transformer
-        self.preprocessor = ColumnTransformer(
-            transformers=preprocessors,
-            remainder='drop'
-        )
-        
-        # Fit and transform the data
+                y_processed = y.astype(int).values
+        else:
+            y_processed = y.astype(float).values
+
+        cat_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
+        num_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+
+        # Remove constant features
+        if self.cfg.remove_constant_features:
+            const_cols = [c for c in num_cols if X[c].nunique() <= 1]
+            if const_cols:
+                X.drop(columns=const_cols, inplace=True)
+                num_cols = [c for c in num_cols if c not in const_cols]
+                logger.debug(f"Removed constant features: {const_cols}")
+
+        numeric_transformer = Pipeline([
+            ("imputer", SimpleImputer(strategy='median')),
+            ("scaler", StandardScaler())
+        ])
+        categorical_transformer = Pipeline([
+            ("imputer", SimpleImputer(strategy='constant', fill_value='missing')),
+            ("onehot", OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+        ]) if cat_cols else None
+
+        transformers = []
+        if num_cols:
+            transformers.append(("num", numeric_transformer, num_cols))
+        if cat_cols:
+            transformers.append(("cat", categorical_transformer, cat_cols))
+
+        self.preprocessor = ColumnTransformer(transformers=transformers, remainder='drop')
         X_processed = self.preprocessor.fit_transform(X)
-        
-        # Store processed data
+
+        # Extract feature names
+        feature_names: List[str] = []
+        if num_cols:
+            feature_names.extend(num_cols)
+        if cat_cols:
+            ohe: OneHotEncoder = self.preprocessor.named_transformers_['cat'].named_steps['onehot']
+            try:
+                cat_features = ohe.get_feature_names_out(cat_cols).tolist()
+            except AttributeError:
+                # Compatibility fallback (older sklearn)
+                cat_features = []
+            feature_names.extend(cat_features)
+
+        self.encoded_feature_names = feature_names
         self.X_processed = X_processed
         self.y_processed = y_processed
-        
-        logger.info(f"Preprocessing completed. Shape: {X_processed.shape}")
-        
-        if self.task_type == 'classification':
-            logger.info(f"Target distribution: {np.bincount(y_processed.astype(int))}")
-        else:
-            logger.info(f"Target statistics: mean={y_processed.mean():.3f}, std={y_processed.std():.3f}")
-        
-        return X_processed, y_processed
 
-    def train_regression_models(self, n_folds: int = 5) -> Dict[str, Dict[str, float]]:
-        """
-        Train regression models for ALS progression prediction
-        
-        Args:
-            n_folds: Number of folds for cross-validation
-            
-        Returns:
-            Dictionary with model results
-        """
-        if self.X_processed is None or self.y_processed is None:
-            raise ValueError("Data must be preprocessed first. Call preprocess_data().")
-        
-        if self.task_type != 'regression':
-            logger.warning("Current task type is not regression. Skipping regression models.")
-            return {}
-        
-        logger.info("Training regression models...")
-        
-        # Define models
-        models = {
-            'Linear Regression': LinearRegression(),
-            'Ridge Regression': Ridge(alpha=1.0, random_state=42),
-            'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42),
-            'SVR': SVR(kernel='rbf')
+        logger.info(f"Preprocessing complete. Feature matrix: {X_processed.shape}")
+        if self.task_type == 'classification':
+            counts = np.bincount(y_processed)
+            logger.info(f"Class distribution: {counts.tolist()}")
+        else:
+            logger.info(f"Target mean={y_processed.mean():.4f} std={y_processed.std():.4f}")
+
+        if self.cfg.save_feature_matrix:
+            np.save(self.output_dir / "artifacts" / "X_processed.npy", X_processed)
+            np.save(self.output_dir / "artifacts" / "y.npy", y_processed)
+
+    # --------------------- Model Registries --------------------- #
+    def _get_regression_models(self) -> Dict[str, Any]:
+        models: Dict[str, Any] = {
+            'LinearRegression': LinearRegression(),
+            'Ridge': Ridge(alpha=1.0, random_state=self.cfg.random_seed),
+            'RandomForest': RandomForestRegressor(
+                n_estimators=160, random_state=self.cfg.random_seed, n_jobs=-1
+            ),
+            'SVR': SVR(kernel='rbf', C=10, gamma='scale')
         }
-        
-        # Add XGBoost if available
-        if XGBOOST_AVAILABLE:
-            models['XGBoost'] = xgb.XGBRegressor(random_state=42, eval_metric='rmse')
-        
-        # Scoring metrics for regression
+        if self.cfg.include_gradient_boosting:
+            models['GradientBoosting'] = GradientBoostingRegressor(random_state=self.cfg.random_seed)
+        if self.cfg.include_xgboost and XGBOOST_AVAILABLE:
+            models['XGBoost'] = xgb.XGBRegressor(
+                random_state=self.cfg.random_seed,
+                n_estimators=250,
+                learning_rate=0.05,
+                max_depth=5,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                eval_metric='rmse'
+            )
+        return models
+
+    def _get_classification_models(self) -> Dict[str, Any]:
+        models: Dict[str, Any] = {
+            'LogisticRegression': LogisticRegression(
+                random_state=self.cfg.random_seed, max_iter=2000
+            ),
+            'RandomForest': RandomForestClassifier(
+                n_estimators=200, random_state=self.cfg.random_seed, n_jobs=-1
+            )
+        }
+        if self.cfg.include_svm:
+            models['SVM'] = SVC(
+                probability=True, kernel='rbf', C=10, gamma='scale', random_state=self.cfg.random_seed
+            )
+        if self.cfg.include_xgboost and XGBOOST_AVAILABLE:
+            models['XGBoost'] = xgb.XGBClassifier(
+                random_state=self.cfg.random_seed,
+                n_estimators=350,
+                learning_rate=0.05,
+                max_depth=5,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                eval_metric='logloss',
+                use_label_encoder=False
+            )
+        return models
+
+    # --------------------- Hyperparameter Search --------------------- #
+    def _maybe_hyperparam_search(self, model_name: str, model, task: str):
+        if not self.cfg.use_hyperparam_search:
+            return model
+        try:
+            logger.info(f"Hyperparameter search for {model_name} ({task})...")
+            if task == 'regression':
+                param_dist = {
+                    'RandomForest': {
+                        'n_estimators': [100, 160, 220, 300],
+                        'max_depth': [None, 6, 8, 10],
+                        'min_samples_split': [2, 5, 10]
+                    },
+                    'Ridge': {'alpha': [0.1, 0.5, 1.0, 2.0, 5.0]},
+                    'SVR': {'C': [1, 5, 10, 20], 'gamma': ['scale', 'auto']},
+                    'XGBoost': {
+                        'n_estimators': [200, 300, 400],
+                        'max_depth': [4, 5, 6],
+                        'learning_rate': [0.03, 0.05, 0.07]
+                    }
+                }.get(model_name, {})
+                scoring = 'neg_root_mean_squared_error'
+            else:
+                param_dist = {
+                    'RandomForest': {
+                        'n_estimators': [150, 200, 300],
+                        'max_depth': [None, 6, 8, 10],
+                        'min_samples_split': [2, 5, 10]
+                    },
+                    'LogisticRegression': {
+                        'C': [0.1, 0.5, 1.0, 2.0]
+                    },
+                    'SVM': {'C': [1, 5, 10, 15], 'gamma': ['scale', 'auto']},
+                    'XGBoost': {
+                        'n_estimators': [250, 350, 450],
+                        'max_depth': [4, 5, 6],
+                        'learning_rate': [0.03, 0.05, 0.07]
+                    }
+                }.get(model_name, {})
+                scoring = 'f1_macro'
+
+            if not param_dist:
+                return model
+
+            search = RandomizedSearchCV(
+                model,
+                param_distributions=param_dist,
+                n_iter=min(self.cfg.hyperparam_iter, sum(len(v) for v in param_dist.values())),
+                scoring=scoring,
+                cv=3,
+                random_state=self.cfg.random_seed,
+                n_jobs=-1
+            )
+            search.fit(self.X_processed, self.y_processed)
+            logger.info(f"Best params for {model_name}: {search.best_params_}")
+            return search.best_estimator_
+        except Exception as e:
+            logger.warning(f"Hyperparam search failed for {model_name}: {e}")
+            return model
+
+    # --------------------- Classic Regression Training --------------------- #
+    def train_regression(self) -> Dict[str, Dict[str, float]]:
+        if self.task_type != 'regression':
+            logger.info("Skipping regression (task type not regression).")
+            return {}
+        models = self._get_regression_models()
+        cv = KFold(n_splits=self.cfg.folds, shuffle=True, random_state=self.cfg.random_seed)
         scoring = ['neg_mean_squared_error', 'neg_mean_absolute_error', 'r2']
-        
-        results = {}
-        cv = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-        
+        results: Dict[str, Dict[str, float]] = {}
+
         for name, model in models.items():
-            logger.info(f"Training {name}...")
-            
+            logger.info(f"[Regression] {name}")
+            model = self._maybe_hyperparam_search(name, model, 'regression')
             try:
-                cv_results = cross_validate(model, self.X_processed, self.y_processed, 
-                                          cv=cv, scoring=scoring, return_train_score=False)
-                
+                cv_res = cross_validate(model, self.X_processed, self.y_processed, cv=cv, scoring=scoring)
+                mse_mean = -cv_res['test_neg_mean_squared_error'].mean()
+                mae_mean = -cv_res['test_neg_mean_absolute_error'].mean()
+                r2_mean = cv_res['test_r2'].mean()
                 results[name] = {
-                    'mse_mean': -cv_results['test_neg_mean_squared_error'].mean(),
-                    'mse_std': cv_results['test_neg_mean_squared_error'].std(),
-                    'mae_mean': -cv_results['test_neg_mean_absolute_error'].mean(),
-                    'mae_std': cv_results['test_neg_mean_absolute_error'].std(),
-                    'r2_mean': cv_results['test_r2'].mean(),
-                    'r2_std': cv_results['test_r2'].std(),
-                    'rmse_mean': np.sqrt(-cv_results['test_neg_mean_squared_error'].mean())
+                    'rmse_mean': math.sqrt(mse_mean),
+                    'mse_mean': mse_mean,
+                    'mae_mean': mae_mean,
+                    'r2_mean': r2_mean,
+                    'r2_std': cv_res['test_r2'].std()
                 }
-                
-                # Train final model on full dataset
                 model.fit(self.X_processed, self.y_processed)
-                
-                # Save model
-                model_path = self.output_dir / "models" / f"regression_{name.replace(' ', '_').lower()}_model.pkl"
-                with open(model_path, 'wb') as f:
-                    pickle.dump(model, f)
-                    
-                logger.info(f"{name} - RMSE: {results[name]['rmse_mean']:.3f}, R²: {results[name]['r2_mean']:.3f}")
-                
+                self._save_model(model, f"regression_{name}.pkl")
+                logger.info(f"{name} -> RMSE={results[name]['rmse_mean']:.4f} R2={r2_mean:.4f}")
             except Exception as e:
-                logger.error(f"Failed to train {name}: {e}")
-                
+                logger.error(f"Regression model {name} failed: {e}")
         self.regression_results = results
         return results
 
-    def train_classification_models(self, n_folds: int = 5) -> Dict[str, Dict[str, float]]:
-        """
-        Train classification models for ALS progression prediction
-        
-        Args:
-            n_folds: Number of folds for cross-validation
-            
-        Returns:
-            Dictionary with model results
-        """
-        if self.X_processed is None or self.y_processed is None:
-            raise ValueError("Data must be preprocessed first. Call preprocess_data().")
-        
+    # --------------------- Classic Classification Training --------------------- #
+    def train_classification(self) -> Dict[str, Dict[str, float]]:
         if self.task_type != 'classification':
-            logger.warning("Current task type is not classification. Skipping classification models.")
+            logger.info("Skipping classification (task type not classification).")
             return {}
-        
-        logger.info("Training classification models...")
-        
-        # Define models
-        models = {
-            'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
-            'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
-            'SVM': SVC(random_state=42, probability=True)
-        }
-        
-        # Add XGBoost if available
-        if XGBOOST_AVAILABLE:
-            models['XGBoost'] = xgb.XGBClassifier(random_state=42, eval_metric='logloss')
-        
-        # Scoring metrics
+        models = self._get_classification_models()
+        cv = StratifiedKFold(n_splits=self.cfg.folds, shuffle=True, random_state=self.cfg.random_seed)
         scoring = ['accuracy', 'balanced_accuracy', 'f1_macro', 'roc_auc']
-        
-        results = {}
-        cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
-        
+        results: Dict[str, Dict[str, float]] = {}
+
         for name, model in models.items():
-            logger.info(f"Training {name}...")
-            
+            logger.info(f"[Classification] {name}")
+            model = self._maybe_hyperparam_search(name, model, 'classification')
             try:
-                cv_results = cross_validate(model, self.X_processed, self.y_processed, 
-                                          cv=cv, scoring=scoring, return_train_score=False)
-                
+                cv_res = cross_validate(model, self.X_processed, self.y_processed, cv=cv, scoring=scoring)
                 results[name] = {
-                    'accuracy_mean': cv_results['test_accuracy'].mean(),
-                    'accuracy_std': cv_results['test_accuracy'].std(),
-                    'balanced_accuracy_mean': cv_results['test_balanced_accuracy'].mean(),
-                    'balanced_accuracy_std': cv_results['test_balanced_accuracy'].std(),
-                    'f1_macro_mean': cv_results['test_f1_macro'].mean(),
-                    'f1_macro_std': cv_results['test_f1_macro'].std(),
-                    'roc_auc_mean': cv_results['test_roc_auc'].mean(),
-                    'roc_auc_std': cv_results['test_roc_auc'].std()
+                    'accuracy_mean': cv_res['test_accuracy'].mean(),
+                    'balanced_accuracy_mean': cv_res['test_balanced_accuracy'].mean(),
+                    'f1_macro_mean': cv_res['test_f1_macro'].mean(),
+                    'roc_auc_mean': cv_res['test_roc_auc'].mean()
                 }
-                
-                # Train final model on full dataset
                 model.fit(self.X_processed, self.y_processed)
-                
-                # Save model
-                model_path = self.output_dir / "models" / f"classification_{name.replace(' ', '_').lower()}_model.pkl"
-                with open(model_path, 'wb') as f:
-                    pickle.dump(model, f)
-                    
-                logger.info(f"{name} - Accuracy: {results[name]['accuracy_mean']:.3f} (±{results[name]['accuracy_std']:.3f})")
-                
+                self._save_model(model, f"classification_{name}.pkl")
+                logger.info(f"{name} -> Acc={results[name]['accuracy_mean']:.4f} F1={results[name]['f1_macro_mean']:.4f}")
             except Exception as e:
-                logger.error(f"Failed to train {name}: {e}")
-                
+                logger.error(f"Classification model {name} failed: {e}")
         self.classification_results = results
         return results
 
-    def train_neural_network(self, epochs: int = 100, batch_size: int = 32) -> Dict[str, float]:
-        """
-        Train neural network for ALS prediction
-        
-        Args:
-            epochs: Number of training epochs
-            batch_size: Batch size for training
-            
-        Returns:
-            Dictionary with training results
-        """
-        if not PYTORCH_AVAILABLE:
-            logger.warning("PyTorch not available, skipping neural network training")
+    # --------------------- Neural Network Training --------------------- #
+    def train_neural(self) -> Dict[str, float]:
+        if not self.cfg.nn_enabled:
+            logger.info("Neural network disabled by config.")
             return {}
-        
-        if self.X_processed is None or self.y_processed is None:
-            raise ValueError("Data must be preprocessed first. Call preprocess_data().")
-        
-        logger.info(f"Training neural network for {self.task_type}...")
-        
-        # Convert to PyTorch tensors
-        X_tensor = torch.FloatTensor(self.X_processed)
-        
+        if not PYTORCH_AVAILABLE:
+            logger.warning("PyTorch not installed - skipping neural network.")
+            return {}
+        if self.X_processed is None:
+            raise ValueError("Call preprocess() before train_neural().")
+
+        device = self._select_device()
+        logger.info(f"NN Device: {device}")
+
+        X_tensor = torch.tensor(self.X_processed, dtype=torch.float32)
         if self.task_type == 'classification':
-            y_tensor = torch.LongTensor(self.y_processed.astype(int))
-        else:  # regression
-            y_tensor = torch.FloatTensor(self.y_processed.astype(float))
-        
-        # Split data
-        if self.task_type == 'classification':
-            X_train, X_val, y_train, y_val = train_test_split(
-                X_tensor, y_tensor, test_size=0.2, random_state=42, stratify=y_tensor
-            )
+            y_tensor = torch.tensor(self.y_processed, dtype=torch.long)
+            stratify = self.y_processed
         else:
-            X_train, X_val, y_train, y_val = train_test_split(
-                X_tensor, y_tensor, test_size=0.2, random_state=42
-            )
-        
-        # Create data loaders
-        train_dataset = TensorDataset(X_train, y_train)
-        val_dataset = TensorDataset(X_val, y_val)
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size)
-        
-        # Initialize model
+            y_tensor = torch.tensor(self.y_processed, dtype=torch.float32)
+            stratify = None
+
+        X_train, X_val, y_train, y_val = train_test_split(
+            X_tensor, y_tensor, test_size=0.2,
+            random_state=self.cfg.random_seed,
+            stratify=stratify if self.task_type == 'classification' else None
+        )
+
+        train_loader = DataLoader(TensorDataset(X_train, y_train), batch_size=self.cfg.batch_size, shuffle=True)
+        val_loader = DataLoader(TensorDataset(X_val, y_val), batch_size=self.cfg.batch_size)
+
         input_size = X_tensor.shape[1]
-        
         if self.task_type == 'classification':
-            num_classes = len(np.unique(self.y_processed))
+            num_classes = int(np.unique(self.y_processed).size)
             model = ALSMLPClassifier(input_size, num_classes)
             criterion = nn.CrossEntropyLoss()
         else:
             model = ALSMLPRegressor(input_size)
             criterion = nn.MSELoss()
-        
-        # Optimizer and scheduler
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
-        
-        # Training loop
-        train_losses = []
-        val_metrics = []
-        best_val_metric = float('inf') if self.task_type == 'regression' else 0.0
+
+        model.to(device)
+        optimizer = optim.Adam(model.parameters(), lr=self.cfg.lr)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            patience=self.cfg.lr_reduction_patience,
+            factor=self.cfg.lr_reduction_factor,
+            verbose=self.cfg.verbose
+        )
+
+        scaler = torch.cuda.amp.GradScaler() if (torch.cuda.is_available()) else None
+        best_metric = float('inf') if self.task_type == 'regression' else 0.0
         patience_counter = 0
-        patience = 15
-        
-        for epoch in range(epochs):
-            # Training
+
+        for epoch in range(1, self.cfg.epochs + 1):
             model.train()
-            train_loss = 0.0
-            
-            for batch_X, batch_y in train_loader:
+            running_loss = 0.0
+            for xb, yb in train_loader:
+                xb, yb = xb.to(device), yb.to(device)
                 optimizer.zero_grad()
-                outputs = model(batch_X)
-                
-                if self.task_type == 'regression':
-                    outputs = outputs.squeeze()
-                
-                loss = criterion(outputs, batch_y)
-                loss.backward()
-                optimizer.step()
-                train_loss += loss.item()
-            
-            avg_train_loss = train_loss / len(train_loader)
-            train_losses.append(avg_train_loss)
-            
-            # Validation
-            model.eval()
-            val_loss = 0.0
-            
-            with torch.no_grad():
-                if self.task_type == 'classification':
-                    val_correct = 0
-                    val_total = 0
-                    
-                    for batch_X, batch_y in val_loader:
-                        outputs = model(batch_X)
-                        loss = criterion(outputs, batch_y)
-                        val_loss += loss.item()
-                        
-                        _, predicted = torch.max(outputs.data, 1)
-                        val_total += batch_y.size(0)
-                        val_correct += (predicted == batch_y).sum().item()
-                    
-                    val_metric = val_correct / val_total  # accuracy
-                    val_metrics.append(val_metric)
-                    scheduler.step(-val_metric)  # For ReduceLROnPlateau
-                    
-                    # Early stopping (maximize accuracy)
-                    if val_metric > best_val_metric:
-                        best_val_metric = val_metric
-                        patience_counter = 0
-                        torch.save(model.state_dict(), self.output_dir / "models" / "neural_network_best.pth")
-                    else:
-                        patience_counter += 1
-                        
-                else:  # regression
-                    val_predictions = []
-                    val_targets = []
-                    
-                    for batch_X, batch_y in val_loader:
-                        outputs = model(batch_X).squeeze()
-                        loss = criterion(outputs, batch_y)
-                        val_loss += loss.item()
-                        
-                        val_predictions.extend(outputs.cpu().numpy())
-                        val_targets.extend(batch_y.cpu().numpy())
-                    
-                    val_metric = np.sqrt(mean_squared_error(val_targets, val_predictions))  # RMSE
-                    val_metrics.append(val_metric)
-                    scheduler.step(val_metric)  # For ReduceLROnPlateau
-                    
-                    # Early stopping (minimize RMSE)
-                    if val_metric < best_val_metric:
-                        best_val_metric = val_metric
-                        patience_counter = 0
-                        torch.save(model.state_dict(), self.output_dir / "models" / "neural_network_best.pth")
-                    else:
-                        patience_counter += 1
-            
-            if patience_counter >= patience:
-                logger.info(f"Early stopping at epoch {epoch+1}")
+                if scaler:
+                    with torch.cuda.amp.autocast():
+                        out = model(xb)
+                        if self.task_type == 'regression':
+                            out = out.squeeze()
+                        loss = criterion(out, yb)
+                    scaler.scale(loss).backward()
+                    if self.cfg.grad_clip_norm:
+                        scaler.unscale_(optimizer)
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), self.cfg.grad_clip_norm)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    out = model(xb)
+                    if self.task_type == 'regression':
+                        out = out.squeeze()
+                    loss = criterion(out, yb)
+                    loss.backward()
+                    if self.cfg.grad_clip_norm:
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), self.cfg.grad_clip_norm)
+                    optimizer.step()
+                running_loss += loss.item()
+
+            val_metric = self._evaluate_nn(model, val_loader, criterion, device)
+            scheduler.step(val_metric if self.task_type == 'regression' else -val_metric)
+
+            improved = (val_metric < best_metric) if self.task_type == 'regression' else (val_metric > best_metric)
+            if improved:
+                best_metric = val_metric
+                patience_counter = 0
+                torch.save(model.state_dict(), self.output_dir / "models" / "neural_best.pth")
+            else:
+                patience_counter += 1
+
+            if epoch == 1 or epoch % 10 == 0:
+                metric_name = "RMSE" if self.task_type == 'regression' else "Accuracy"
+                logger.info(f"[NN] Epoch {epoch}/{self.cfg.epochs} loss={running_loss/len(train_loader):.4f} "
+                            f"val_{metric_name}={val_metric:.4f}")
+
+            if patience_counter >= self.cfg.early_stopping_patience:
+                logger.info("Early stopping triggered.")
                 break
-            
-            if (epoch + 1) % 20 == 0:
-                metric_name = 'Accuracy' if self.task_type == 'classification' else 'RMSE'
-                logger.info(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_train_loss:.4f}, Val {metric_name}: {val_metric:.4f}")
-        
-        # Final evaluation
+
+        # Load best checkpoint
+        model.load_state_dict(torch.load(self.output_dir / "models" / "neural_best.pth"))
+        final = self._final_nn_eval(model, X_val, y_val, device)
+        self.neural_results = final
+        self._save_json(final, self.output_dir / "metrics" / "neural_results.json")
+        return final
+
+    def _select_device(self) -> str:
+        if not PYTORCH_AVAILABLE:
+            return 'cpu'
+        if self.cfg.prefer_gpu and torch.cuda.is_available():
+            return 'cuda'
+        if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+            return 'mps'
+        return 'cpu'
+
+    def _evaluate_nn(self, model, loader, criterion, device):
+        model.eval()
+        correct = 0
+        total = 0
+        preds_all = []
+        targets_all = []
+        with torch.no_grad():
+            for xb, yb in loader:
+                xb, yb = xb.to(device), yb.to(device)
+                outputs = model(xb)
+                if self.task_type == 'classification':
+                    _, pred = torch.max(outputs, 1)
+                    total += yb.size(0)
+                    correct += (pred == yb).sum().item()
+                else:
+                    outputs = outputs.squeeze()
+                    preds_all.extend(outputs.detach().cpu().numpy())
+                    targets_all.extend(yb.detach().cpu().numpy())
+        if self.task_type == 'classification':
+            return correct / max(total, 1)
+        else:
+            return math.sqrt(mean_squared_error(targets_all, preds_all))
+
+    def _final_nn_eval(self, model, X_val, y_val, device):
         model.eval()
         with torch.no_grad():
+            X_val = X_val.to(device)
+            y_val = y_val.to(device)
+            outputs = model(X_val)
             if self.task_type == 'classification':
-                val_outputs = model(X_val)
-                _, val_pred = torch.max(val_outputs, 1)
-                
-                val_accuracy = (val_pred == y_val).float().mean().item()
-                val_pred_np = val_pred.numpy()
-                y_val_np = y_val.numpy()
-                val_f1 = f1_score(y_val_np, val_pred_np, average='macro')
-                
-                results = {
-                    'best_validation_accuracy': best_val_metric,
-                    'final_validation_accuracy': val_accuracy,
-                    'validation_f1_macro': val_f1,
-                    'epochs_trained': len(train_losses)
+                _, preds = torch.max(outputs, 1)
+                acc = (preds == y_val).float().mean().item()
+                f1 = f1_score(y_val.cpu().numpy(), preds.cpu().numpy(), average='macro')
+                return {
+                    'best_validation_accuracy': acc,
+                    'validation_f1_macro': f1
                 }
-                
-                logger.info(f"Neural Network - Best Val Acc: {best_val_metric:.3f}, Final F1: {val_f1:.3f}")
-                
-            else:  # regression
-                val_outputs = model(X_val).squeeze()
-                val_predictions = val_outputs.numpy()
-                y_val_np = y_val.numpy()
-                
-                final_rmse = np.sqrt(mean_squared_error(y_val_np, val_predictions))
-                final_mae = mean_absolute_error(y_val_np, val_predictions)
-                final_r2 = r2_score(y_val_np, val_predictions)
-                
-                results = {
-                    'best_validation_rmse': best_val_metric,
-                    'final_validation_rmse': final_rmse,
-                    'validation_mae': final_mae,
-                    'validation_r2': final_r2,
-                    'epochs_trained': len(train_losses)
+            else:
+                outputs = outputs.squeeze()
+                preds = outputs.cpu().numpy()
+                truth = y_val.cpu().numpy()
+                rmse = math.sqrt(mean_squared_error(truth, preds))
+                mae = mean_absolute_error(truth, preds)
+                r2 = r2_score(truth, preds)
+                return {
+                    'best_validation_rmse': rmse,
+                    'validation_mae': mae,
+                    'validation_r2': r2
                 }
-                
-                logger.info(f"Neural Network - Best Val RMSE: {best_val_metric:.3f}, Final R²: {final_r2:.3f}")
-        
-        self.neural_results = results
-        return results
 
-    def save_preprocessor(self):
-        """Save the data preprocessor and label encoder"""
+    # --------------------- Feature Importance & SHAP --------------------- #
+    def compute_feature_importance(self):
+        if self.X_processed is None or self.y_processed is None:
+            return
+        vis_dir = self.output_dir / "visualizations"
+        vis_dir.mkdir(exist_ok=True)
+
+        # Reload candidate tree models
+        candidates = []
+        for base in ['RandomForest', 'XGBoost', 'GradientBoosting']:
+            fname = f"{'regression' if self.task_type=='regression' else 'classification'}_{base}.pkl"
+            path = self.output_dir / "models" / fname
+            if path.exists():
+                try:
+                    with open(path, 'rb') as f:
+                        model = pickle.load(f)
+                    candidates.append((base, model))
+                except Exception:
+                    pass
+
+        for name, model in candidates:
+            if hasattr(model, 'feature_importances_'):
+                try:
+                    fi = model.feature_importances_
+                    df_imp = pd.DataFrame({
+                        'feature': self.encoded_feature_names,
+                        'importance': fi
+                    }).sort_values('importance', ascending=False)
+                    df_imp.to_csv(vis_dir / f"feature_importance_{name}.csv", index=False)
+                    if MPL_AVAILABLE and SEABORN_AVAILABLE and self.cfg.plot_importance:
+                        plt.figure(figsize=(8, 8))
+                        top_df = df_imp.head(25)
+                        sns.barplot(data=top_df, x='importance', y='feature', palette='viridis')
+                        plt.title(f"Top Feature Importances ({name})")
+                        plt.tight_layout()
+                        plt.savefig(vis_dir / f"feature_importance_{name}.png")
+                        plt.close()
+                    logger.info(f"Saved feature importance for {name}")
+                except Exception as e:
+                    logger.warning(f"Failed importance for {name}: {e}")
+
+        if self.cfg.compute_shap and SHAP_AVAILABLE and candidates:
+            name, model = candidates[0]
+            logger.info(f"Computing SHAP values for {name} (subset for performance)...")
+            try:
+                if 'xgb' in str(type(model)).lower() or hasattr(model, 'feature_importances_'):
+                    explainer = shap.TreeExplainer(model)
+                    sample = self.X_processed[: min(1000, self.X_processed.shape[0])]
+                    shap_values = explainer.shap_values(sample)
+                    shap.summary_plot(shap_values, sample, feature_names=self.encoded_feature_names, show=False)
+                    if MPL_AVAILABLE:
+                        plt.tight_layout()
+                        plt.savefig(vis_dir / f"shap_summary_{name}.png")
+                        plt.close()
+                        logger.info("Saved SHAP summary plot.")
+                else:
+                    logger.warning("Model type unsupported for SHAP TreeExplainer.")
+            except Exception as e:
+                logger.warning(f"SHAP computation failed: {e}")
+        elif self.cfg.compute_shap and not SHAP_AVAILABLE:
+            logger.warning("SHAP requested but shap not installed.")
+
+    # --------------------- Persistence & Reporting --------------------- #
+    def _save_model(self, model, filename: str):
+        path = self.output_dir / "models" / filename
+        with open(path, 'wb') as f:
+            pickle.dump(model, f)
+
+    def save_preprocessing(self):
         if self.preprocessor is not None:
-            preprocessor_path = self.output_dir / "preprocessors" / "preprocessor.pkl"
-            with open(preprocessor_path, 'wb') as f:
+            with open(self.output_dir / "preprocessors" / "preprocessor.pkl", 'wb') as f:
                 pickle.dump(self.preprocessor, f)
-        
         if self.label_encoder is not None:
-            encoder_path = self.output_dir / "preprocessors" / "label_encoder.pkl"
-            with open(encoder_path, 'wb') as f:
+            with open(self.output_dir / "preprocessors" / "label_encoder.pkl", 'wb') as f:
                 pickle.dump(self.label_encoder, f)
 
-    def generate_report(self) -> Dict[str, Any]:
-        """
-        Generate comprehensive training report
-        
-        Returns:
-            Dictionary containing all results and metadata
-        """
+    def _save_json(self, data: Dict[str, Any], path: Path):
+        with open(path, 'w') as f:
+            json.dump(data, f, indent=2)
+
+    def export_metrics(self):
         report = {
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.utcnow().isoformat(),
+            'config': asdict(self.cfg),
             'task_type': self.task_type,
-            'dataset_info': {
-                'shape': self.data.shape if self.data is not None else None,
-                'features': len(self.feature_names) if self.feature_names else None,
-                'feature_names': self.feature_names
-            },
             'regression_results': self.regression_results,
             'classification_results': self.classification_results,
             'neural_results': self.neural_results,
-            'output_directory': str(self.output_dir)
+            'feature_count': len(self.encoded_feature_names) if self.encoded_feature_names else None
         }
-        
-        # Save report
-        report_path = self.output_dir / "training_report.json"
-        with open(report_path, 'w') as f:
-            json.dump(report, f, indent=2)
-        
-        # Create summary
-        self._create_summary_report(report)
-        
-        return report
+        self._save_json(report, self.output_dir / "metrics" / "training_report.json")
 
-    def _create_summary_report(self, report: Dict[str, Any]):
-        """Create human-readable summary report"""
-        summary_path = self.output_dir / "summary_report.txt"
-        
-        with open(summary_path, 'w') as f:
-            f.write("ALS PROGRESSION PREDICTION TRAINING REPORT\n")
-            f.write("=" * 45 + "\n\n")
-            f.write(f"Generated: {report['timestamp']}\n")
-            f.write(f"Task Type: {report['task_type'].title()}\n\n")
-            
-            if report['dataset_info']['shape']:
-                f.write(f"Dataset Information:\n")
-                f.write(f"- Shape: {report['dataset_info']['shape']}\n")
-                f.write(f"- Features: {report['dataset_info']['features']}\n\n")
-            
-            if report['regression_results']:
-                f.write("Regression Model Results:\n")
-                f.write("-" * 26 + "\n")
-                for model, metrics in report['regression_results'].items():
-                    f.write(f"{model}:\n")
-                    f.write(f"  RMSE: {metrics['rmse_mean']:.3f}\n")
-                    f.write(f"  MAE: {metrics['mae_mean']:.3f} (±{metrics['mae_std']:.3f})\n")
-                    f.write(f"  R²: {metrics['r2_mean']:.3f} (±{metrics['r2_std']:.3f})\n\n")
-            
-            if report['classification_results']:
-                f.write("Classification Model Results:\n")
-                f.write("-" * 30 + "\n")
-                for model, metrics in report['classification_results'].items():
-                    f.write(f"{model}:\n")
-                    f.write(f"  Accuracy: {metrics['accuracy_mean']:.3f} (±{metrics['accuracy_std']:.3f})\n")
-                    f.write(f"  Balanced Accuracy: {metrics['balanced_accuracy_mean']:.3f} (±{metrics['balanced_accuracy_std']:.3f})\n")
-                    f.write(f"  F1 Score: {metrics['f1_macro_mean']:.3f} (±{metrics['f1_macro_std']:.3f})\n")
-                    f.write(f"  ROC AUC: {metrics['roc_auc_mean']:.3f} (±{metrics['roc_auc_std']:.3f})\n\n")
-            
-            if report['neural_results']:
-                f.write("Neural Network Results:\n")
-                f.write("-" * 22 + "\n")
-                if report['task_type'] == 'classification':
-                    f.write(f"Best Validation Accuracy: {report['neural_results']['best_validation_accuracy']:.3f}\n")
-                    f.write(f"Final Validation F1: {report['neural_results']['validation_f1_macro']:.3f}\n")
+        # Flat metrics CSV
+        rows = []
+        for model, metrics in self.regression_results.items():
+            r = {'model': model, 'type': 'regression'}
+            r.update(metrics)
+            rows.append(r)
+        for model, metrics in self.classification_results.items():
+            r = {'model': model, 'type': 'classification'}
+            r.update(metrics)
+            rows.append(r)
+        if rows:
+            pd.DataFrame(rows).to_csv(self.output_dir / "metrics" / "model_metrics.csv", index=False)
+
+        # Human summary
+        with open(self.output_dir / "metrics" / "summary.txt", 'w') as f:
+            f.write("ALS TRAINING SUMMARY\n")
+            f.write("=" * 60 + "\n")
+            f.write(f"Timestamp: {report['timestamp']}\n")
+            f.write(f"Task Type: {self.task_type}\n")
+            if self.regression_results:
+                best_r = min(self.regression_results.items(), key=lambda x: x[1]['rmse_mean'])
+                f.write(f"Best Regression: {best_r[0]} RMSE={best_r[1]['rmse_mean']:.4f} R2={best_r[1]['r2_mean']:.4f}\n")
+            if self.classification_results:
+                best_c = max(self.classification_results.items(), key=lambda x: x[1]['accuracy_mean'])
+                f.write(f"Best Classification: {best_c[0]} Acc={best_c[1]['accuracy_mean']:.4f} "
+                        f"F1={best_c[1]['f1_macro_mean']:.4f}\n")
+            if self.neural_results:
+                if self.task_type == 'classification':
+                    f.write(f"Neural Best Acc: {self.neural_results.get('best_validation_accuracy')}\n")
                 else:
-                    f.write(f"Best Validation RMSE: {report['neural_results']['best_validation_rmse']:.3f}\n")
-                    f.write(f"Final Validation R²: {report['neural_results']['validation_r2']:.3f}\n")
-                f.write(f"Epochs Trained: {report['neural_results']['epochs_trained']}\n\n")
-            
-            f.write(f"Models and outputs saved in: {report['output_directory']}\n")
+                    f.write(f"Neural Best RMSE: {self.neural_results.get('best_validation_rmse')}\n")
 
-    def run_full_pipeline(self, data_path: str = None, epochs: int = 100, 
-                         n_folds: int = 5, dataset_choice: str = "als-progression", 
-                         task_type: str = 'auto', target_column: str = None) -> Dict[str, Any]:
-        """
-        Run the complete training pipeline
-        
-        Args:
-            data_path: Path to dataset CSV (optional)
-            epochs: Number of epochs for neural network
-            n_folds: Number of folds for cross-validation
-            dataset_choice: Which Kaggle dataset to use
-            task_type: 'regression', 'classification', or 'auto'
-            target_column: Name of target column (auto-detects if None)
-            
-        Returns:
-            Dictionary containing all results
-        """
-        logger.info("Starting ALS Progression Prediction Training Pipeline...")
-        
-        try:
-            # Load data
-            self.load_data(data_path, dataset_choice)
-            
-            # Preprocess data
-            self.preprocess_data(target_column, task_type)
-            
-            # Train models based on task type
-            regression_results = {}
-            classification_results = {}
-            
+    # --------------------- Orchestration --------------------- #
+    def run(self, data_path: Optional[str] = None):
+        start = time.time()
+        logger.info("=== ALS Pipeline: START ===")
+        self.load_data(data_path)
+        self.preprocess()
+
+        if self.cfg.classical_enabled:
             if self.task_type == 'regression':
-                regression_results = self.train_regression_models(n_folds)
-            elif self.task_type == 'classification':
-                classification_results = self.train_classification_models(n_folds)
-            
-            # Train neural network
-            neural_results = self.train_neural_network(epochs)
-            
-            # Save preprocessors
-            self.save_preprocessor()
-            
-            # Generate report
-            report = self.generate_report()
-            
-            logger.info("ALS training pipeline completed successfully!")
-            logger.info(f"Results saved to: {self.output_dir}")
-            
-            return report
-            
-        except Exception as e:
-            logger.error(f"Pipeline failed: {e}")
-            raise
+                self.train_regression()
+            else:
+                self.train_classification()
+
+        if self.cfg.nn_enabled:
+            self.train_neural()
+
+        self.save_preprocessing()
+        self.compute_feature_importance()
+        self.export_metrics()
+
+        logger.info(f"=== ALS Pipeline: DONE ({(time.time()-start)/60:.2f} min) ===")
+
+        return {
+            'task_type': self.task_type,
+            'regression_results': self.regression_results,
+            'classification_results': self.classification_results,
+            'neural_results': self.neural_results
+        }
+
+
+# ------------------------- CLI ------------------------- #
+def build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Advanced ALS Progression Prediction Training Pipeline")
+    p.add_argument('--data-path', type=str, default=None, help='Path to CSV (optional)')
+    p.add_argument('--output-dir', type=str, default='als_outputs')
+    p.add_argument('--dataset-choice', choices=['als-progression', 'bram-als'], default='als-progression')
+    p.add_argument('--task-type', choices=['regression', 'classification', 'auto'], default='auto')
+    p.add_argument('--target-column', type=str, default=None)
+
+    p.add_argument('--epochs', type=int, default=80)
+    p.add_argument('--batch-size', type=int, default=32)
+    p.add_argument('--folds', type=int, default=5)
+    p.add_argument('--seed', type=int, default=42)
+
+    p.add_argument('--disable-nn', action='store_true')
+    p.add_argument('--disable-classic', action='store_true')
+
+    p.add_argument('--use-hyperparam-search', action='store_true')
+    p.add_argument('--hyperparam-iter', type=int, default=20)
+
+    p.add_argument('--no-xgboost', action='store_true')
+    p.add_argument('--no-svm', action='store_true')
+    p.add_argument('--no-gb', action='store_true')
+
+    p.add_argument('--compute-shap', action='store_true')
+    p.add_argument('--no-importance-plot', action='store_true')
+    p.add_argument('--save-feature-matrix', action='store_true')
+
+    p.add_argument('--verbose', action='store_true')
+    return p
+
 
 def main():
-    """
-    Main entry point for the training script.
-    """
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="ALS Progression Prediction Training Pipeline")
-    parser.add_argument('--data-path', type=str, default=None,
-                       help='Path to dataset CSV file (optional, will download from Kaggle if not provided)')
-    parser.add_argument('--epochs', type=int, default=100,
-                       help='Number of epochs for neural network training')
-    parser.add_argument('--folds', type=int, default=5,
-                       help='Number of folds for cross-validation')
-    parser.add_argument('--dataset-choice', type=str, default='als-progression',
-                       choices=['als-progression', 'bram-als'],
-                       help='Which Kaggle dataset to use')
-    parser.add_argument('--task-type', type=str, default='auto',
-                       choices=['regression', 'classification', 'auto'],
-                       help='Type of ML task to perform')
-    parser.add_argument('--target-column', type=str, default=None,
-                       help='Name of target column (auto-detects if not provided)')
-    parser.add_argument('--output-dir', type=str, default='als_outputs',
-                       help='Output directory for results')
-    
+    parser = build_arg_parser()
     args = parser.parse_args()
-    
-    pipeline = ALSTrainingPipeline(output_dir=args.output_dir)
-    
+
+    cfg = TrainingConfig(
+        output_dir=args.output_dir,
+        dataset_choice=args.dataset_choice,
+        task_type=args.task_type,
+        target_column=args.target_column,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        folds=args.folds,
+        random_seed=args.seed,
+        nn_enabled=not args.disable_nn,
+        classical_enabled=not args.disable_classic,
+        use_hyperparam_search=args.use_hyperparam_search,
+        hyperparam_iter=args.hyperparam_iter,
+        include_xgboost=not args.no_xgboost,
+        include_svm=not args.no_svm,
+        include_gradient_boosting=not args.no_gb,
+        compute_shap=args.compute_shap,
+        plot_importance=not args.no_importance_plot,
+        save_feature_matrix=args.save_feature_matrix,
+        verbose=args.verbose
+    )
+
+    pipeline = ALSTrainingPipeline(cfg)
     try:
-        results = pipeline.run_full_pipeline(
-            data_path=args.data_path,
-            epochs=args.epochs,
-            n_folds=args.folds,
-            dataset_choice=args.dataset_choice,
-            task_type=args.task_type,
-            target_column=args.target_column
-        )
-        
-        print(f"\nTraining completed successfully!")
-        print(f"Task Type: {results.get('task_type', 'Unknown')}")
-        print(f"Results saved to: {args.output_dir}")
-        
-        # Print quick summary
-        if results.get('regression_results'):
-            print(f"\nBest Regression Model Performance:")
-            best_model = min(results['regression_results'].items(), 
-                           key=lambda x: x[1]['rmse_mean'])
-            print(f"  {best_model[0]}: {best_model[1]['rmse_mean']:.3f} RMSE, {best_model[1]['r2_mean']:.3f} R²")
-        
-        if results.get('classification_results'):
-            print(f"\nBest Classification Model Performance:")
-            best_model = max(results['classification_results'].items(), 
-                           key=lambda x: x[1]['accuracy_mean'])
-            print(f"  {best_model[0]}: {best_model[1]['accuracy_mean']:.3f} accuracy")
-        
-        if results.get('neural_results'):
-            if results.get('task_type') == 'classification':
-                print(f"Neural Network: {results['neural_results']['best_validation_accuracy']:.3f} best validation accuracy")
-            else:
-                print(f"Neural Network: {results['neural_results']['best_validation_rmse']:.3f} best validation RMSE")
-            
+        results = pipeline.run(data_path=args.data_path)
+        print("\n=== Training Complete ===")
+        print(f"Task: {results['task_type']}")
+        if results['regression_results']:
+            best_r = min(results['regression_results'].items(), key=lambda x: x[1]['rmse_mean'])
+            print(f"Best Regression: {best_r[0]} RMSE={best_r[1]['rmse_mean']:.4f} R2={best_r[1]['r2_mean']:.4f}")
+        if results['classification_results']:
+            best_c = max(results['classification_results'].items(), key=lambda x: x[1]['accuracy_mean'])
+            print(f"Best Classification: {best_c[0]} Acc={best_c[1]['accuracy_mean']:.4f} "
+                  f"F1={best_c[1]['f1_macro_mean']:.4f}")
+        if results['neural_results']:
+            print(f"Neural Results: {results['neural_results']}")
+        print(f"Outputs saved to: {cfg.output_dir}")
     except Exception as e:
-        logger.error(f"Training failed: {e}")
+        logger.exception(f"Pipeline failure: {e}")
         sys.exit(1)
 
 
