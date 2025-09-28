@@ -16,8 +16,8 @@ AiMedRes accelerates research and development of AI-driven solutions for **neuro
 Fighting brain diseases through AI innovation:
 - **Alzheimer's Disease** - Early detection and progression modeling
 - **Stroke & Cerebrovascular Conditions** - Risk assessment and recovery planning  
-- **Neurological Disorders** - Comprehensive brain disease spectrum
-- **Mental Health Conditions** - Psychological state modeling and intervention
+- **Neurological Disorders** - partial brain disease spectrum 
+
 
 ## 🚀 Key Features
 
