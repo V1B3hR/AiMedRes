@@ -125,6 +125,102 @@ class TestRiskStratificationEngine:
         assert len(interventions) > 0
         # Should include high-risk interventions
         assert any('referral' in intervention for intervention in interventions)
+    
+    def test_parkinson_risk_calculation(self, risk_engine):
+        """Test Parkinson's disease risk calculation"""
+        parkinson_patient = {
+            'patient_id': 'PD_TEST_001',
+            'Age': 68,
+            'M/F': 1,  # Male
+            'tremor_at_rest': True,
+            'bradykinesia': True,
+            'rigidity': False,
+            'postural_instability': True,
+            'family_history_parkinson': False,
+            'anosmia': True,
+            'coffee_consumption_daily': True,
+            'UPDRS_motor_score': 25
+        }
+        
+        risk_score = risk_engine._calculate_parkinson_risk(parkinson_patient)
+        
+        assert 0.0 <= risk_score <= 1.0
+        assert risk_score > 0.4  # Should have significant risk given symptoms
+    
+    def test_als_risk_calculation(self, risk_engine):
+        """Test ALS risk calculation"""
+        als_patient = {
+            'patient_id': 'ALS_TEST_001',
+            'Age': 62,
+            'M/F': 1,  # Male
+            'muscle_weakness': True,
+            'muscle_atrophy': True,
+            'fasciculations': True,
+            'speech_difficulty': True,
+            'swallowing_difficulty': False,
+            'ALSFRS_R_score': 35,
+            'family_history_als': False,
+            'military_service': True,
+            'upper_motor_neuron_signs': True,
+            'lower_motor_neuron_signs': True
+        }
+        
+        risk_score = risk_engine._calculate_als_risk(als_patient)
+        
+        assert 0.0 <= risk_score <= 1.0
+        assert risk_score > 0.6  # Should have high risk given multiple symptoms
+    
+    def test_parkinson_comprehensive_assessment(self, risk_engine):
+        """Test comprehensive Parkinson's assessment"""
+        parkinson_patient = {
+            'patient_id': 'PD_TEST_002',
+            'Age': 65,
+            'M/F': 1,
+            'tremor_at_rest': True,
+            'bradykinesia': True,
+            'rigidity': True,
+            'postural_instability': False,
+            'speech_difficulty': True
+        }
+        
+        assessment = risk_engine.assess_risk(parkinson_patient, 'parkinson')
+        
+        assert isinstance(assessment, RiskAssessment)
+        assert assessment.patient_id == 'PD_TEST_002'
+        assert assessment.condition == 'parkinson'
+        assert assessment.risk_level in ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH']
+        assert 0.0 <= assessment.risk_score <= 1.0
+        assert 0.0 <= assessment.confidence <= 1.0
+        assert isinstance(assessment.interventions, list)
+        assert len(assessment.interventions) > 0
+        # Should include Parkinson's-specific interventions
+        assert any('speech' in intervention.lower() for intervention in assessment.interventions)
+    
+    def test_als_comprehensive_assessment(self, risk_engine):
+        """Test comprehensive ALS assessment"""
+        als_patient = {
+            'patient_id': 'ALS_TEST_002',
+            'Age': 58,
+            'M/F': 0,  # Female
+            'muscle_weakness': True,
+            'muscle_atrophy': False,
+            'fasciculations': True,
+            'breathing_difficulty': True,
+            'ALSFRS_R_score': 30
+        }
+        
+        assessment = risk_engine.assess_risk(als_patient, 'als')
+        
+        assert isinstance(assessment, RiskAssessment)
+        assert assessment.patient_id == 'ALS_TEST_002'
+        assert assessment.condition == 'als'
+        assert assessment.risk_level in ['MINIMAL', 'LOW', 'MEDIUM', 'HIGH']
+        assert 0.0 <= assessment.risk_score <= 1.0
+        assert 0.0 <= assessment.confidence <= 1.0
+        assert isinstance(assessment.interventions, list)
+        assert len(assessment.interventions) > 0
+        # Should include ALS-specific interventions for breathing difficulty
+        assert any('respiratory' in intervention.lower() for intervention in assessment.interventions)
 
 
 class TestExplainableAIDashboard:

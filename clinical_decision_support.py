@@ -128,6 +128,10 @@ class RiskStratificationEngine:
             return self._calculate_diabetes_risk(patient_data)
         elif condition == 'stroke':
             return self._calculate_stroke_risk(patient_data)
+        elif condition == 'parkinson':
+            return self._calculate_parkinson_risk(patient_data)
+        elif condition == 'als':
+            return self._calculate_als_risk(patient_data)
         else:
             # Generic risk calculation
             return self._calculate_generic_risk(patient_data)
@@ -274,6 +278,172 @@ class RiskStratificationEngine:
         
         return min(1.0, max(0.0, risk_score))
     
+    def _calculate_parkinson_risk(self, patient_data: Dict[str, Any]) -> float:
+        """Calculate Parkinson's disease risk using established factors."""
+        risk_score = 0.0
+        
+        # Age factor (strongest predictor for PD)
+        age = patient_data.get('Age', 60)
+        if age >= 80:
+            risk_score += 0.35
+        elif age >= 70:
+            risk_score += 0.25
+        elif age >= 60:
+            risk_score += 0.15
+        elif age >= 50:
+            risk_score += 0.05
+        
+        # Gender (male predominance)
+        gender = patient_data.get('M/F', 1)  # 1 = Male, 0 = Female
+        if gender == 1:
+            risk_score += 0.1
+        
+        # Family history of Parkinson's
+        if patient_data.get('family_history_parkinson', False):
+            risk_score += 0.2
+        
+        # Motor symptoms indicators
+        tremor_at_rest = patient_data.get('tremor_at_rest', False)
+        bradykinesia = patient_data.get('bradykinesia', False)
+        rigidity = patient_data.get('rigidity', False)
+        postural_instability = patient_data.get('postural_instability', False)
+        
+        motor_symptoms = sum([tremor_at_rest, bradykinesia, rigidity, postural_instability])
+        if motor_symptoms >= 3:
+            risk_score += 0.4
+        elif motor_symptoms >= 2:
+            risk_score += 0.25
+        elif motor_symptoms >= 1:
+            risk_score += 0.15
+        
+        # UPDRS Motor Score (if available)
+        updrs_motor = patient_data.get('UPDRS_motor_score', None)
+        if updrs_motor is not None:
+            if updrs_motor > 30:
+                risk_score += 0.3
+            elif updrs_motor > 20:
+                risk_score += 0.2
+            elif updrs_motor > 10:
+                risk_score += 0.1
+        
+        # Non-motor symptoms (early indicators)
+        anosmia = patient_data.get('anosmia', False)  # Loss of smell
+        rbd = patient_data.get('rem_behavior_disorder', False)  # REM Behavior Disorder
+        constipation = patient_data.get('chronic_constipation', False)
+        
+        if anosmia:
+            risk_score += 0.15
+        if rbd:
+            risk_score += 0.15
+        if constipation:
+            risk_score += 0.1
+        
+        # DaTscan result (if available)
+        datscan_abnormal = patient_data.get('datscan_abnormal', None)
+        if datscan_abnormal is True:
+            risk_score += 0.25
+        
+        # Environmental factors (protective: caffeine, smoking; risk: pesticides)
+        coffee_consumption = patient_data.get('coffee_consumption_daily', False)
+        if coffee_consumption:
+            risk_score -= 0.05  # Protective effect
+        
+        pesticide_exposure = patient_data.get('pesticide_exposure', False)
+        if pesticide_exposure:
+            risk_score += 0.1
+        
+        return min(1.0, max(0.0, risk_score))
+    
+    def _calculate_als_risk(self, patient_data: Dict[str, Any]) -> float:
+        """Calculate ALS (Amyotrophic Lateral Sclerosis) risk using established factors."""
+        risk_score = 0.0
+        
+        # Age factor (peak incidence 55-75 years)
+        age = patient_data.get('Age', 55)
+        if 55 <= age <= 75:
+            risk_score += 0.3
+        elif 45 <= age < 55 or 75 < age <= 85:
+            risk_score += 0.2
+        elif age > 85:
+            risk_score += 0.1  # Decreased incidence in very elderly
+        
+        # Gender (male predominance, especially in sporadic ALS)
+        gender = patient_data.get('M/F', 1)  # 1 = Male, 0 = Female
+        if gender == 1:
+            risk_score += 0.15
+        
+        # Family history (5-10% of cases are familial)
+        if patient_data.get('family_history_als', False):
+            risk_score += 0.4  # Strong predictor for familial ALS
+        
+        # Clinical symptoms
+        muscle_weakness = patient_data.get('muscle_weakness', False)
+        muscle_atrophy = patient_data.get('muscle_atrophy', False)
+        fasciculations = patient_data.get('fasciculations', False)  # Muscle twitching
+        speech_difficulty = patient_data.get('speech_difficulty', False)
+        swallowing_difficulty = patient_data.get('swallowing_difficulty', False)
+        breathing_difficulty = patient_data.get('breathing_difficulty', False)
+        
+        clinical_symptoms = sum([muscle_weakness, muscle_atrophy, fasciculations, 
+                               speech_difficulty, swallowing_difficulty, breathing_difficulty])
+        
+        if clinical_symptoms >= 4:
+            risk_score += 0.5
+        elif clinical_symptoms >= 3:
+            risk_score += 0.35
+        elif clinical_symptoms >= 2:
+            risk_score += 0.25
+        elif clinical_symptoms >= 1:
+            risk_score += 0.15
+        
+        # ALSFRS-R Score (ALS Functional Rating Scale-Revised)
+        alsfrs_r = patient_data.get('ALSFRS_R_score', None)
+        if alsfrs_r is not None:
+            # Normal score is 48, lower scores indicate greater impairment
+            if alsfrs_r < 30:
+                risk_score += 0.4
+            elif alsfrs_r < 36:
+                risk_score += 0.3
+            elif alsfrs_r < 42:
+                risk_score += 0.2
+            elif alsfrs_r < 46:
+                risk_score += 0.1
+        
+        # Upper and lower motor neuron signs
+        upper_motor_signs = patient_data.get('upper_motor_neuron_signs', False)
+        lower_motor_signs = patient_data.get('lower_motor_neuron_signs', False)
+        
+        if upper_motor_signs and lower_motor_signs:
+            risk_score += 0.3  # Both present is highly suggestive
+        elif upper_motor_signs or lower_motor_signs:
+            risk_score += 0.15
+        
+        # EMG abnormalities
+        emg_abnormal = patient_data.get('emg_abnormal', None)
+        if emg_abnormal is True:
+            risk_score += 0.2
+        
+        # Bulbar onset (affects speech and swallowing first)
+        bulbar_onset = patient_data.get('bulbar_onset', False)
+        if bulbar_onset:
+            risk_score += 0.2
+        
+        # Environmental factors
+        military_service = patient_data.get('military_service', False)
+        if military_service:
+            risk_score += 0.1  # Associated with higher ALS risk
+        
+        smoking_history = patient_data.get('smoking_history', False)
+        if smoking_history:
+            risk_score += 0.1
+        
+        # Physical activity (high levels may be a risk factor)
+        high_physical_activity = patient_data.get('high_physical_activity', False)
+        if high_physical_activity:
+            risk_score += 0.05
+        
+        return min(1.0, max(0.0, risk_score))
+    
     def _calculate_generic_risk(self, patient_data: Dict[str, Any]) -> float:
         """Generic risk calculation for unknown conditions."""
         # Simple age-based risk
@@ -315,6 +485,50 @@ class RiskStratificationEngine:
             if patient_data.get('BMI', 25) > 30:
                 interventions.append('weight_management_program')
         
+        elif condition == 'parkinson':
+            # Personalized interventions for Parkinson's disease
+            motor_symptoms = sum([
+                patient_data.get('tremor_at_rest', False),
+                patient_data.get('bradykinesia', False),
+                patient_data.get('rigidity', False),
+                patient_data.get('postural_instability', False)
+            ])
+            if motor_symptoms >= 2:
+                interventions.append('dopaminergic_medication_evaluation')
+            
+            if patient_data.get('speech_difficulty', False):
+                interventions.append('speech_therapy_referral')
+            
+            if patient_data.get('postural_instability', False):
+                interventions.append('balance_training_program')
+            
+            if patient_data.get('Age', 0) > 65:
+                interventions.append('fall_risk_assessment')
+        
+        elif condition == 'als':
+            # Personalized interventions for ALS
+            if patient_data.get('speech_difficulty', False) or patient_data.get('swallowing_difficulty', False):
+                interventions.append('speech_language_pathology_referral')
+            
+            if patient_data.get('breathing_difficulty', False):
+                interventions.append('pulmonary_function_monitoring')
+                interventions.append('respiratory_therapy_referral')
+            
+            if patient_data.get('muscle_weakness', False):
+                interventions.append('adaptive_equipment_assessment')
+            
+            # ALSFRS-R score based interventions
+            alsfrs_r = patient_data.get('ALSFRS_R_score', 48)
+            if alsfrs_r < 30:
+                interventions.append('palliative_care_urgent')
+                interventions.append('advance_directives_discussion')
+            elif alsfrs_r < 36:
+                interventions.append('nutrition_support_evaluation')
+            
+            # Family history consideration
+            if patient_data.get('family_history_als', False):
+                interventions.append('genetic_testing_consideration')
+        
         # Combine general and specific interventions
         interventions.extend(risk_interventions)
         
@@ -326,7 +540,9 @@ class RiskStratificationEngine:
             'alzheimer': ['Age', 'MMSE', 'CDR', 'EDUC'],
             'cardiovascular': ['Age', 'M/F', 'hypertension', 'diabetes'],
             'diabetes': ['Age', 'BMI', 'family_history_diabetes'],
-            'stroke': ['Age', 'hypertension', 'diabetes']
+            'stroke': ['Age', 'hypertension', 'diabetes'],
+            'parkinson': ['Age', 'M/F', 'tremor_at_rest', 'bradykinesia', 'rigidity'],
+            'als': ['Age', 'M/F', 'muscle_weakness', 'muscle_atrophy', 'fasciculations']
         }
         
         fields = required_fields.get(condition, ['Age'])
@@ -396,6 +612,20 @@ class RiskStratificationEngine:
                 'high': ['neurology_referral', 'anticoagulation_assessment', 'intensive_monitoring'],
                 'medium': ['risk_factor_management', 'regular_monitoring'],
                 'low': ['lifestyle_modification', 'annual_screening']
+            },
+            'parkinson': {
+                'high': ['movement_disorders_specialist_referral', 'datscan_evaluation', 'medication_optimization', 
+                         'multidisciplinary_care_team', 'speech_therapy_evaluation', 'physical_therapy_assessment'],
+                'medium': ['neurologist_referral', 'symptom_monitoring', 'exercise_program', 'nutrition_counseling'],
+                'low': ['annual_neurological_screening', 'lifestyle_optimization', 'physical_activity_counseling']
+            },
+            'als': {
+                'high': ['als_specialist_referral', 'multidisciplinary_als_clinic', 'respiratory_assessment', 
+                         'speech_language_therapy', 'occupational_therapy', 'palliative_care_consultation', 
+                         'clinical_trial_evaluation'],
+                'medium': ['neurologist_referral', 'emg_nerve_conduction_studies', 'pulmonary_function_tests',
+                          'nutritional_assessment', 'genetic_counseling'],
+                'low': ['annual_neurological_screening', 'symptom_monitoring', 'lifestyle_counseling']
             }
         }
 
@@ -427,7 +657,7 @@ class ClinicalDecisionSupportSystem:
             Dictionary mapping conditions to risk assessments
         """
         if conditions is None:
-            conditions = ['alzheimer', 'cardiovascular', 'diabetes', 'stroke']
+            conditions = ['alzheimer', 'cardiovascular', 'diabetes', 'stroke', 'parkinson', 'als']
         
         assessments = {}
         
