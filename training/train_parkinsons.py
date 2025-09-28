@@ -59,6 +59,26 @@ try:
     PYTORCH_AVAILABLE = True
 except ImportError:
     PYTORCH_AVAILABLE = False
+    # Create dummy objects when PyTorch is not available
+    class nn:
+        class Module:
+            def __init__(self):
+                pass
+        class Sequential:
+            def __init__(self, *args):
+                pass
+        class Linear:
+            def __init__(self, *args, **kwargs):
+                pass
+        class BatchNorm1d:
+            def __init__(self, *args, **kwargs):
+                pass
+        class ReLU:
+            def __init__(self, *args, **kwargs):
+                pass
+        class Dropout:
+            def __init__(self, *args, **kwargs):
+                pass
 
 # Data Loading
 try:
@@ -176,22 +196,33 @@ class ParkinsonsTrainingPipeline:
                 if dataset_choice == "vikasukani":
                     # Primary Parkinson's dataset
                     dataset_path = kagglehub.dataset_download("vikasukani/parkinsons-disease-data-set")
-                    csv_files = list(Path(dataset_path).glob("*.csv"))
-                    if csv_files:
-                        self.data = pd.read_csv(csv_files[0])
-                        logger.info(f"Loaded dataset from: {csv_files[0]}")
+                    # Look for both CSV and data files
+                    data_files = list(Path(dataset_path).glob("*.csv")) + list(Path(dataset_path).glob("*.data"))
+                    if data_files:
+                        self.data = pd.read_csv(data_files[0])
+                        logger.info(f"Loaded dataset from: {data_files[0]}")
                     else:
-                        raise FileNotFoundError("No CSV files found in downloaded dataset")
+                        raise FileNotFoundError("No CSV or data files found in downloaded dataset")
                         
                 elif dataset_choice == "uci-parkinsons":
                     # Alternative UCI Parkinson's dataset
                     dataset_path = kagglehub.dataset_download("anonymous6623/uci-parkinsons-datasets")
-                    csv_files = list(Path(dataset_path).glob("*.csv"))
-                    if csv_files:
-                        self.data = pd.read_csv(csv_files[0])
-                        logger.info(f"Loaded dataset from: {csv_files[0]}")
+                    data_files = list(Path(dataset_path).glob("*.csv")) + list(Path(dataset_path).glob("*.data"))
+                    if data_files:
+                        self.data = pd.read_csv(data_files[0])
+                        logger.info(f"Loaded dataset from: {data_files[0]}")
                     else:
-                        raise FileNotFoundError("No CSV files found in downloaded dataset")
+                        raise FileNotFoundError("No CSV or data files found in downloaded dataset")
+                        
+                elif dataset_choice == "leilahasan":
+                    # Dataset mentioned in problem statement
+                    dataset_path = kagglehub.dataset_download("leilahasan/parkinson-dataset")
+                    data_files = list(Path(dataset_path).glob("*.csv")) + list(Path(dataset_path).glob("*.data"))
+                    if data_files:
+                        self.data = pd.read_csv(data_files[0])
+                        logger.info(f"Loaded dataset from: {data_files[0]}")
+                    else:
+                        raise FileNotFoundError("No CSV or data files found in downloaded dataset")
                         
             except Exception as e:
                 logger.warning(f"Failed to download from Kaggle: {e}")
@@ -678,7 +709,7 @@ def main():
     parser.add_argument('--folds', type=int, default=5, 
                        help='Number of folds for cross-validation')
     parser.add_argument('--dataset-choice', type=str, default='vikasukani',
-                       choices=['vikasukani', 'uci-parkinsons'],
+                       choices=['vikasukani', 'uci-parkinsons', 'leilahasan'],
                        help='Which Kaggle dataset to use')
     parser.add_argument('--output-dir', type=str, default='parkinsons_outputs',
                        help='Output directory for results')
