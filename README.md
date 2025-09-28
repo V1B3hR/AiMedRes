@@ -1,267 +1,299 @@
 # 🧠 AiMedRes
 
 > **Advanced AI Medical Research Assistant**  
-> **Combining adaptive neural networks with intelligent healthcare analytics**  
-> **Creating intelligent, safe, multi-agent systems for medical research**
+> **Adaptive neural architectures + multi-agent clinical reasoning**  
+> **Safety‑aware, explainable AI for neurological and mental health research**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Development Status](https://img.shields.io/badge/status-active%20development-green.svg)](https://github.com/V1B3hR/aimedres)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-active%20development-green.svg)](https://github.com/V1B3hR/AiMedRes)
+
+---
 
 ## 🎯 Mission
 
-AiMedRes accelerates research and development of AI-driven solutions for **neurodegenerative and mental health conditions**. By combining adaptive neural architectures with agent-based collaboration, we're building tools that enhance understanding of disease mechanisms and improve clinical decision support.
+AiMedRes accelerates AI-driven discovery and decision support for **neurodegenerative and mental health conditions**. It combines:
+- Adaptive neural network topologies
+- Multi-agent medical reasoning
+- Biological state + memory simulation
+- Clinically aligned explainability & auditability
 
-### 🏥 Primary Focus
-Fighting brain diseases through AI innovation:
-- **Alzheimer's Disease** - Early detection and progression modeling
-- **Stroke & Cerebrovascular Conditions** - Risk assessment and recovery planning  
-- **Neurological Disorders** - partial brain disease spectrum 
+---
 
+## 🏥 Core Clinical Focus
+
+- **Alzheimer's Disease** – Early detection, progression risk modeling  
+- **Stroke / Cerebrovascular** – Risk stratification & recovery trajectory scoring  
+- **Neurocognitive Disorders** – Expansion toward broader spectrum (in progress)  
+- **Mental Health State Modeling** – (roadmap / prototype status)  
+
+---
 
 ## 🚀 Key Features
 
-### 🧩 Core Integration
-- **Adaptive Neural Network Engine** - Dynamic, learning-capable architecture
-- **Multi-Agent Dialogue System** - Collaborative medical reasoning
-- **Biological State Simulation** - Energy, sleep, and mood modeling
-- **Advanced Memory Consolidation** - Biological-inspired memory systems with dual-store architecture
+### 🧩 Intelligence & Architecture
+- Adaptive neural evolution engine (dynamic layer & pathway adjustment)
+- Multi-agent consultation & consensus system
+- Biological state simulators (energy, mood, circadian influences)
+- Dual-store + prioritized replay memory consolidation
 
-### 📊 Medical Intelligence
-- **Real-World Dataset Training** - Alzheimer's and neurological disease data
-- **Clinical Decision Support** - Risk stratification with quantitative scores
-- **Explainable AI Dashboard** - Transparent clinical feature analysis with deployed interface
-- **Performance Targets**: <100ms response, 92%+ sensitivity, 87%+ specificity
-- **Memory Consolidation** - Priority replay, synaptic tagging, and semantic conflict resolution
+### 📊 Clinical AI
+- Risk scoring & uncertainty estimates
+- Explainable prediction frames (feature attributions + causal hints)
+- Configurable safety thresholds & override gating
+- Quantitative performance dashboards (CLI + API + dashboard module)
 
-### 🏥 Healthcare Integration
-- **EHR Compatibility** - FHIR/HL7 standard support with active implementation
-- **Real-Time Data Processing** - Continuous clinical monitoring system in deployment
-- **Regulatory Compliance** - HIPAA/FDA standards adherence with comprehensive documentation
-- **Audit Trail System** - Complete decision transparency with immutable logging
+### 🏥 Integration Layer
+- FHIR / HL7 interface modules
+- Real-time EHR streaming hooks (event-driven ingestion)
+- Immutable audit log & trace provenance tagging
+- Compliance scaffolding (HIPAA/FDA alignment docs)
 
-## 📁 Project Structure
+---
+
+## 🔁 Recent Training Progress (Updated)
+
+| Model / Variant | Dataset(s) | Target Task | Best Metric | Prev Metric | Δ | Notes |
+|-----------------|-----------|-------------|-------------|-------------|----|-------|
+| AD_EARLY_V2 | ADNI + INTERNAL_SET_V1 | MCI→AD conversion (12–24m) | AUC = PLACEHOLDER | PLACEHOLDER | +PLACEHOLDER | Improved temporal embeddings |
+| AD_SCREEN_V1 | ADNI subset | Screening classifier | Sens = PLACEHOLDER / Spec = PLACEHOLDER | Sens = PLACEHOLDER / Spec = PLACEHOLDER | +PLACEHOLDER | Class imbalance reweighting |
+| MULTI_AGENT_CONSENSUS_V3 | Simulated + Expert Annotation | Agreement score |  PLACEHOLDER% | PLACEHOLDER% | +PLACEHOLDER | New conflict resolver |
+| MEMORY_CONSOLIDATION_V4 | Synthetic episodic tasks | Retention @24h |  PLACEHOLDER% | PLACEHOLDER% | +PLACEHOLDER | Added synaptic tagging decay |
+| LATENCY_OPT_BATCH_OPT | Live inference harness | p95 latency |  PLACEHOLDER ms | PLACEHOLDER ms | -PLACEHOLDER ms | CUDA graphs + fused ops |
+
+(Replace PLACEHOLDER values with actual results; I can regenerate this table.)
+
+---
+
+## 📈 Current Performance Snapshot
+
+Update these with your latest numbers:
+
+- Response Time: p50 = PLACEHOLDER ms | p95 = PLACEHOLDER ms (target <100ms)
+- Alzheimer's Early Detection:
+  - Sensitivity: PLACEHOLDER%  (target ≥92%)
+  - Specificity: PLACEHOLDER%  (target ≥87%)
+  - AUC: PLACEHOLDER
+- Multi-Agent Consensus Agreement: PLACEHOLDER%
+- Memory Retention (24h simulated): PLACEHOLDER%
+- EHR Stream Throughput: PLACEHOLDER events/sec sustained
+
+---
+
+## 🛠️ Installation
+
+```bash
+git clone https://github.com/V1B3hR/AiMedRes.git
+cd AiMedRes
+pip install -r requirements.txt
+# optional extras: pip install -e ".[dev,docs]"
+```
+
+Quick import check:
+```bash
+python -c "from aimedres.training.alzheimer_training_system import load_alzheimer_data; print('OK')"
+```
+
+---
+
+## 💡 Basic Usage
+
+### Training (Alzheimer's pipeline)
+```python
+from aimedres.training.alzheimer_training_system import (
+    load_alzheimer_data, train_model, evaluate_model
+)
+
+df = load_alzheimer_data("data/adni_processed.csv")
+model = train_model(df, epochs=10, adaptive=True)
+metrics = evaluate_model(model, df)
+print(metrics)
+```
+
+### Multi-Agent Consensus
+```python
+from aimedres.agents.dialogue_manager import MultiAgentConsultation
+from aimedres.agents.medical_reasoning import ClinicalDecisionAgent
+
+consultation = MultiAgentConsultation([
+    ClinicalDecisionAgent(role="neurologist"),
+    ClinicalDecisionAgent(role="radiologist"),
+    ClinicalDecisionAgent(role="cognitive_assessor"),
+])
+
+case = consultation.load_case("examples/cases/case_001.json")
+recommendation = consultation.analyze_case(case)
+print(recommendation.summary())
+```
+
+### Memory Consolidation
+```python
+from aimedres.agent_memory.memory_consolidation import MemoryConsolidator
+from aimedres.agent_memory.memory_store import MemoryStore
+
+store = MemoryStore()
+consolidator = MemoryConsolidator(store=store, strategy="dual_store")
+consolidator.ingest({"type": "clinical_event", "content": "...", "priority": 0.87})
+consolidator.run_cycle()
+```
+
+---
+
+## 🔬 Reproducing Training Runs
+
+```bash
+# 1. Environment
+pip install -r requirements.txt
+
+# 2. Data prep (ADNI example — requires credentials / license)
+python scripts/prepare_adni.py --input ~/raw_adni --output data/adni_processed.csv
+
+# 3. Train
+python scripts/train_alzheimer.py \
+  --data data/adni_processed.csv \
+  --model out/models/ad_early_v2.pt \
+  --adaptive \
+  --epochs 25 \
+  --batch-size 64
+
+# 4. Evaluate
+python scripts/eval_alzheimer.py --model out/models/ad_early_v2.pt --data data/adni_processed.csv
+```
+
+Determinism options:
+- Set `AIMEDRES_SEED=42`
+- Use `--deterministic` flag in training script
+- Logged configs stored under `out/runs/<timestamp>/config.yaml`
+
+---
+
+## 🧪 Model Zoo (Emerging)
+
+| Name | Task | Status | Checkpoint | Notes |
+|------|------|--------|------------|-------|
+| ad_early_v2 | 12–24m conversion | Stable Candidate | (planned) | Temporal embedding + adaptive pruning |
+| ad_screen_v1 | Screening classifier | Beta | (planned) | High sensitivity emphasis |
+| consensus_v3 | Multi-agent aggregator | Experimental | (planned) | Weighted disagreement resolution |
+| memory_v4 | Consolidation kernel | Experimental | (planned) | Synaptic tagging + decay curves |
+
+(If you want, I can script automatic table generation from a registry file.)
+
+---
+
+## 📁 Project Structure (Condensed)
 
 ```
 aimedres/
-├── files/
-│   ├── training/
-│   │   ├── alzheimer_training_system.py    # Core training pipeline
-│   │   ├── data_processing.py              # Medical data preprocessing
-│   │   └── model_validation.py             # Performance validation
-│   ├── agents/
-│   │   ├── medical_reasoning.py            # Clinical decision agents
-│   │   ├── dialogue_manager.py             # Multi-agent coordination
-│   │   └── safety_monitor.py               # AI safety oversight
-│   ├── neural_networks/
-│   │   ├── adaptive_architecture.py        # Dynamic network structure
-│   │   ├── biological_simulation.py        # State modeling
-│   │   └── memory_consolidation.py         # Learning mechanisms
-│   └── integration/
-│       ├── ehr_connector.py                # Healthcare system interface
-│       ├── fhir_handler.py                 # Medical data standards
-│       └── dashboard_api.py                # Clinical interface
-├── agent_memory/
-│   ├── memory_consolidation.py             # Advanced memory consolidation algorithms
-│   ├── embed_memory.py                     # Memory embedding system
-│   └── memory_store.py                     # Memory storage backend
-├── explainable_ai_dashboard.py             # Clinical AI explanations interface
-├── ehr_integration.py                      # EHR connectivity implementation
-├── docs/                                   # Documentation
-├── examples/                               # Usage examples
-├── tests/                                  # Test suite
-└── requirements.txt                        # Dependencies
+  training/                  # Core pipelines
+  agents/                    # Medical reasoning & dialogue
+  neural_networks/           # Adaptive + biological models
+  agent_memory/              # Consolidation & storage
+  integration/               # EHR / FHIR / dashboard
+  dashboards/ (planned)      # UI components
+  scripts/                   # CLI utilities
+  tests/                     # Unit / integration tests
 ```
 
-## 🚨 Important: Project Renamed to AiMedRes
+---
 
-**The project has been renamed to AiMedRes!** Import paths updated to use the new package structure:
+## 🛡️ Safety & Compliance
 
-### ❌ Old Import Paths (Will Fail)
-```python
-from duetmind_adaptive.training import alzheimer_training_system
-from files.training.alzheimer_training_system import load_alzheimer_data
-from files.training.model_validation import validate_performance
-```
+- Configurable risk thresholds & human-in-loop gating
+- Immutable audit trails (planned: hash chain / ledger)
+- Bias & drift monitoring hooks (framework present; dashboards WIP)
+- Privacy: de-identification utilities (PHI scrubber module planned)
 
-### ✅ New Import Paths (Correct)
-```python
-from aimedres.training.alzheimer_training_system import load_alzheimer_data
-from aimedres.training.model_validation import validate_performance
-```
-
-If you encounter `ModuleNotFoundError`, update your imports to use the new `aimedres.*` structure.
-
-## 🛠️ Installation & Setup
-
-### Prerequisites
-- Python 3.8 or higher
-- CUDA-compatible GPU (recommended for neural network training)
-- 16GB+ RAM for large dataset processing
-
-### Quick Start
-```bash
-# Clone the repository
-git clone https://github.com/V1B3hR/duetmind_adaptive.git
-cd duetmind_adaptive
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Verify installation
-python -c "from aimedres.training.alzheimer_training_system import load_alzheimer_data; print('Installation successful!')"
-```
-
-## 💡 Usage Examples
-
-### Basic Medical Data Analysis
-```python
-from aimedres.training.alzheimer_training_system import load_alzheimer_data, train_model
-from files.agents.medical_reasoning import ClinicalDecisionAgent
-
-# Load medical dataset
-data = load_alzheimer_data('path/to/alzheimer_dataset.csv')
-
-# Initialize clinical reasoning agent
-clinical_agent = ClinicalDecisionAgent()
-
-# Perform risk assessment
-risk_scores = clinical_agent.assess_patient_risk(data)
-print(f"High-risk patients identified: {len(risk_scores[risk_scores > 0.7])}")
-```
-
-### Multi-Agent Clinical Consultation
-```python
-from files.agents.dialogue_manager import MultiAgentConsultation
-from files.neural_networks.adaptive_architecture import AdaptiveNetwork
-
-# Create multi-agent medical consultation
-consultation = MultiAgentConsultation([
-    'neurologist_agent',
-    'radiologist_agent', 
-    'psychiatrist_agent'
-])
-
-# Process patient case
-patient_data = load_patient_ehr('patient_001')
-recommendation = consultation.analyze_case(patient_data)
-print(f"Consensus recommendation: {recommendation.treatment_plan}")
-```
-
-### Real-Time EHR Integration
-```python
-from files.integration.ehr_connector import EHRConnector
-from files.integration.dashboard_api import ClinicalDashboard
-
-# Connect to hospital EHR system
-ehr = EHRConnector(fhir_endpoint='https://hospital-fhir.example.com')
-
-# Set up real-time monitoring
-dashboard = ClinicalDashboard()
-dashboard.monitor_patients(ehr.get_active_patients())
-```
-
-## 📈 Performance Benchmarks
-
-### Current Metrics
-- **Response Time**: Target <100ms (currently optimizing)
-- **Diagnostic Sensitivity**: Target 92%+ (in validation)
-- **Diagnostic Specificity**: Target 87%+ (in validation)  
-- **Data Processing**: Real-time EHR integration capable
-
-### Validation Results
-- ✅ **Alzheimer's Detection**: 89% accuracy on ADNI dataset
-- ✅ **Multi-Agent Consensus**: 94% agreement with expert panels
-- ✅ **Advanced Memory Consolidation**: Biological-inspired dual-store architecture implemented
-- 🟧 **Response Optimization**: Working toward sub-100ms targets (currently ~150ms)
-- 🟧 **EHR Integration**: Active development with FHIR/HL7 compliance
-- 🟧 **Explainable AI Dashboard**: Clinical interface deployment in progress
-- 🔄 **Clinical Pilot Programs**: Partnership establishment underway
-
-## 🛣️ Development Roadmap
-
-### 🔥 Current Phase: Clinical Integration & Validation (Q1-Q2 2026)
-- [x] Core architecture design
-- [x] Basic training pipeline implementation  
-- [x] Multi-agent framework setup
-- [x] Complete import path migration
-- [🟧] Performance optimization to meet targets
-- [🟧] EHR integration protocol finalization
-- [🟧] FHIR/HL7 standard implementation and compliance
-- [🟧] Explainable AI dashboard deployment
-- [🟧] Real-time patient monitoring system
-- [ ] Initial clinical pilot programs
-- [ ] Regulatory compliance documentation
-
-### 🚀 Phase 3: Production Deployment & Scale (Q3-Q4 2026)
-- [ ] FDA regulatory pathway initiation
-- [ ] Multi-hospital clinical validation
-- [ ] Advanced AI safety monitoring
-- [ ] Production infrastructure scaling
-- [ ] Research publication and dissemination
-- [🟧] Advanced memory consolidation algorithms
-
-### 🔮 Future Enhancements
-- [ ] Expanded disease coverage (Parkinson's, ALS, etc.)
-- [ ] 3D brain visualization tools
-- [ ] Custom agent behavior API
-- [ ] Mobile clinical companion app
-- [ ] Drug discovery and clinical trial support modules
-
-## 🤝 Contributing
-
-We welcome contributions from researchers, clinicians, and developers! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Priority Areas
-- **Medical Domain Expertise** - Clinical validation and use case development
-- **AI Safety Research** - Robust safeguards for medical applications
-- **Healthcare Integration** - EHR system compatibility and workflow optimization
-- **Performance Optimization** - Meeting strict clinical response time requirements
+---
 
 ## 📚 Documentation
 
-- **[Technical Architecture](docs/architecture.md)** - System design and components
-- **[Medical Use Cases](docs/medical-applications.md)** - Clinical scenarios and workflows
-- **[API Reference](docs/api-reference.md)** - Developer integration guide
-- **[Regulatory Compliance](docs/compliance.md)** - Healthcare standards adherence
-- **[Research Publications](docs/publications.md)** - Academic contributions
+| Topic | Link |
+|-------|------|
+| Technical Architecture | docs/architecture.md |
+| Medical Applications | docs/medical-applications.md |
+| API Reference | docs/api-reference.md |
+| Compliance Tracking | docs/compliance.md |
+| Publications / Notes | docs/publications.md |
 
-## ⚖️ Ethics & Compliance
-
-### Medical Ethics
-- **Patient Privacy**: Full HIPAA compliance with encrypted data handling
-- **Transparency**: Explainable AI decisions with audit trails
-- **Safety First**: Conservative recommendations with human oversight requirements
-- **Bias Mitigation**: Diverse training datasets and fairness monitoring
-
-### Regulatory Standards
-- **FDA Guidelines**: Following medical device development pathways
-- **Clinical Validation**: Rigorous testing with healthcare professionals
-- **Data Security**: Healthcare-grade encryption and access controls
-- **Audit Compliance**: Complete decision trail documentation
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Medical Research Community** - Clinical insights and validation support
-- **AI Safety Researchers** - Ensuring robust and safe medical AI systems
-- **Healthcare Partners** - Real-world testing and integration opportunities
-- **Open Source Contributors** - Community-driven development and improvements
+(Generate missing docs via `scripts/scaffold_docs.py` – planned.)
 
 ---
 
-**⚠️ Medical Disclaimer**: This software is for research and development purposes. All clinical decisions should be made by qualified healthcare professionals. This system provides decision support only and should not replace professional medical judgment.
+## 🛣️ Roadmap (High-Level Update)
+
+### Active (Now)
+- [x] Core adaptive architecture
+- [x] Multi-agent baseline
+- [x] Memory dual-store prototype
+- [🟧] Latency optimization pass (CUDA graph + kernel fusion)
+- [🟧] Expanded evaluation harness (uncertainty + calibration)
+- [🟧] FHIR ingestion pipeline hardening
+- [🟧] Explainability dashboard backend
+- [ ] Formal clinical pilot onboarding
+- [ ] Regulatory pre-assessment packet
+
+### Upcoming
+- [ ] Parkinson's & ALS dataset integration
+- [ ] Adversarial robustness testing suite
+- [ ] Advanced safety monitor (causal anomaly detection)
+- [ ] Model card auto-generation
+- [ ] Deployment orchestrator (K8s + streaming inference)
+
+---
+
+## 🧾 Data Sources & Ethics
+
+| Dataset | Usage | Access |
+|---------|-------|--------|
+| ADNI | Alzheimer's progression training/eval | Licensed / user-supplied |
+| INTERNAL_SIM_V1 | Synthetic multimodal cases | Generated |
+| CLINICAL_NOTES_PROTOTYPE (planned) | Context enrichment | Pending de-ID pipeline |
+
+Ethics:
+- No raw PHI stored in repo
+- Synthetic augmentation to reduce demographic skew
+- Planned fairness reporting: stratified sensitivity/specificity
+
+---
+
+## 🤝 Contributing
+
+Focus areas:
+- Clinical validation scenarios
+- Safety / auditing modules
+- Latency + systems optimization
+- Advanced memory & continual learning
+See CONTRIBUTING.md (coming update: new code style + testing matrix).
+
+---
+
+## 📢 Citing
+
+(Add once first preprint is available)
+```
+@article{aimedres2026,
+  title   = {AiMedRes: Adaptive Multi-Agent Clinical Reasoning with Biological Memory Enhancement},
+  author  = {...},
+  year    = {2026},
+  journal = {Preprint}
+}
+```
+
+---
+
+## ⚖️ Disclaimer
+
+This software is for **research & development**. It does **not** provide medical diagnosis. Clinical decisions must be made by licensed professionals.
+
+---
 
 ## 📞 Contact
 
-- **Project Lead**: [V1B3hR](https://github.com/V1B3hR)
-- **Issues**: [GitHub Issues](https://github.com/V1B3hR/duetmind_adaptive/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/V1B3hR/duetmind_adaptive/discussions)
-- **Research Collaboration**: Contact via GitHub for partnership opportunities
+- Lead: [V1B3hR](https://github.com/V1B3hR)
+- Issues: https://github.com/V1B3hR/AiMedRes/issues
+- Discussions: https://github.com/V1B3hR/AiMedRes/discussions
+- Collaboration: Open to research & clinical partners
 
 ---
 
-*Building the future of AI-driven medical research, one algorithm at a time.* 🧠💡
+*Advancing responsible AI for neurological health.* 🧠
