@@ -28,7 +28,7 @@ def read_requirements():
 
 setup(
     name="aimedres",
-    version="1.0.0",
+    version="0.1.0",
     description="AiMedRes - AI Medical Research Assistant for advanced healthcare analytics",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",

@@ -1,6 +1,6 @@
 # Requirements
 
-This document describes software, system, environment, and dependency requirements for developing, running, and optionally deploying the DuetMind Adaptive project.
+This document describes software, system, environment, and dependency requirements for developing, running, and optionally deploying the AiMedRes project.
 
 Sources used:
 - pyproject.toml
@@ -115,7 +115,7 @@ Application (.env.example):
 - LOG_LEVEL=INFO
 - EMBEDDING_MODEL=all-MiniLM-L6-v2
 - EMBEDDING_DIM=384
-- DATABASE_URL=postgresql://duetmind:duetmind_secret@localhost:5432/duetmind
+- DATABASE_URL=postgresql://aimedres:aimedres_secret@localhost:5432/aimedres
 - SENTENCE_TRANSFORMERS_HOME=.cache/sentence-transformers
 
 MLOps (mlops/config/.env.example):
@@ -141,8 +141,8 @@ Using a virtual environment is recommended.
 
 ```bash
 # Clone
-git clone https://github.com/V1B3hR/duetmind_adaptive.git
-cd duetmind_adaptive
+git clone https://github.com/V1B3hR/aimedres.git
+cd aimedres
 
 # Python 3.10+ environment
 python -m venv .venv
@@ -162,8 +162,8 @@ pip install -r requirements-dev.txt
 
 1) Create a database and enable pgvector:
 ```sql
-CREATE DATABASE duetmind;
-\c duetmind
+CREATE DATABASE aimedres;
+\c aimedres
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
