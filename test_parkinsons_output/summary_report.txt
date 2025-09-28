@@ -1,0 +1,42 @@
+PARKINSON'S DISEASE CLASSIFICATION TRAINING REPORT
+=======================================================
+
+Generated: 2025-09-28T13:06:22.102800
+
+Dataset Information:
+- Shape: (500, 24)
+- Features: 22
+
+Classical Model Results:
+-------------------------
+Logistic Regression:
+  Accuracy: 0.800 (±0.030)
+  Balanced Accuracy: 0.787 (±0.028)
+  F1 Score: 0.791 (±0.030)
+  ROC AUC: 0.889 (±0.012)
+
+Random Forest:
+  Accuracy: 0.982 (±0.005)
+  Balanced Accuracy: 0.981 (±0.005)
+  F1 Score: 0.981 (±0.005)
+  ROC AUC: 0.997 (±0.002)
+
+SVM:
+  Accuracy: 0.812 (±0.022)
+  Balanced Accuracy: 0.789 (±0.023)
+  F1 Score: 0.797 (±0.024)
+  ROC AUC: 0.891 (±0.004)
+
+XGBoost:
+  Accuracy: 0.990 (±0.010)
+  Balanced Accuracy: 0.990 (±0.011)
+  F1 Score: 0.990 (±0.010)
+  ROC AUC: 0.999 (±0.001)
+
+Neural Network Results:
+----------------------
+Best Validation Accuracy: 0.810
+Final Validation F1: 0.777
+Epochs Trained: 10
+
+Models and outputs saved in: test_parkinsons_output
