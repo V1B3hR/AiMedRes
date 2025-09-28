@@ -1,0 +1,15 @@
+# Machine Learning Training Requirements for AiMedRes
+# Required for running training scripts including ALS, Alzheimer's, etc.
+
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+matplotlib>=3.5.0
+seaborn>=0.12.0
+torch>=2.0.0
+xgboost>=2.0.0
+kagglehub>=0.3.0
+
+# Additional optional dependencies for enhanced functionality
+scipy>=1.10.0
+joblib>=1.3.0
