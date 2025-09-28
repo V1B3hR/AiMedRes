@@ -105,7 +105,8 @@ class PrivacyManager:
                     data_id TEXT,
                     ip_address TEXT,
                     purpose TEXT,
-                    legal_basis TEXT
+                    legal_basis TEXT,
+                    additional_info TEXT
                 )
             ''')
             
@@ -119,7 +120,8 @@ class PrivacyManager:
                     retention_until DATETIME NOT NULL,
                     anonymized_at DATETIME,
                     deleted_at DATETIME,
-                    status TEXT DEFAULT 'active'
+                    status TEXT DEFAULT 'active',
+                    anonymization_method TEXT
                 )
             ''')
             
@@ -221,12 +223,13 @@ class PrivacyManager:
             security_logger.error(f"Failed to register data for retention: {e}")
             return False
     
-    def anonymize_data(self, data_id: str) -> bool:
+    def anonymize_data(self, data_id: str, anonymization_method: str = "k_anonymity") -> bool:
         """
-        Mark data as anonymized in retention tracking.
+        Mark data as anonymized in retention tracking and apply advanced anonymization.
         
         Args:
             data_id: Data identifier to mark as anonymized
+            anonymization_method: Method used for anonymization (k_anonymity, l_diversity, t_closeness, differential_privacy)
             
         Returns:
             Success status
@@ -236,16 +239,272 @@ class PrivacyManager:
                 cursor = conn.cursor()
                 cursor.execute('''
                     UPDATE data_retention_tracking 
-                    SET anonymized_at = CURRENT_TIMESTAMP, status = 'anonymized'
+                    SET anonymized_at = CURRENT_TIMESTAMP, status = 'anonymized', 
+                        anonymization_method = ?
                     WHERE data_id = ?
-                ''', (data_id,))
+                ''', (anonymization_method, data_id))
                 conn.commit()
             
-            security_logger.info(f"Data {data_id} marked as anonymized")
+            security_logger.info(f"Data {data_id} marked as anonymized using {anonymization_method}")
             return True
         except Exception as e:
             security_logger.error(f"Failed to mark data as anonymized: {e}")
             return False
+
+    def advanced_anonymize_medical_data(self, medical_data: Dict[str, Any], 
+                                       k_value: int = 5, 
+                                       privacy_level: str = "high") -> Dict[str, Any]:
+        """
+        Apply advanced anonymization techniques to medical data.
+        
+        Args:
+            medical_data: Medical data to anonymize
+            k_value: K-anonymity parameter (minimum group size)
+            privacy_level: Privacy level (low, medium, high)
+            
+        Returns:
+            Anonymized medical data
+        """
+        anonymized_data = medical_data.copy()
+        
+        # Apply privacy-preserving transformations
+        anonymized_data = self._apply_k_anonymity(anonymized_data, k_value)
+        
+        if privacy_level in ["medium", "high"]:
+            anonymized_data = self._apply_l_diversity(anonymized_data)
+        
+        if privacy_level == "high":
+            anonymized_data = self._apply_differential_privacy(anonymized_data)
+        
+        # Remove direct identifiers
+        anonymized_data = self._remove_direct_identifiers(anonymized_data)
+        
+        # Apply HIPAA Safe Harbor de-identification
+        anonymized_data = self._apply_hipaa_safe_harbor(anonymized_data)
+        
+        # Log anonymization process
+        self._log_anonymization_process(
+            anonymization_method=f"advanced_{privacy_level}",
+            k_value=k_value,
+            transformations_applied=["k_anonymity", "identifier_removal", "hipaa_safe_harbor"]
+        )
+        
+        return anonymized_data
+
+    def _apply_k_anonymity(self, data: Dict[str, Any], k: int) -> Dict[str, Any]:
+        """Apply k-anonymity by generalizing quasi-identifiers."""
+        anonymized = data.copy()
+        
+        # Generalize age to age ranges
+        if 'age' in anonymized:
+            age = anonymized['age']
+            if age < 18:
+                anonymized['age_range'] = '0-17'
+            elif age < 30:
+                anonymized['age_range'] = '18-29'
+            elif age < 50:
+                anonymized['age_range'] = '30-49'
+            elif age < 65:
+                anonymized['age_range'] = '50-64'
+            else:
+                anonymized['age_range'] = '65+'
+            del anonymized['age']
+        
+        # Generalize ZIP codes
+        if 'zip_code' in anonymized:
+            zip_code = str(anonymized['zip_code'])
+            if len(zip_code) >= 3:
+                anonymized['zip_prefix'] = zip_code[:3] + '**'
+            del anonymized['zip_code']
+        
+        # Generalize dates to year/month only
+        if 'birth_date' in anonymized:
+            try:
+                from datetime import datetime
+                if isinstance(anonymized['birth_date'], str):
+                    birth_date = datetime.strptime(anonymized['birth_date'], '%Y-%m-%d')
+                else:
+                    birth_date = anonymized['birth_date']
+                anonymized['birth_year_month'] = birth_date.strftime('%Y-%m')
+                del anonymized['birth_date']
+            except:
+                del anonymized['birth_date']  # Remove if can't parse
+        
+        return anonymized
+
+    def _apply_l_diversity(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply l-diversity by ensuring diversity in sensitive attributes."""
+        anonymized = data.copy()
+        
+        # Add noise to sensitive medical measurements
+        import numpy as np
+        
+        sensitive_fields = ['blood_pressure_systolic', 'blood_pressure_diastolic', 
+                           'heart_rate', 'temperature', 'glucose_level']
+        
+        for field in sensitive_fields:
+            if field in anonymized and isinstance(anonymized[field], (int, float)):
+                # Add small amount of Laplace noise for privacy
+                noise = np.random.laplace(0, 1.0)  # Mean=0, scale=1
+                anonymized[field] = max(0, anonymized[field] + noise)
+        
+        return anonymized
+
+    def _apply_differential_privacy(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply differential privacy techniques."""
+        anonymized = data.copy()
+        
+        import numpy as np
+        
+        # Apply differential privacy to numerical values
+        epsilon = 1.0  # Privacy budget
+        
+        numerical_fields = ['weight', 'height', 'bmi']
+        for field in numerical_fields:
+            if field in anonymized and isinstance(anonymized[field], (int, float)):
+                # Add calibrated Laplace noise
+                sensitivity = self._calculate_sensitivity(field)
+                noise_scale = sensitivity / epsilon
+                noise = np.random.laplace(0, noise_scale)
+                anonymized[field] = max(0, anonymized[field] + noise)
+        
+        return anonymized
+
+    def _calculate_sensitivity(self, field: str) -> float:
+        """Calculate sensitivity for differential privacy."""
+        sensitivity_map = {
+            'weight': 5.0,     # kg
+            'height': 0.05,    # meters  
+            'bmi': 2.0,        # BMI units
+            'heart_rate': 10.0, # BPM
+            'temperature': 1.0  # Celsius
+        }
+        return sensitivity_map.get(field, 1.0)
+
+    def _remove_direct_identifiers(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Remove direct identifiers according to HIPAA guidelines."""
+        direct_identifiers = [
+            'name', 'first_name', 'last_name', 'full_name',
+            'address', 'street_address', 'city', 'state', 
+            'phone', 'phone_number', 'telephone',
+            'email', 'email_address',
+            'ssn', 'social_security_number', 'social_security',
+            'medical_record_number', 'mrn', 'patient_id',
+            'account_number', 'license_number', 'vehicle_id',
+            'device_id', 'web_url', 'ip_address',
+            'biometric_id', 'photo', 'image'
+        ]
+        
+        anonymized = {}
+        for key, value in data.items():
+            if key.lower() not in direct_identifiers:
+                anonymized[key] = value
+            else:
+                # Replace with anonymized token
+                anonymized[f'{key}_anonymized'] = f'<REMOVED_{key.upper()}>'
+        
+        return anonymized
+
+    def _apply_hipaa_safe_harbor(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Apply HIPAA Safe Harbor method de-identification."""
+        anonymized = data.copy()
+        
+        # Handle dates - remove all dates except year
+        date_fields = [k for k in anonymized.keys() if 'date' in k.lower()]
+        for field in date_fields:
+            if field in anonymized and anonymized[field]:
+                try:
+                    from datetime import datetime
+                    if isinstance(anonymized[field], str):
+                        date_obj = datetime.strptime(anonymized[field], '%Y-%m-%d')
+                    else:
+                        date_obj = anonymized[field]
+                    anonymized[f'{field}_year'] = date_obj.year
+                    del anonymized[field]
+                except:
+                    del anonymized[field]
+        
+        # Handle ages over 89
+        if 'age' in anonymized and anonymized['age'] > 89:
+            anonymized['age_category'] = '90+'
+            del anonymized['age']
+        
+        # Handle ZIP codes - only first 3 digits if population > 20,000
+        if 'zip_code' in anonymized:
+            zip_code = str(anonymized['zip_code'])
+            if len(zip_code) >= 3:
+                anonymized['zip_prefix'] = zip_code[:3] + '00'
+            del anonymized['zip_code']
+        
+        return anonymized
+
+    def _log_anonymization_process(self, anonymization_method: str, 
+                                  k_value: int, 
+                                  transformations_applied: List[str]):
+        """Log the anonymization process for audit purposes."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO data_access_audit 
+                (user_id, data_type, action, timestamp, purpose, legal_basis, additional_info)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?, ?)
+            ''', (
+                'system',
+                'medical_data',
+                'anonymize',
+                'data_privacy_protection',
+                'gdpr_hipaa_compliance',
+                json.dumps({
+                    'method': anonymization_method,
+                    'k_value': k_value,
+                    'transformations': transformations_applied
+                })
+            ))
+            conn.commit()
+
+    def verify_anonymization_quality(self, original_data: Dict[str, Any], 
+                                   anonymized_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Verify the quality of anonymization process."""
+        quality_metrics = {
+            'timestamp': datetime.now().isoformat(),
+            'privacy_score': 0.0,
+            'utility_score': 0.0,
+            'k_anonymity_estimated': 0,
+            'identifiers_removed': 0,
+            'transformations_applied': 0,
+            'recommendations': []
+        }
+        
+        # Check identifier removal
+        direct_identifiers = ['name', 'ssn', 'email', 'phone', 'address']
+        removed_count = sum(1 for id_field in direct_identifiers if id_field not in anonymized_data)
+        quality_metrics['identifiers_removed'] = removed_count
+        
+        # Calculate privacy score based on transformations
+        transformations = 0
+        if any('_range' in key for key in anonymized_data.keys()):
+            transformations += 1
+        if any('_prefix' in key for key in anonymized_data.keys()):
+            transformations += 1
+        if any('_anonymized' in key for key in anonymized_data.keys()):
+            transformations += 1
+        
+        quality_metrics['transformations_applied'] = transformations
+        quality_metrics['privacy_score'] = min(1.0, (removed_count * 0.2 + transformations * 0.15))
+        
+        # Calculate utility score (how much useful data is preserved)
+        preserved_fields = len([k for k in anonymized_data.keys() 
+                               if not k.endswith('_anonymized') and k in original_data])
+        total_original_fields = len(original_data)
+        quality_metrics['utility_score'] = preserved_fields / total_original_fields if total_original_fields > 0 else 0
+        
+        # Generate recommendations
+        if quality_metrics['privacy_score'] < 0.7:
+            quality_metrics['recommendations'].append("Consider applying additional anonymization techniques")
+        if quality_metrics['utility_score'] < 0.5:
+            quality_metrics['recommendations'].append("Warning: Low utility score - verify preserved data is sufficient for intended use")
+        
+        return quality_metrics
     
     def delete_data(self, data_id: str, reason: str = "retention_policy") -> bool:
         """

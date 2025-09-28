@@ -6,17 +6,25 @@ and eliminate magic numbers/strings throughout the codebase.
 """
 
 # Performance Monitoring Configuration
-DEFAULT_MONITORING_INTERVAL_SECONDS = 5
+DEFAULT_MONITORING_INTERVAL_SECONDS = 1  # More frequent monitoring for clinical applications
 MAX_REQUEST_TIMESTAMPS_STORED = 1000
 MAX_MEMORY_HISTORY_ENTRIES = 100
 MAX_CPU_HISTORY_ENTRIES = 100
 THROUGHPUT_CALCULATION_WINDOW_SECONDS = 60
 
+# Medical-grade Performance Thresholds (milliseconds)
+TARGET_RESPONSE_TIME_MS = 100.0  # Primary target: <100ms
+CRITICAL_RESPONSE_TIME_MS = 150.0  # Alert threshold
+EMERGENCY_RESPONSE_TIME_MS = 20.0  # Emergency operations
+URGENT_RESPONSE_TIME_MS = 100.0  # Urgent clinical operations  
+ROUTINE_RESPONSE_TIME_MS = 200.0  # Routine operations
+
 # Memory and Performance Thresholds
 MEMORY_ALERT_THRESHOLD_MB = 512
 CPU_ALERT_THRESHOLD_PERCENT = 80
-RESPONSE_TIME_ALERT_THRESHOLD = 5.0  # seconds
+RESPONSE_TIME_ALERT_THRESHOLD = 0.15  # 150ms in seconds
 ERROR_RATE_ALERT_THRESHOLD = 0.1  # 10%
+PERFORMANCE_DEGRADATION_THRESHOLD = 0.25  # 25% degradation triggers optimization
 
 # Network and API Configuration
 DEFAULT_API_PORT = 8080

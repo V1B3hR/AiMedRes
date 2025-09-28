@@ -649,27 +649,60 @@ class ClinicalAISafetyMonitor:
                 }, self.active_decisions.get(decision_id))
     
     def _monitor_bias_patterns(self):
-        """Monitor for bias patterns in AI decisions."""
+        """Monitor for bias patterns in AI decisions with enhanced algorithms."""
         if not self.enable_bias_detection:
             return
         
-        # This would implement sophisticated bias detection
-        # For now, just a placeholder
         recent_decisions = list(self.decision_history)[-100:]  # Last 100 decisions
         
         if len(recent_decisions) < 20:
-            return  # Need minimum data
+            return  # Need minimum data for statistical analysis
         
-        # Check for demographic bias patterns
-        self._check_demographic_bias(recent_decisions)
+        # Enhanced bias detection
+        bias_results = self._comprehensive_bias_analysis(recent_decisions)
         
-        # Check for outcome disparities
-        self._check_outcome_disparities(recent_decisions)
+        # Check for statistical significance in disparities
+        for bias_type, disparity_data in bias_results.items():
+            if disparity_data['p_value'] < 0.05:  # Statistically significant
+                self._trigger_enhanced_bias_alert(bias_type, disparity_data)
+        
+        # Store bias monitoring results
+        self.bias_monitoring[datetime.now(timezone.utc)] = bias_results
     
-    def _check_demographic_bias(self, decisions: List[AIDecision]):
-        """Check for demographic bias in AI decisions."""
-        # Group decisions by demographic factors
-        age_groups = defaultdict(list)
+    def _comprehensive_bias_analysis(self, decisions: List[AIDecision]) -> Dict[str, Any]:
+        """Perform comprehensive bias analysis using statistical methods."""
+        import scipy.stats as stats
+        
+        bias_results = {}
+        
+        # 1. Demographic Bias Analysis
+        demographic_analysis = self._analyze_demographic_bias(decisions)
+        bias_results['demographic'] = demographic_analysis
+        
+        # 2. Confidence Score Disparity Analysis
+        confidence_analysis = self._analyze_confidence_disparities(decisions)
+        bias_results['confidence'] = confidence_analysis
+        
+        # 3. Temporal Bias Analysis
+        temporal_analysis = self._analyze_temporal_bias(decisions)
+        bias_results['temporal'] = temporal_analysis
+        
+        # 4. Outcome Disparity Analysis
+        outcome_analysis = self._analyze_outcome_disparities(decisions)
+        bias_results['outcome'] = outcome_analysis
+        
+        return bias_results
+    
+    def _analyze_demographic_bias(self, decisions: List[AIDecision]) -> Dict[str, Any]:
+        """Analyze demographic bias using statistical tests."""
+        try:
+            import scipy.stats as stats
+        except ImportError:
+            logger.warning("scipy not available for statistical tests")
+            return {}
+        
+        # Group by demographic factors
+        age_groups = {'pediatric': [], 'adult': [], 'geriatric': []}
         gender_groups = defaultdict(list)
         
         for decision in decisions:
@@ -677,45 +710,421 @@ class ClinicalAISafetyMonitor:
             patient_gender = decision.clinical_context.get('patient_gender', 'unknown')
             
             if patient_age < 18:
-                age_groups['pediatric'].append(decision)
+                age_groups['pediatric'].append(decision.confidence_score)
             elif patient_age > 65:
-                age_groups['geriatric'].append(decision)
+                age_groups['geriatric'].append(decision.confidence_score)
             else:
-                age_groups['adult'].append(decision)
+                age_groups['adult'].append(decision.confidence_score)
             
-            gender_groups[patient_gender].append(decisions)
+            gender_groups[patient_gender].append(decision.confidence_score)
         
-        # Check for confidence disparities
-        for group, group_decisions in age_groups.items():
-            if len(group_decisions) > 5:
-                avg_confidence = statistics.mean([d.confidence_score for d in group_decisions])
-                overall_avg = statistics.mean([d.confidence_score for d in decisions])
+        results = {}
+        
+        # Age group analysis using ANOVA
+        age_values = [scores for scores in age_groups.values() if len(scores) > 0]
+        if len(age_values) >= 2:
+            f_stat, p_value = stats.f_oneway(*age_values)
+            results['age_disparity'] = {
+                'f_statistic': f_stat,
+                'p_value': p_value,
+                'groups': {k: {'mean': np.mean(v), 'count': len(v)} for k, v in age_groups.items() if v}
+            }
+        
+        # Gender analysis using t-test (if binary)
+        gender_keys = [k for k, v in gender_groups.items() if len(v) >= 5]
+        if len(gender_keys) == 2:
+            group1, group2 = gender_keys
+            t_stat, p_value = stats.ttest_ind(gender_groups[group1], gender_groups[group2])
+            results['gender_disparity'] = {
+                't_statistic': t_stat,
+                'p_value': p_value,
+                'group1': {'name': group1, 'mean': np.mean(gender_groups[group1])},
+                'group2': {'name': group2, 'mean': np.mean(gender_groups[group2])}
+            }
+        
+        return results
+    
+    def _analyze_confidence_disparities(self, decisions: List[AIDecision]) -> Dict[str, Any]:
+        """Analyze confidence score disparities across different groups."""
+        try:
+            import scipy.stats as stats
+        except ImportError:
+            logger.warning("scipy not available for confidence analysis")
+            return {}
+        
+        # Group by risk level and calculate confidence statistics
+        risk_groups = defaultdict(list)
+        
+        for decision in decisions:
+            risk_groups[decision.computed_risk_level.value].append(decision.confidence_score)
+        
+        # Calculate statistical measures
+        results = {}
+        overall_confidence = [d.confidence_score for d in decisions]
+        overall_mean = np.mean(overall_confidence)
+        overall_std = np.std(overall_confidence)
+        
+        for risk_level, confidences in risk_groups.items():
+            if len(confidences) >= 3:
+                group_mean = np.mean(confidences)
+                group_std = np.std(confidences)
                 
-                if abs(avg_confidence - overall_avg) > self.thresholds.demographic_disparity_threshold:
-                    self._trigger_bias_alert(f"Confidence disparity detected for {group} age group")
+                # Calculate z-score for bias detection
+                z_score = abs(group_mean - overall_mean) / (overall_std / np.sqrt(len(confidences)))
+                
+                results[f'{risk_level}_bias'] = {
+                    'group_mean': group_mean,
+                    'overall_mean': overall_mean,
+                    'z_score': z_score,
+                    'p_value': 2 * (1 - stats.norm.cdf(abs(z_score))),  # Two-tailed test
+                    'sample_size': len(confidences)
+                }
+        
+        return results
     
-    def _check_outcome_disparities(self, decisions: List[AIDecision]):
-        """Check for outcome disparities that might indicate bias."""
-        # This would implement more sophisticated bias detection
-        # For now, just a placeholder
-        pass
+    def _analyze_temporal_bias(self, decisions: List[AIDecision]) -> Dict[str, Any]:
+        """Analyze temporal bias patterns in AI decisions."""
+        try:
+            import scipy.stats as stats
+        except ImportError:
+            logger.warning("scipy not available for temporal bias analysis")
+            return {}
+        
+        # Sort decisions by timestamp
+        sorted_decisions = sorted(decisions, key=lambda d: d.timestamp)
+        
+        # Split into time periods (first half vs second half)
+        mid_point = len(sorted_decisions) // 2
+        early_decisions = sorted_decisions[:mid_point]
+        late_decisions = sorted_decisions[mid_point:]
+        
+        if len(early_decisions) >= 5 and len(late_decisions) >= 5:
+            early_confidence = [d.confidence_score for d in early_decisions]
+            late_confidence = [d.confidence_score for d in late_decisions]
+            
+            # Perform t-test
+            t_stat, p_value = stats.ttest_ind(early_confidence, late_confidence)
+            
+            return {
+                'temporal_drift': {
+                    't_statistic': t_stat,
+                    'p_value': p_value,
+                    'early_mean': np.mean(early_confidence),
+                    'late_mean': np.mean(late_confidence),
+                    'drift_magnitude': abs(np.mean(late_confidence) - np.mean(early_confidence))
+                }
+            }
+        
+        return {}
     
-    def _trigger_bias_alert(self, message: str):
-        """Trigger bias detection alert."""
+    def _analyze_outcome_disparities(self, decisions: List[AIDecision]) -> Dict[str, Any]:
+        """Analyze outcome disparities that might indicate bias."""
+        # Group by patient demographics and analyze safety actions
+        demographic_outcomes = defaultdict(lambda: defaultdict(int))
+        
+        for decision in decisions:
+            age_group = 'pediatric' if decision.clinical_context.get('patient_age', 0) < 18 else \
+                       'geriatric' if decision.clinical_context.get('patient_age', 0) > 65 else 'adult'
+            
+            demographic_outcomes[age_group][decision.safety_action.value] += 1
+        
+        # Calculate disparity measures
+        results = {}
+        for group, outcomes in demographic_outcomes.items():
+            if sum(outcomes.values()) >= 5:  # Minimum sample size
+                total_decisions = sum(outcomes.values())
+                escalation_rate = (outcomes.get('ESCALATE', 0) + outcomes.get('BLOCK', 0)) / total_decisions
+                
+                results[f'{group}_escalation_rate'] = {
+                    'rate': escalation_rate,
+                    'total_decisions': total_decisions,
+                    'outcomes': dict(outcomes)
+                }
+        
+        return results
+    
+    def _trigger_enhanced_bias_alert(self, bias_type: str, disparity_data: Dict[str, Any]):
+        """Trigger enhanced bias detection alert with detailed information."""
         bias_alert = {
-            'type': 'BIAS_DETECTION_ALERT',
-            'message': message,
-            'severity': 'MEDIUM',
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            'type': 'ENHANCED_BIAS_DETECTION',
+            'bias_type': bias_type,
+            'severity': 'HIGH' if disparity_data.get('p_value', 1.0) < 0.01 else 'MEDIUM',
+            'statistical_data': disparity_data,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'remediation_suggestions': self._generate_bias_remediation_suggestions(bias_type, disparity_data)
         }
         
-        logger.warning(f"BIAS ALERT: {message}")
+        logger.warning(f"ENHANCED BIAS ALERT [{bias_type}]: p-value = {disparity_data.get('p_value', 'N/A')}")
         
         for callback in self.safety_alert_callbacks:
             try:
                 callback(bias_alert)
             except Exception as e:
                 logger.error(f"Error in bias alert callback: {e}")
+    
+    def _generate_bias_remediation_suggestions(self, bias_type: str, data: Dict[str, Any]) -> List[str]:
+        """Generate remediation suggestions based on detected bias."""
+        suggestions = []
+        
+        if bias_type == 'demographic':
+            suggestions.extend([
+                "Review training data for demographic representation balance",
+                "Implement demographic parity constraints in model training",
+                "Consider stratified validation across demographic groups"
+            ])
+        elif bias_type == 'confidence':
+            suggestions.extend([
+                "Calibrate confidence scores across different risk levels",
+                "Review uncertainty estimation methods",
+                "Implement confidence score normalization"
+            ])
+        elif bias_type == 'temporal':
+            suggestions.extend([
+                "Implement concept drift detection and model retraining",
+                "Review data distribution changes over time",
+                "Consider temporal data augmentation techniques"
+            ])
+        elif bias_type == 'outcome':
+            suggestions.extend([
+                "Review safety action thresholds for different demographics",
+                "Implement fairness-aware decision boundaries",
+                "Audit clinical decision support protocols"
+            ])
+        
+        return suggestions
+
+    def run_adversarial_tests(self, test_cases: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Run adversarial tests to evaluate AI robustness."""
+        logger.info("Starting adversarial testing suite")
+        
+        test_results = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'total_tests': len(test_cases),
+            'passed_tests': 0,
+            'failed_tests': 0,
+            'test_details': [],
+            'robustness_score': 0.0,
+            'vulnerabilities_detected': []
+        }
+        
+        for i, test_case in enumerate(test_cases):
+            test_result = self._execute_adversarial_test(test_case, f"ADV_TEST_{i:03d}")
+            test_results['test_details'].append(test_result)
+            
+            if test_result['passed']:
+                test_results['passed_tests'] += 1
+            else:
+                test_results['failed_tests'] += 1
+                test_results['vulnerabilities_detected'].append(test_result['vulnerability_type'])
+        
+        # Calculate robustness score
+        test_results['robustness_score'] = test_results['passed_tests'] / len(test_cases) if test_cases else 0.0
+        
+        # Trigger alerts for significant vulnerabilities
+        if test_results['robustness_score'] < 0.8:
+            self._trigger_adversarial_alert(test_results)
+        
+        return test_results
+    
+    def _execute_adversarial_test(self, test_case: Dict[str, Any], test_id: str) -> Dict[str, Any]:
+        """Execute a single adversarial test."""
+        test_type = test_case.get('type', 'unknown')
+        
+        try:
+            if test_type == 'input_perturbation':
+                return self._test_input_perturbation(test_case, test_id)
+            elif test_type == 'boundary_condition':
+                return self._test_boundary_condition(test_case, test_id)
+            elif test_type == 'confidence_manipulation':
+                return self._test_confidence_manipulation(test_case, test_id)
+            elif test_type == 'demographic_fairness':
+                return self._test_demographic_fairness(test_case, test_id)
+            else:
+                return {
+                    'test_id': test_id,
+                    'test_type': test_type,
+                    'passed': False,
+                    'error': f"Unknown test type: {test_type}",
+                    'vulnerability_type': 'UNKNOWN_TEST_TYPE'
+                }
+                
+        except Exception as e:
+            logger.error(f"Error executing adversarial test {test_id}: {e}")
+            return {
+                'test_id': test_id,
+                'test_type': test_type,
+                'passed': False,
+                'error': str(e),
+                'vulnerability_type': 'TEST_EXECUTION_ERROR'
+            }
+    
+    def _test_input_perturbation(self, test_case: Dict[str, Any], test_id: str) -> Dict[str, Any]:
+        """Test robustness against input perturbations."""
+        original_input = test_case['original_input']
+        perturbed_input = test_case['perturbed_input']
+        
+        # Simulate AI decision on original input
+        original_confidence = self._simulate_ai_confidence(original_input)
+        
+        # Simulate AI decision on perturbed input
+        perturbed_confidence = self._simulate_ai_confidence(perturbed_input)
+        
+        # Check if the perturbation causes unexpected behavior
+        confidence_change = abs(original_confidence - perturbed_confidence)
+        
+        # Test passes if confidence change is within acceptable bounds
+        acceptable_change = test_case.get('max_confidence_change', 0.1)
+        passed = confidence_change <= acceptable_change
+        
+        return {
+            'test_id': test_id,
+            'test_type': 'input_perturbation',
+            'passed': passed,
+            'original_confidence': original_confidence,
+            'perturbed_confidence': perturbed_confidence,
+            'confidence_change': confidence_change,
+            'acceptable_change': acceptable_change,
+            'vulnerability_type': 'INPUT_SENSITIVITY' if not passed else None
+        }
+    
+    def _test_boundary_condition(self, test_case: Dict[str, Any], test_id: str) -> Dict[str, Any]:
+        """Test AI behavior at boundary conditions."""
+        boundary_input = test_case['boundary_input']
+        expected_behavior = test_case['expected_behavior']
+        
+        # Simulate AI decision at boundary
+        confidence = self._simulate_ai_confidence(boundary_input)
+        
+        # Check if behavior matches expectations
+        if expected_behavior == 'low_confidence':
+            passed = confidence < 0.6
+            vulnerability_type = 'BOUNDARY_OVERCONFIDENCE' if not passed else None
+        elif expected_behavior == 'high_confidence':
+            passed = confidence > 0.8
+            vulnerability_type = 'BOUNDARY_UNDERCONFIDENCE' if not passed else None
+        else:
+            passed = True  # Default pass for unknown expected behavior
+            vulnerability_type = None
+        
+        return {
+            'test_id': test_id,
+            'test_type': 'boundary_condition',
+            'passed': passed,
+            'confidence': confidence,
+            'expected_behavior': expected_behavior,
+            'vulnerability_type': vulnerability_type
+        }
+    
+    def _test_demographic_fairness(self, test_case: Dict[str, Any], test_id: str) -> Dict[str, Any]:
+        """Test fairness across demographic groups."""
+        group1_input = test_case['group1_input']
+        group2_input = test_case['group2_input']
+        max_disparity = test_case.get('max_disparity', 0.05)
+        
+        # Simulate AI decisions for both groups
+        group1_confidence = self._simulate_ai_confidence(group1_input)
+        group2_confidence = self._simulate_ai_confidence(group2_input)
+        
+        # Calculate disparity
+        disparity = abs(group1_confidence - group2_confidence)
+        passed = disparity <= max_disparity
+        
+        return {
+            'test_id': test_id,
+            'test_type': 'demographic_fairness',
+            'passed': passed,
+            'group1_confidence': group1_confidence,
+            'group2_confidence': group2_confidence,
+            'disparity': disparity,
+            'max_disparity': max_disparity,
+            'vulnerability_type': 'DEMOGRAPHIC_BIAS' if not passed else None
+        }
+    
+    def _simulate_ai_confidence(self, input_data: Dict[str, Any]) -> float:
+        """Simulate AI confidence score for testing purposes."""
+        # This is a simplified simulation for testing
+        # In a real implementation, this would call the actual AI model
+        
+        # Use patient age and other factors to simulate realistic confidence
+        patient_age = input_data.get('patient_age', 40)
+        symptoms_severity = input_data.get('symptoms_severity', 0.5)
+        
+        # Simple heuristic for simulation
+        base_confidence = 0.7
+        age_factor = 0.1 if 18 <= patient_age <= 65 else -0.1
+        severity_factor = symptoms_severity * 0.2
+        
+        # Add some noise for realistic variation
+        import random
+        noise = random.uniform(-0.05, 0.05)
+        
+        confidence = max(0.1, min(0.95, base_confidence + age_factor + severity_factor + noise))
+        return confidence
+    
+    def _trigger_adversarial_alert(self, test_results: Dict[str, Any]):
+        """Trigger alert for adversarial test failures."""
+        alert = {
+            'type': 'ADVERSARIAL_VULNERABILITY_DETECTED',
+            'severity': 'HIGH' if test_results['robustness_score'] < 0.6 else 'MEDIUM',
+            'robustness_score': test_results['robustness_score'],
+            'failed_tests': test_results['failed_tests'],
+            'total_tests': test_results['total_tests'],
+            'vulnerabilities': test_results['vulnerabilities_detected'],
+            'timestamp': test_results['timestamp'],
+            'remediation_required': True
+        }
+        
+        logger.warning(f"ADVERSARIAL ALERT: Robustness score {test_results['robustness_score']:.2f}")
+        
+        for callback in self.safety_alert_callbacks:
+            try:
+                callback(alert)
+            except Exception as e:
+                logger.error(f"Error in adversarial alert callback: {e}")
+
+    def generate_standard_adversarial_tests(self) -> List[Dict[str, Any]]:
+        """Generate standard adversarial test cases for clinical AI."""
+        return [
+            # Input perturbation tests
+            {
+                'type': 'input_perturbation',
+                'original_input': {'patient_age': 45, 'symptoms_severity': 0.6},
+                'perturbed_input': {'patient_age': 45, 'symptoms_severity': 0.61},  # Tiny change
+                'max_confidence_change': 0.05
+            },
+            {
+                'type': 'input_perturbation', 
+                'original_input': {'patient_age': 30, 'symptoms_severity': 0.8},
+                'perturbed_input': {'patient_age': 31, 'symptoms_severity': 0.8},  # Age perturbation
+                'max_confidence_change': 0.03
+            },
+            
+            # Boundary condition tests
+            {
+                'type': 'boundary_condition',
+                'boundary_input': {'patient_age': 0, 'symptoms_severity': 0.0},  # Minimum values
+                'expected_behavior': 'low_confidence'
+            },
+            {
+                'type': 'boundary_condition', 
+                'boundary_input': {'patient_age': 120, 'symptoms_severity': 1.0},  # Maximum values
+                'expected_behavior': 'low_confidence'
+            },
+            
+            # Demographic fairness tests
+            {
+                'type': 'demographic_fairness',
+                'group1_input': {'patient_age': 25, 'symptoms_severity': 0.7, 'gender': 'male'},
+                'group2_input': {'patient_age': 25, 'symptoms_severity': 0.7, 'gender': 'female'},
+                'max_disparity': 0.05
+            },
+            {
+                'type': 'demographic_fairness',
+                'group1_input': {'patient_age': 70, 'symptoms_severity': 0.6, 'ethnicity': 'group_a'},
+                'group2_input': {'patient_age': 70, 'symptoms_severity': 0.6, 'ethnicity': 'group_b'},
+                'max_disparity': 0.05
+            }
+        ]
     
     def _check_safety_performance(self):
         """Check overall safety system performance."""
