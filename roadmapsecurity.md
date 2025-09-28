@@ -1,4 +1,4 @@
-# 🛡️ DuetMind Adaptive – Security & Compliance Roadmap (Verified September 2025)
+# 🛡️ AimMedRes – Security & Compliance Roadmap (Verified September 2025)
 
 ## Summary: All critical security, encryption, authentication, audit logging, and compliance requirements are implemented and tested as described. Gaps and ongoing work clearly marked.
 
