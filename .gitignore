@@ -76,3 +76,4 @@ diabetes_training.log
 *.egg-info/
 build/
 dist/
+.test_env/
