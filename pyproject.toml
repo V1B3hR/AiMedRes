@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "duetmind-adaptive"
+name = "aimedres"
 version = "0.1.0"
-description = "DuetMind Adaptive - Agent Memory Store"
+description = "AiMedRes - AI Medical Research Assistant"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
