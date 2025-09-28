@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DuetMind Adaptive - Secure Main Entry Point
+AiMedRes - Secure Main Entry Point
 
 Production-ready main entry point with comprehensive security,
 configuration management, and operational safety.
@@ -27,14 +27,14 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('duetmind.log')
+        logging.FileHandler('aimedres.log')
     ]
 )
-logger = logging.getLogger("DuetMind")
+logger = logging.getLogger("AiMedRes")
 
-class DuetMindApplication:
+class AiMedResApplication:
     """
-    Main DuetMind application with security and safety features
+    Main AiMedRes application with security and safety features
     """
     
     def __init__(self, config_path: Optional[Path] = None):
@@ -54,7 +54,7 @@ class DuetMindApplication:
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
         
-        logger.info("DuetMind application initialized")
+        logger.info("AiMedRes application initialized")
     
     def _signal_handler(self, signum, frame):
         """Handle shutdown signals gracefully"""
@@ -89,7 +89,7 @@ class DuetMindApplication:
         return network
     
     def create_agent(self, agent_id: Optional[str] = None, name: Optional[str] = None, **kwargs) -> DuetMindAgent:
-        """Create a new DuetMind agent"""
+        """Create a new AiMedRes agent"""
         neural_config = {
             'input_size': kwargs.get('input_size', self.config.neural_network.input_size),
             'hidden_layers': kwargs.get('hidden_layers', self.config.neural_network.hidden_layers),
@@ -267,12 +267,12 @@ class DuetMindApplication:
     def run_interactive_mode(self):
         """Run interactive mode with user commands"""
         logger.info("=== Starting Interactive Mode ===")
-        print("DuetMind Interactive Mode")
+        print("AiMedRes Interactive Mode")
         print("Commands: train, simulate, comprehensive, agents, networks, status, quit")
         
         while True:
             try:
-                command = input("\nduetmind> ").strip().lower()
+                command = input("\naimedres> ").strip().lower()
                 
                 if command == "quit" or command == "exit":
                     break
@@ -317,7 +317,7 @@ class DuetMindApplication:
     
     def print_system_status(self):
         """Print comprehensive system status"""
-        print("\n=== DuetMind System Status ===")
+        print("\n=== AiMedRes System Status ===")
         
         # Configuration
         print(f"Configuration loaded: {bool(self.config)}")
@@ -383,14 +383,14 @@ class DuetMindApplication:
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="DuetMind Adaptive System - Secure AI Framework",
+        description="AiMedRes System - Advanced AI Medical Research Assistant",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m duetmind_adaptive --mode training       # Run training only
-  python -m duetmind_adaptive --mode simulation     # Run simulation only  
-  python -m duetmind_adaptive --mode comprehensive  # Run both training and simulation
-  python -m duetmind_adaptive                       # Interactive mode (default)
+  python -m aimedres --mode training       # Run training only
+  python -m aimedres --mode simulation     # Run simulation only  
+  python -m aimedres --mode comprehensive  # Run both training and simulation
+  python -m aimedres                       # Interactive mode (default)
         """)
     
     parser.add_argument('--mode', 
@@ -413,7 +413,7 @@ Examples:
     
     try:
         # Create and configure application
-        with DuetMindApplication(args.config) as app:
+        with AiMedResApplication(args.config) as app:
             # Start safety monitoring unless disabled
             if not args.no_safety_monitoring:
                 app.start_safety_monitoring()
