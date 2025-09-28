@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import tempfile
 import os
 
-from files.training.training import AlzheimerTrainer, TrainingConfig
+from aimedres.training.training import AlzheimerTrainer, TrainingConfig
 from scripts.data_loaders import MockDataLoader
 from neuralnet import AliveLoopNode, ResourceRoom
 

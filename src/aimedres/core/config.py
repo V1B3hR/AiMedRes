@@ -1,5 +1,5 @@
 """
-Configuration Management for DuetMind Adaptive
+Configuration Management for AiMedRes
 
 Provides secure, centralized configuration management with environment
 variable support and validation.
@@ -34,7 +34,7 @@ class DatabaseConfig:
     type: str = "sqlite"
     host: str = "localhost"
     port: int = 5432
-    name: str = "duetmind.db"
+    name: str = "aimedres.db"
     username: str = ""
     password: str = ""
     pool_size: int = 10
@@ -121,33 +121,33 @@ class DuetMindConfig:
         """Load configuration from environment variables"""
         env_mappings = {
             # Security
-            'DUETMIND_AUTH_ENABLED': ('security', 'auth_enabled', bool),
-            'DUETMIND_API_KEY_REQUIRED': ('security', 'api_key_required', bool),
-            'DUETMIND_RATE_LIMIT_ENABLED': ('security', 'rate_limit_enabled', bool),
-            'DUETMIND_MAX_REQUESTS_PER_MINUTE': ('security', 'max_requests_per_minute', int),
-            'DUETMIND_SESSION_TIMEOUT': ('security', 'session_timeout_minutes', int),
+            'AIMEDRES_AUTH_ENABLED': ('security', 'auth_enabled', bool),
+            'AIMEDRES_API_KEY_REQUIRED': ('security', 'api_key_required', bool),
+            'AIMEDRES_RATE_LIMIT_ENABLED': ('security', 'rate_limit_enabled', bool),
+            'AIMEDRES_MAX_REQUESTS_PER_MINUTE': ('security', 'max_requests_per_minute', int),
+            'AIMEDRES_SESSION_TIMEOUT': ('security', 'session_timeout_minutes', int),
             
             # Database  
-            'DUETMIND_DB_TYPE': ('database', 'type', str),
-            'DUETMIND_DB_HOST': ('database', 'host', str),
-            'DUETMIND_DB_PORT': ('database', 'port', int),
-            'DUETMIND_DB_NAME': ('database', 'name', str),
-            'DUETMIND_DB_USER': ('database', 'username', str),
-            'DUETMIND_DB_PASSWORD': ('database', 'password', str),
+            'AIMEDRES_DB_TYPE': ('database', 'type', str),
+            'AIMEDRES_DB_HOST': ('database', 'host', str),
+            'AIMEDRES_DB_PORT': ('database', 'port', int),
+            'AIMEDRES_DB_NAME': ('database', 'name', str),
+            'AIMEDRES_DB_USER': ('database', 'username', str),
+            'AIMEDRES_DB_PASSWORD': ('database', 'password', str),
             
             # API
-            'DUETMIND_API_HOST': ('api', 'host', str),
-            'DUETMIND_API_PORT': ('api', 'port', int),
-            'DUETMIND_API_DEBUG': ('api', 'debug', bool),
-            'DUETMIND_SSL_ENABLED': ('api', 'ssl_enabled', bool),
-            'DUETMIND_SSL_CERT_PATH': ('api', 'ssl_cert_path', str),
-            'DUETMIND_SSL_KEY_PATH': ('api', 'ssl_key_path', str),
+            'AIMEDRES_API_HOST': ('api', 'host', str),
+            'AIMEDRES_API_PORT': ('api', 'port', int),
+            'AIMEDRES_API_DEBUG': ('api', 'debug', bool),
+            'AIMEDRES_SSL_ENABLED': ('api', 'ssl_enabled', bool),
+            'AIMEDRES_SSL_CERT_PATH': ('api', 'ssl_cert_path', str),
+            'AIMEDRES_SSL_KEY_PATH': ('api', 'ssl_key_path', str),
             
             # Neural Network
-            'DUETMIND_NN_INPUT_SIZE': ('neural_network', 'input_size', int),
-            'DUETMIND_NN_LEARNING_RATE': ('neural_network', 'learning_rate', float),
-            'DUETMIND_NN_BATCH_SIZE': ('neural_network', 'batch_size', int),
-            'DUETMIND_NN_EPOCHS': ('neural_network', 'epochs', int),
+            'AIMEDRES_NN_INPUT_SIZE': ('neural_network', 'input_size', int),
+            'AIMEDRES_NN_LEARNING_RATE': ('neural_network', 'learning_rate', float),
+            'AIMEDRES_NN_BATCH_SIZE': ('neural_network', 'batch_size', int),
+            'AIMEDRES_NN_EPOCHS': ('neural_network', 'epochs', int),
         }
         
         for env_var, (section, key, type_func) in env_mappings.items():

@@ -1,5 +1,5 @@
 """
-DuetMind Agent - Secure Cognitive Agent Implementation
+AiMedRes Agent - Secure Cognitive Agent Implementation
 
 Provides secure, production-ready cognitive agents with biological
 state simulation, safety monitoring, and comprehensive logging.
@@ -59,7 +59,7 @@ class DuetMindAgent:
                  enable_safety_monitoring: bool = True,
                  enable_input_validation: bool = True):
         """
-        Initialize DuetMind agent
+        Initialize AiMedRes agent
         
         Args:
             agent_id: Unique agent identifier
@@ -115,7 +115,7 @@ class DuetMindAgent:
         # Thread safety
         self._lock = threading.RLock()
         
-        logger.info(f"DuetMind agent initialized: {self.name} ({self.agent_id})")
+        logger.info(f"AiMedRes agent initialized: {self.name} ({self.agent_id})")
     
     def think(self, 
              inputs: np.ndarray, 

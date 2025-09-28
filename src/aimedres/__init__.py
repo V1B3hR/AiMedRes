@@ -1,8 +1,8 @@
 """
-DuetMind Adaptive - Hybrid AI Framework
+AiMedRes - Advanced AI Medical Research Assistant
 
 A secure, production-ready AI system combining Adaptive Neural Networks 
-with DuetMind cognitive agents for medical and research applications.
+with intelligent healthcare analytics for medical and research applications.
 
 Main Components:
 - Core: Neural network engine and adaptive systems
@@ -13,7 +13,7 @@ Main Components:
 """
 
 __version__ = "1.0.0"
-__author__ = "DuetMind Team"
+__author__ = "AiMedRes Team"
 
 # Core imports for external use
 from .core.neural_network import AdaptiveNeuralNetwork

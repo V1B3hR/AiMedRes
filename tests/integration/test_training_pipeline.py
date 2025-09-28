@@ -6,7 +6,7 @@ import pandas as pd
 import tempfile
 import os
 
-from files.training.training import AlzheimerTrainer, TrainingConfig
+from aimedres.training.training import AlzheimerTrainer, TrainingConfig
 from scripts.data_loaders import MockDataLoader, CSVDataLoader, create_data_loader
 
 
@@ -149,7 +149,7 @@ class TestTrainingWithNeuralNetwork:
     
     def test_training_integrated_agent_creation(self, sample_alzheimer_data):
         """Test creating training-integrated agents"""
-        from files.training.training import TrainingIntegratedAgent
+        from aimedres.training.training import TrainingIntegratedAgent
         from neuralnet import AliveLoopNode, ResourceRoom
         
         # Setup components
@@ -180,7 +180,7 @@ class TestTrainingWithNeuralNetwork:
     
     def test_enhanced_reasoning_with_ml(self, sample_alzheimer_data):
         """Test enhanced reasoning with ML predictions"""
-        from files.training.training import TrainingIntegratedAgent, run_training_simulation
+        from aimedres.training.training import TrainingIntegratedAgent, run_training_simulation
         
         # Run training simulation which creates integrated agents
         results, agents = run_training_simulation()
