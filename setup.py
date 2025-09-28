@@ -27,7 +27,7 @@ def read_requirements():
     return requirements
 
 setup(
-    name="duetmind_adaptive",
+    name="aimedres",
     version="1.0.0",
     description="Hybrid AI framework combining Adaptive Neural Networks with DuetMind cognitive agents",
     long_description=read_file("README.md"),
@@ -66,12 +66,12 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'duetmind=duetmind_adaptive.main:main',
-            'duetmind-train=duetmind_adaptive.training.cli:train_cli',
-            'duetmind-api=duetmind_adaptive.api.server:run_server',
+            'aimedres=duetmind_adaptive.main:main',
+            'aimedres-train=duetmind_adaptive.training.cli:train_cli',
+            'aimedres-api=duetmind_adaptive.api.server:run_server',
         ],
     },
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
@@ -79,8 +79,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
+
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
