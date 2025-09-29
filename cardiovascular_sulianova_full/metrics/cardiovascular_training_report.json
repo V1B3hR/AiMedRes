@@ -1,0 +1,61 @@
+{
+  "timestamp": "2025-09-29T10:15:07.522127",
+  "dataset_info": {
+    "n_samples": 5000,
+    "n_features": 17,
+    "feature_names": [
+      "age",
+      "gender",
+      "height",
+      "weight",
+      "ap_hi",
+      "ap_lo",
+      "cholesterol",
+      "gluc",
+      "smoke",
+      "alco",
+      "active",
+      "heart_rate",
+      "chest_pain",
+      "shortness_of_breath",
+      "fatigue"
+    ],
+    "target_names": [
+      "No Disease",
+      "Disease"
+    ],
+    "class_distribution": {
+      "0": 1019,
+      "1": 3981
+    }
+  },
+  "classical_models": {
+    "Logistic Regression": {
+      "accuracy": 0.8099999999999999,
+      "accuracy_std": 0.0035213633723317605,
+      "balanced_accuracy": 0.5853125477105714,
+      "f1": 0.8899130337552951,
+      "roc_auc": 0.7778263991852837
+    },
+    "Random Forest": {
+      "accuracy": 0.8126,
+      "accuracy_std": 0.002727636339397123,
+      "balanced_accuracy": 0.5920699284976099,
+      "f1": 0.8912294425245422,
+      "roc_auc": 0.7624221952263767
+    },
+    "XGBoost": {
+      "accuracy": 0.804,
+      "accuracy_std": 0.009359487165438057,
+      "balanced_accuracy": 0.6155075289333556,
+      "f1": 0.8835161248394956,
+      "roc_auc": 0.7485757803431298
+    }
+  },
+  "neural_network": {
+    "accuracy": 0.809,
+    "f1": 0.7880653036687392,
+    "balanced_accuracy": 0.6266504089072815,
+    "best_val_loss": 0.4087142236530781
+  }
+}

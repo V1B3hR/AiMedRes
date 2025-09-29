@@ -311,7 +311,16 @@ class BrainMRITrainingPipeline:
             else:
                 raise ValueError(f"Unknown dataset choice: {dataset_choice}")
             
+            # Ensure we have valid labels
+            unique_labels = sorted(set(labels))
+            logger.info(f"Unique labels found: {unique_labels}")
+            
+            # Remap labels to ensure they start from 0 and are consecutive
+            label_mapping = {old_label: new_label for new_label, old_label in enumerate(unique_labels)}
+            labels = [label_mapping[label] for label in labels]
+            
             logger.info(f"Label distribution: Class 0: {labels.count(0)}, Class 1: {labels.count(1)}")
+            logger.info(f"Total samples: {len(image_paths)}")
             
             return image_paths, labels
             
