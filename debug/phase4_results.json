@@ -1,0 +1,214 @@
+{
+  "timestamp": "2025-09-29T15:58:59.637816",
+  "data_source": "alzheimer",
+  "architecture_analysis": {
+    "data_characteristics": {
+      "n_samples": 1000,
+      "n_features": 6,
+      "n_classes": 2,
+      "samples_per_feature_ratio": 166.66666666666666,
+      "feature_variance": 22.859512679346015,
+      "class_balance": {
+        "0": 756,
+        "1": 244
+      }
+    },
+    "architecture_recommendations": {
+      "complexity": "high",
+      "regularization": "light",
+      "class_weight": "balanced"
+    },
+    "overfitting_risk_factors": [
+      "Class imbalance detected"
+    ]
+  },
+  "baseline_results": {
+    "logistic_regression": {
+      "train_accuracy": 0.9342857142857143,
+      "test_accuracy": 0.9266666666666666,
+      "cv_mean": 0.9328571428571429,
+      "cv_std": 0.02657296462534038,
+      "overfitting_score": 0.007619047619047636,
+      "precision": 0.9260770445086823,
+      "recall": 0.9266666666666666,
+      "f1": 0.9263182261208577
+    },
+    "decision_tree": {
+      "train_accuracy": 0.9214285714285714,
+      "test_accuracy": 0.85,
+      "cv_mean": 0.8614285714285714,
+      "cv_std": 0.025793528693239694,
+      "overfitting_score": 0.0714285714285714,
+      "precision": 0.8480434782608696,
+      "recall": 0.85,
+      "f1": 0.8489189147832473
+    }
+  },
+  "complexity_results": {
+    "random_forest_simple": {
+      "train_accuracy": 0.9471428571428572,
+      "test_accuracy": 0.91,
+      "cv_mean": 0.8928571428571429,
+      "cv_std": 0.02213133340689953,
+      "overfitting_score": 0.037142857142857144,
+      "precision": 0.9081959880726483,
+      "recall": 0.91,
+      "f1": 0.9073978494623657
+    },
+    "random_forest_moderate": {
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.9133333333333333,
+      "cv_mean": 0.9014285714285715,
+      "cv_std": 0.022767682072156036,
+      "overfitting_score": 0.08666666666666667,
+      "precision": 0.9115701036552101,
+      "recall": 0.9133333333333333,
+      "f1": 0.911571616789008
+    },
+    "random_forest_complex": {
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.9133333333333333,
+      "cv_mean": 0.9099999999999999,
+      "cv_std": 0.024159335036125367,
+      "overfitting_score": 0.08666666666666667,
+      "precision": 0.9116321746701493,
+      "recall": 0.9133333333333333,
+      "f1": 0.9110809668695065
+    },
+    "svm_linear": {
+      "train_accuracy": 0.9371428571428572,
+      "test_accuracy": 0.9233333333333333,
+      "cv_mean": 0.93,
+      "cv_std": 0.02762725657973387,
+      "overfitting_score": 0.013809523809523827,
+      "precision": 0.9237116319859683,
+      "recall": 0.9233333333333333,
+      "f1": 0.923509483263504
+    },
+    "svm_rbf": {
+      "train_accuracy": 0.9385714285714286,
+      "test_accuracy": 0.9366666666666666,
+      "cv_mean": 0.9228571428571428,
+      "cv_std": 0.030101867865293522,
+      "overfitting_score": 0.0019047619047619646,
+      "precision": 0.9369843737542853,
+      "recall": 0.9366666666666666,
+      "f1": 0.936812181826373
+    },
+    "mlp_simple": {
+      "train_accuracy": 0.9471428571428572,
+      "test_accuracy": 0.93,
+      "cv_mean": 0.9285714285714286,
+      "cv_std": 0.02515259551665572,
+      "overfitting_score": 0.017142857142857126,
+      "precision": 0.9296978557504871,
+      "recall": 0.93,
+      "f1": 0.9298355437665782
+    },
+    "mlp_complex": {
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.9233333333333333,
+      "cv_mean": 0.9014285714285715,
+      "cv_std": 0.02490799396308954,
+      "overfitting_score": 0.07666666666666666,
+      "precision": 0.9268598484848485,
+      "recall": 0.9233333333333333,
+      "f1": 0.924486847684637
+    }
+  },
+  "recommendations": {
+    "best_baseline_model": {
+      "name": "logistic_regression",
+      "test_accuracy": 0.9266666666666666
+    },
+    "best_complex_model": {
+      "name": "svm_rbf",
+      "test_accuracy": 0.9366666666666666
+    },
+    "architecture_advice": [
+      "Use regularization techniques (L1/L2, early stopping)",
+      "Consider data augmentation or feature selection"
+    ],
+    "overfitting_warnings": [],
+    "performance_summary": {},
+    "best_overall_model": {
+      "name": "svm_rbf",
+      "test_accuracy": 0.9366666666666666,
+      "overfitting_score": 0.0019047619047619646
+    }
+  },
+  "performance_log": [
+    {
+      "model": "logistic_regression",
+      "complexity": "low",
+      "train_accuracy": 0.9342857142857143,
+      "test_accuracy": 0.9266666666666666,
+      "cv_accuracy": 0.9328571428571429,
+      "overfitting_score": 0.007619047619047636
+    },
+    {
+      "model": "decision_tree",
+      "complexity": "low",
+      "train_accuracy": 0.9214285714285714,
+      "test_accuracy": 0.85,
+      "cv_accuracy": 0.8614285714285714,
+      "overfitting_score": 0.0714285714285714
+    },
+    {
+      "model": "random_forest_simple",
+      "complexity": "moderate",
+      "train_accuracy": 0.9471428571428572,
+      "test_accuracy": 0.91,
+      "cv_accuracy": 0.8928571428571429,
+      "overfitting_score": 0.037142857142857144
+    },
+    {
+      "model": "random_forest_moderate",
+      "complexity": "high",
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.9133333333333333,
+      "cv_accuracy": 0.9014285714285715,
+      "overfitting_score": 0.08666666666666667
+    },
+    {
+      "model": "random_forest_complex",
+      "complexity": "high",
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.9133333333333333,
+      "cv_accuracy": 0.9099999999999999,
+      "overfitting_score": 0.08666666666666667
+    },
+    {
+      "model": "svm_linear",
+      "complexity": "moderate",
+      "train_accuracy": 0.9371428571428572,
+      "test_accuracy": 0.9233333333333333,
+      "cv_accuracy": 0.93,
+      "overfitting_score": 0.013809523809523827
+    },
+    {
+      "model": "svm_rbf",
+      "complexity": "high",
+      "train_accuracy": 0.9385714285714286,
+      "test_accuracy": 0.9366666666666666,
+      "cv_accuracy": 0.9228571428571428,
+      "overfitting_score": 0.0019047619047619646
+    },
+    {
+      "model": "mlp_simple",
+      "complexity": "moderate",
+      "train_accuracy": 0.9471428571428572,
+      "test_accuracy": 0.93,
+      "cv_accuracy": 0.9285714285714286,
+      "overfitting_score": 0.017142857142857126
+    },
+    {
+      "model": "mlp_complex",
+      "complexity": "high",
+      "train_accuracy": 1.0,
+      "test_accuracy": 0.9233333333333333,
+      "cv_accuracy": 0.9014285714285715,
+      "overfitting_score": 0.07666666666666666
+    }
+  ]
+}
