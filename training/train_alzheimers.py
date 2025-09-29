@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 """
-Enhanced Alzheimer's Disease Classification Pipeline
-
-Key Improvements:
-- Corrected logistic regression params (removed invalid probability=True)
-- Robust CV with proper SMOTE application (train folds only)
-- Unified metric computation with binary vs multiclass handling
-- Optional calibration & confusion matrix (multi-class safe)
-- Per-fold metrics logging and summary
-- Model selection (best macro F1) + persistence of all base models and ensemble
-- Preprocessor fitted once on full data and embedded in saved pipelines
-- Predict function loads best model metadata
+Enhanced Alzheimer's Disease Classification Pipeline with:
+- Ensemble methods (Random Forest, XGBoost, LightGBM)
+- Feature engineering (Polynomial & interaction features)
+- Model tuning (GridSearchCV for hyperparameter optimization)
 """
+
 from __future__ import annotations
 
 import os
@@ -29,8 +23,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from sklearn.model_selection import StratifiedKFold
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.model_selection import StratifiedKFold, GridSearchCV
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder, PolynomialFeatures
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
@@ -43,7 +37,6 @@ from sklearn.compose import ColumnTransformer
 
 warnings.filterwarnings("ignore")
 
-# -------- Optional imports -------- #
 def _try_import(module_name: str):
     try:
         return __import__(module_name), True
@@ -73,7 +66,11 @@ DEFAULT_CONFIG = {
     'run_voting_ensemble': True,
     'calibration_plots': True,
     'mlflow_experiment_name': 'Alzheimer_Classification_Enhanced',
-    'model_selection_metric': 'f1_macro'
+    'model_selection_metric': 'f1_macro',
+    'enable_polynomial_features': True,
+    'poly_degree': 2,
+    'poly_interaction_only': False,
+    'model_tuning': True
 }
 
 def load_config(path: str) -> Dict[str, Any]:
@@ -88,7 +85,6 @@ def load_config(path: str) -> Dict[str, Any]:
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
-# -------- Logging -------- #
 def init_logger(log_file: Path) -> logging.Logger:
     logger = logging.getLogger("alz_pipeline")
     if logger.handlers:
@@ -108,7 +104,6 @@ def set_seed(seed: int):
     np.random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
 
-# -------- Data Loading / Preprocessing -------- #
 def download_dataset(handle: str) -> Path:
     if not KAGGLEHUB_AVAILABLE:
         raise ImportError("Install kagglehub to download dataset.")
@@ -122,16 +117,33 @@ def load_data(cfg: Dict[str, Any]) -> pd.DataFrame:
     csv_path = download_dataset(cfg['dataset_handle'])
     return pd.read_csv(csv_path)
 
-def preprocess(df: pd.DataFrame, target_col: str) -> Tuple[pd.DataFrame, pd.Series, LabelEncoder]:
+def preprocess(df: pd.DataFrame, target_col: str, cfg: Dict[str, Any]) -> Tuple[pd.DataFrame, pd.Series, LabelEncoder]:
     if target_col not in df.columns:
         raise ValueError(f"Target column '{target_col}' not found.")
-    # Drop ID-like columns & rows missing target
     id_cols = [c for c in df.columns if 'id' in c.lower()]
     df = df.drop(columns=id_cols).dropna(subset=[target_col])
     X = df.drop(columns=[target_col])
     y_raw = df[target_col]
     le = LabelEncoder()
     y = pd.Series(le.fit_transform(y_raw), name='target')
+
+    # Feature engineering: Polynomial & interaction features
+    if cfg.get('enable_polynomial_features', False):
+        num_cols = X.select_dtypes(include=np.number).columns.tolist()
+        X_num = X[num_cols]
+        poly = PolynomialFeatures(
+            degree=cfg.get('poly_degree', 2),
+            interaction_only=cfg.get('poly_interaction_only', False),
+            include_bias=False
+        )
+        X_poly = pd.DataFrame(
+            poly.fit_transform(X_num),
+            columns=poly.get_feature_names_out(num_cols)
+        )
+        # Replace numeric columns with polynomial features
+        X = X.drop(columns=num_cols)
+        X = pd.concat([X, X_poly], axis=1)
+
     return X, y, le
 
 def build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
@@ -142,7 +154,6 @@ def build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
         ('imputer', SimpleImputer(strategy='median')),
         ('scaler', StandardScaler())
     ])
-    # Handle older sklearn compatibility
     try:
         ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
     except TypeError:
@@ -159,40 +170,48 @@ def build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
     ], remainder='drop')
     return ct
 
-def get_feature_names(preprocessor: ColumnTransformer) -> List[str]:
-    feature_names = []
-    for name, trans, cols in preprocessor.transformers_:
-        if name == 'num':
-            feature_names.extend(cols)
-        elif name == 'cat':
-            ohe = trans.named_steps['onehot']
-            feature_names.extend(ohe.get_feature_names_out(cols))
-    return feature_names
-
-# -------- Models -------- #
 def get_models(cfg: Dict[str, Any]) -> Dict[str, Any]:
-    models: Dict[str, Any] = {
-        'LogisticRegression': LogisticRegression(
-            random_state=cfg['random_seed'],
-            max_iter=1000
-        ),
-        'RandomForest': RandomForestClassifier(
-            random_state=cfg['random_seed'],
-            n_jobs=-1
-        )
-    }
+    models: Dict[str, Any] = {}
+    # Random Forest
+    models['RandomForest'] = RandomForestClassifier(
+        random_state=cfg['random_seed'],
+        n_jobs=-1
+    )
+    # XGBoost
     if XGBOOST_AVAILABLE:
         models['XGBoost'] = xgb.XGBClassifier(
             random_state=cfg['random_seed'],
-            eval_metric='logloss'
+            eval_metric='logloss',
+            n_jobs=-1
         )
+    # LightGBM
     if LIGHTGBM_AVAILABLE:
         models['LightGBM'] = lgb.LGBMClassifier(
-            random_state=cfg['random_seed']
+            random_state=cfg['random_seed'],
+            n_jobs=-1
         )
     return models
 
-# -------- Metrics / Evaluation -------- #
+def get_param_grids():
+    grids = {
+        'RandomForest': {
+            'classifier__n_estimators': [100, 200],
+            'classifier__max_depth': [None, 5, 10],
+            'classifier__min_samples_split': [2, 5]
+        },
+        'XGBoost': {
+            'classifier__n_estimators': [100, 200],
+            'classifier__max_depth': [3, 5, 7],
+            'classifier__learning_rate': [0.01, 0.1]
+        },
+        'LightGBM': {
+            'classifier__n_estimators': [100, 200],
+            'classifier__max_depth': [-1, 5, 10],
+            'classifier__learning_rate': [0.01, 0.1]
+        }
+    }
+    return grids
+
 def compute_metrics(y_true, y_pred, y_proba):
     n_classes = y_proba.shape[1]
     out = {
@@ -225,7 +244,7 @@ def plot_calibration(model_name: str, y_true, y_proba, out_dir: Path):
     if not MPL_AVAILABLE:
         return
     if y_proba.shape[1] != 2:
-        return  # Skip multiclass calibration for simplicity
+        return
     from sklearn.calibration import CalibrationDisplay
     fig, ax = plt.subplots()
     CalibrationDisplay.from_predictions(y_true, y_proba[:, 1], n_bins=10, ax=ax, name=model_name)
@@ -235,7 +254,6 @@ def plot_calibration(model_name: str, y_true, y_proba, out_dir: Path):
     plt.close(fig)
     return path
 
-# -------- Cross-Validation Training -------- #
 def cross_validate_model(
     name: str,
     model,
@@ -243,7 +261,8 @@ def cross_validate_model(
     y: pd.Series,
     preprocessor: ColumnTransformer,
     cfg: Dict[str, Any],
-    logger: logging.Logger
+    logger: logging.Logger,
+    param_grid=None
 ) -> Dict[str, Any]:
     folds = cfg['folds']
     skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=cfg['random_seed'])
@@ -256,29 +275,36 @@ def cross_validate_model(
         y_tr, y_va = y.iloc[tr_idx], y.iloc[va_idx]
 
         # Fit preprocessor per fold (unbiased)
-        preprocessor_fold = pickle.loads(pickle.dumps(preprocessor))  # clone
+        preprocessor_fold = pickle.loads(pickle.dumps(preprocessor))
         X_tr_tf = preprocessor_fold.fit_transform(X_tr)
         X_va_tf = preprocessor_fold.transform(X_va)
 
         # SMOTE (numeric-only matrix already)
         if cfg['use_smote'] and IMBLEARN_AVAILABLE:
-            # Adjust k_neighbors if needed
             unique, counts = np.unique(y_tr, return_counts=True)
             min_count = counts.min()
             k_neighbors = min(cfg.get('smote_k_neighbors', 5), max(1, min_count - 1))
             sm = SMOTE(random_state=cfg['random_seed'], k_neighbors=k_neighbors)
             X_tr_tf, y_tr = sm.fit_resample(X_tr_tf, y_tr)
 
-        # Fit classifier on transformed (resampled) data
-        clf = pickle.loads(pickle.dumps(model))  # clone
-        clf.fit(X_tr_tf, y_tr)
-
-        y_va_pred = clf.predict(X_va_tf)
-        # Some classifiers might not implement predict_proba (should for our set)
-        if hasattr(clf, "predict_proba"):
-            y_va_proba = clf.predict_proba(X_va_tf)
+        # Model tuning with GridSearchCV
+        if param_grid and cfg.get('model_tuning', False):
+            pipe = Pipeline([
+                ('preprocessor', preprocessor_fold),
+                ('classifier', pickle.loads(pickle.dumps(model)))
+            ])
+            grid = GridSearchCV(pipe, param_grid, cv=3, n_jobs=-1, scoring='f1_macro')
+            grid.fit(X_tr, y_tr)
+            best_clf = grid.best_estimator_.named_steps['classifier']
+            logger.info(f"[{name}] Fold {fold+1} best params: {grid.best_params_}")
         else:
-            # Fallback: create pseudo-proba
+            best_clf = pickle.loads(pickle.dumps(model))
+            best_clf.fit(X_tr_tf, y_tr)
+
+        y_va_pred = best_clf.predict(X_va_tf)
+        if hasattr(best_clf, "predict_proba"):
+            y_va_proba = best_clf.predict_proba(X_va_tf)
+        else:
             y_va_proba = np.zeros((len(y_va_pred), len(np.unique(y))))
             for i, p in enumerate(y_va_pred):
                 y_va_proba[i, p] = 1.0
@@ -293,19 +319,10 @@ def cross_validate_model(
 
     # Aggregate OOF
     oof_proba = np.zeros((len(y), oof_proba_list[0].shape[1]))
-    cursor = 0
-    # Reconstruct in order (since we appended per fold sequential val sets)
-    # Actually val indices may not be contiguous; better map via indices
-    # We'll rebuild per fold again:
-    # Alternative approach: we stored per-fold arrays in the same order as va_idx, so:
-    # Just fill them:
-    filled = np.zeros(len(y), dtype=bool)
     for (tr_idx, va_idx), proba in zip(skf.split(X, y), oof_proba_list):
         oof_proba[va_idx] = proba
-        filled[va_idx] = True
 
     final_metrics = compute_metrics(y, oof_pred, oof_proba)
-
     return {
         'fold_metrics': fold_metrics,
         'oof_metrics': final_metrics,
@@ -313,20 +330,18 @@ def cross_validate_model(
         'oof_proba': oof_proba
     }
 
-# -------- Final Model Fitting & Saving -------- #
 def fit_full_model(
     name: str,
     model,
     X: pd.DataFrame,
     y: pd.Series,
     preprocessor: ColumnTransformer,
-    cfg: Dict[str, Any]
+    cfg: Dict[str, Any],
+    param_grid=None
 ):
-    # Fit preprocessor on full data
     preprocessor_full = pickle.loads(pickle.dumps(preprocessor))
     X_tf = preprocessor_full.fit_transform(X)
 
-    # Optional SMOTE on full data (controversial for final model—commonly you might not)
     if cfg['use_smote'] and IMBLEARN_AVAILABLE:
         unique, counts = np.unique(y, return_counts=True)
         min_count = counts.min()
@@ -334,13 +349,22 @@ def fit_full_model(
         sm = SMOTE(random_state=cfg['random_seed'], k_neighbors=k_neighbors)
         X_tf, y = sm.fit_resample(X_tf, y)
 
-    clf = pickle.loads(pickle.dumps(model))
-    clf.fit(X_tf, y)
+    # Model tuning with GridSearchCV
+    if param_grid and cfg.get('model_tuning', False):
+        pipe = Pipeline([
+            ('preprocessor', preprocessor_full),
+            ('classifier', pickle.loads(pickle.dumps(model)))
+        ])
+        grid = GridSearchCV(pipe, param_grid, cv=3, n_jobs=-1, scoring='f1_macro')
+        grid.fit(X, y)
+        best_clf = grid.best_estimator_.named_steps['classifier']
+    else:
+        best_clf = pickle.loads(pickle.dumps(model))
+        best_clf.fit(X_tf, y)
 
-    # Create a pipeline-like wrapper for inference (manual)
     artifact = {
         'preprocessor': preprocessor_full,
-        'classifier': clf
+        'classifier': best_clf
     }
     return artifact
 
@@ -352,12 +376,9 @@ def pipeline_predict(artifact: Dict[str, Any], X: pd.DataFrame):
     proba = clf.predict_proba(X_tf) if hasattr(clf, "predict_proba") else None
     return pred, proba
 
-# -------- Ensemble -------- #
 def build_ensemble(artifacts: Dict[str, Dict[str, Any]], cfg: Dict[str, Any]):
-    # Construct a VotingClassifier with frozen fitted base estimators each preceded by its preprocessor.
     estimators = []
     for name, art in artifacts.items():
-        # Wrap each into a sklearn Pipeline for uniform interface
         pipe = Pipeline([
             ('preprocessor', art['preprocessor']),
             ('classifier', art['classifier'])
@@ -366,13 +387,11 @@ def build_ensemble(artifacts: Dict[str, Dict[str, Any]], cfg: Dict[str, Any]):
     ensemble = VotingClassifier(estimators=estimators, voting='soft')
     return ensemble
 
-# -------- Artifact Persistence -------- #
 def save_pickle(obj, path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, 'wb') as f:
         pickle.dump(obj, f)
 
-# -------- Main Orchestration -------- #
 def main(config_path: str):
     cfg = load_config(config_path)
     out_dir = Path(cfg['output_dir'])
@@ -389,31 +408,30 @@ def main(config_path: str):
 
     logger.info("=== Pipeline Start ===")
     df = load_data(cfg)
-    X, y, label_encoder = preprocess(df, cfg['target_column'])
+    X, y, label_encoder = preprocess(df, cfg['target_column'], cfg)
     n_classes = len(np.unique(y))
     logger.info(f"Data shape: X={X.shape}, y={y.shape}, classes={n_classes}")
 
     save_pickle(label_encoder, out_dir / 'preprocessors' / 'label_encoder.pkl')
 
     base_preprocessor = build_preprocessor(X)
-
     models = get_models(cfg)
+    param_grids = get_param_grids()
     cv_results = {}
     model_artifacts = {}
 
     vis_dir = out_dir / 'visualizations'
     vis_dir.mkdir(exist_ok=True)
 
-    # Cross-validate each model
     for name, model in models.items():
         logger.info(f"---- CV {name} ----")
-        res = cross_validate_model(name, model, X, y, base_preprocessor, cfg, logger)
+        param_grid = param_grids[name] if name in param_grids else None
+        res = cross_validate_model(name, model, X, y, base_preprocessor, cfg, logger, param_grid)
         cv_results[name] = {
             'oof_metrics': res['oof_metrics'],
             'fold_metrics': res['fold_metrics']
         }
 
-        # Artifacts: confusion matrix & calibration
         paths_to_log = []
         cm_path = plot_confusion(name, y, res['oof_pred'], vis_dir)
         if cm_path:
@@ -425,16 +443,13 @@ def main(config_path: str):
         if MLFLOW_AVAILABLE:
             for p in paths_to_log:
                 mlflow.log_artifact(str(p))
-            # Per-fold metrics
             for i, foldm in enumerate(res['fold_metrics']):
                 mlflow.log_metrics({f"{name}_fold{i+1}_{k}": v for k, v in foldm.items() if not k.endswith("_error")})
 
-        # Fit full model and save artifact
-        artifact = fit_full_model(name, model, X, y, base_preprocessor, cfg)
+        artifact = fit_full_model(name, model, X, y, base_preprocessor, cfg, param_grid)
         model_artifacts[name] = artifact
         save_pickle(artifact, out_dir / 'models' / f'{name}.pkl')
 
-    # Select best model
     selection_metric = cfg['model_selection_metric']
     best_name = max(
         cv_results.keys(),
@@ -445,16 +460,11 @@ def main(config_path: str):
     with open(out_dir / 'models' / 'best_model.json', 'w') as f:
         json.dump({'best_model': best_name, 'metric': selection_metric, 'metrics': best_metrics}, f, indent=2)
 
-    # Ensemble (optional)
     if cfg.get('run_voting_ensemble', True) and len(model_artifacts) > 1:
         logger.info("---- Building Ensemble ----")
-        # Build ensemble wrapper
         ensemble = build_ensemble(model_artifacts, cfg)
-        # Fit ensemble (each underlying pipeline already fitted; but VotingClassifier refits - acceptable)
         ensemble.fit(X, y)
         save_pickle(ensemble, out_dir / 'models' / 'voting_ensemble.pkl')
-        # Evaluate ensemble via direct OOF-like prediction (simple hold-out mimic using CV again for fairness)
-        # For simplicity, reuse same CV for ensemble scoring (not strictly identical to base method)
         skf = StratifiedKFold(n_splits=cfg['folds'], shuffle=True, random_state=cfg['random_seed'])
         ens_pred = np.zeros(len(y), dtype=int)
         ens_proba = []
@@ -476,7 +486,6 @@ def main(config_path: str):
                 cal_path = plot_calibration("Ensemble", y, ens_proba_full, vis_dir)
                 if cal_path: mlflow.log_artifact(str(cal_path))
 
-    # Persist global report
     report = {
         'timestamp': datetime.utcnow().isoformat(),
         'classes': label_encoder.classes_.tolist(),
@@ -494,7 +503,6 @@ def main(config_path: str):
 
     logger.info("=== Pipeline Complete ===")
 
-# -------- Inference -------- #
 def load_artifact(path: Path):
     with open(path, 'rb') as f:
         return pickle.load(f)
@@ -506,7 +514,6 @@ def predict(raw_df: pd.DataFrame, artifacts_dir: str):
         meta = json.loads(best_meta_path.read_text())
         best_name = meta['best_model']
     else:
-        # fallback
         best_name = 'Ensemble' if (base / 'models' / 'voting_ensemble.pkl').exists() else None
 
     if best_name == 'Ensemble':
