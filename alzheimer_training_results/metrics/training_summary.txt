@@ -1,0 +1,44 @@
+Alzheimer's Disease Classification Training Summary
+==================================================
+
+Training Date: 2025-09-29T09:47:22.961431
+
+Dataset Information:
+  Shape: (2149, 35)
+  Target classes: [0, 1]
+  Features after preprocessing: 32
+
+Classical Models Performance (5-fold CV):
+----------------------------------------
+Logistic Regression:
+  accuracy: 0.8329 ± 0.0168
+  balanced_accuracy: 0.8094 ± 0.0151
+  macro_f1: 0.8143 ± 0.0172
+  roc_auc: 0.8976 ± 0.0118
+
+Random Forest:
+  accuracy: 0.9386 ± 0.0104
+  balanced_accuracy: 0.9239 ± 0.0153
+  macro_f1: 0.9314 ± 0.0123
+  roc_auc: 0.9499 ± 0.0060
+
+XGBoost:
+  accuracy: 0.9511 ± 0.0049
+  balanced_accuracy: 0.9422 ± 0.0076
+  macro_f1: 0.9461 ± 0.0056
+  roc_auc: 0.9531 ± 0.0066
+
+Neural Network Performance:
+------------------------------
+Accuracy: 0.9767
+Balanced Accuracy: 0.9722
+Macro F1: 0.9744
+ROC AUC: 0.9980
+Training Epochs: 50
+Final Loss: 0.2091
+
+Output Files:
+---------------
+Models: outputs/models/
+Preprocessors: outputs/preprocessors/
+Metrics: outputs/metrics/
