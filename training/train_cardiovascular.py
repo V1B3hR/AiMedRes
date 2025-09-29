@@ -12,7 +12,8 @@ Features:
 - Downloads datasets using kagglehub
 - Comprehensive data preprocessing  
 - Training of classical models with 5-fold cross-validation
-- Tabular neural network training (MLP) with 100 epochs
+- Tabular neural network training (MLP) with 50 epochs
+- Early stopping for neural network training
 - Detailed metrics reporting
 - Model and preprocessing pipeline persistence
 """
@@ -420,15 +421,15 @@ class CardiovascularTrainingPipeline:
         
         return results
     
-    def train_neural_network(self, epochs: int = 100) -> Dict[str, float]:
+    def train_neural_network(self, epochs: int = 50, early_stopping_patience: int = 7) -> Dict[str, float]:
         """
-        Train neural network classifier
+        Train neural network classifier with early stopping
         """
         if not PYTORCH_AVAILABLE:
             logger.warning("PyTorch not available. Skipping neural network training.")
             return {}
         
-        logger.info(f"Training neural network for {epochs} epochs...")
+        logger.info(f"Training neural network for up to {epochs} epochs (early stopping enabled)...")
         
         # Convert to PyTorch tensors
         X_tensor = torch.FloatTensor(self.X_processed.toarray() if hasattr(self.X_processed, 'toarray') else self.X_processed)
@@ -457,10 +458,12 @@ class CardiovascularTrainingPipeline:
         optimizer = optim.Adam(model.parameters(), lr=0.001)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5)
         
-        # Training loop
+        # Training loop with early stopping
         train_losses = []
         val_losses = []
         best_val_loss = float('inf')
+        best_epoch = 0
+        epochs_no_improve = 0
         
         for epoch in range(epochs):
             # Training
@@ -499,13 +502,22 @@ class CardiovascularTrainingPipeline:
             
             scheduler.step(val_loss)
             
+            # Early stopping logic
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
+                best_epoch = epoch
+                epochs_no_improve = 0
                 # Save best model
                 torch.save(model.state_dict(), self.output_dir / "models" / "best_cardiovascular_nn.pth")
+            else:
+                epochs_no_improve += 1
             
-            if (epoch + 1) % 5 == 0:
+            if (epoch + 1) % 5 == 0 or epoch == 0:
                 logger.info(f'Epoch [{epoch+1}/{epochs}] - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.4f}')
+            
+            if epochs_no_improve >= early_stopping_patience:
+                logger.info(f'Early stopping triggered after {epoch+1} epochs (best epoch: {best_epoch+1}, best val loss: {best_val_loss:.4f})')
+                break
         
         # Final evaluation on validation set
         model.eval()
@@ -532,10 +544,11 @@ class CardiovascularTrainingPipeline:
             'accuracy': accuracy,
             'f1': f1,
             'balanced_accuracy': balanced_acc,
-            'best_val_loss': best_val_loss
+            'best_val_loss': best_val_loss,
+            'best_epoch': best_epoch+1
         }
         
-        logger.info(f"Neural Network - Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
+        logger.info(f"Neural Network - Accuracy: {accuracy:.4f}, F1: {f1:.4f}, Best Epoch: {best_epoch+1}")
         
         return results
     
@@ -591,11 +604,12 @@ class CardiovascularTrainingPipeline:
                 f.write(f"Accuracy: {nn_results['accuracy']:.4f}\n")
                 f.write(f"F1 Score: {nn_results['f1']:.4f}\n")
                 f.write(f"Balanced Accuracy: {nn_results['balanced_accuracy']:.4f}\n")
+                f.write(f"Best Epoch: {nn_results.get('best_epoch', 'N/A')}\n")
         
         logger.info(f"Training report saved to {json_path} and {text_path}")
     
     def run_full_pipeline(self, data_path: str = None, target_column: str = None, 
-                         epochs: int = 100, n_folds: int = 5, dataset_choice: str = "colewelkins") -> Dict[str, Any]:
+                         epochs: int = 50, n_folds: int = 5, dataset_choice: str = "colewelkins") -> Dict[str, Any]:
         """
         Run the complete cardiovascular disease classification pipeline
         """
@@ -658,8 +672,8 @@ def main():
     parser.add_argument(
         '--epochs', 
         type=int, 
-        default=100,
-        help='Number of epochs for neural network training (default: 100)'
+        default=50,
+        help='Number of epochs for neural network training (default: 50)'
     )
     parser.add_argument(
         '--folds', 
@@ -697,7 +711,7 @@ def main():
         # Display neural network results
         if 'neural_network' in report and report['neural_network']:
             nn_metrics = report['neural_network']
-            print(f"\nNeural Network: Accuracy={nn_metrics['accuracy']:.2%}, F1={nn_metrics['f1']:.2%}")
+            print(f"\nNeural Network: Accuracy={nn_metrics['accuracy']:.2%}, F1={nn_metrics['f1']:.2%}, Best Epoch={nn_metrics.get('best_epoch', 'N/A')}")
         
         print("\n✅ Training pipeline completed successfully!")
         print("📊 Models and metrics saved to output directory")
