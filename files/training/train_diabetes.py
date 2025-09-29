@@ -6,6 +6,8 @@ This script implements a comprehensive machine learning pipeline for diabetes ri
 using the specified Kaggle datasets:
 - https://www.kaggle.com/datasets/andrewmvd/early-diabetes-classification
 - https://www.kaggle.com/datasets/tanshihjen/early-stage-diabetes-risk-prediction
+- https://www.kaggle.com/datasets/akshaydattatraykhare/diabetes-dataset
+- https://www.kaggle.com/datasets/mathchi/diabetes-data-set
 
 Features:
 - Downloads datasets using kagglehub
@@ -159,7 +161,7 @@ class DiabetesTrainingPipeline:
         
         Args:
             data_path: Path to local CSV file (optional)
-            dataset_choice: Which dataset to use ("early-diabetes" or "early-stage")
+            dataset_choice: Which dataset to use ("early-diabetes", "early-stage", "akshay-diabetes", or "mathchi-diabetes")
         
         Returns:
             DataFrame with the loaded data
@@ -182,6 +184,12 @@ class DiabetesTrainingPipeline:
                 elif dataset_choice == "early-stage":
                     logger.info("Downloading early-stage diabetes risk prediction dataset...")
                     path = kagglehub.dataset_download("tanshihjen/early-stage-diabetes-risk-prediction")
+                elif dataset_choice == "akshay-diabetes":
+                    logger.info("Downloading Akshay diabetes dataset...")
+                    path = kagglehub.dataset_download("akshaydattatraykhare/diabetes-dataset")
+                elif dataset_choice == "mathchi-diabetes":
+                    logger.info("Downloading Mathchi diabetes dataset...")
+                    path = kagglehub.dataset_download("mathchi/diabetes-data-set")
                 else:
                     logger.warning(f"Unknown dataset choice: {dataset_choice}. Using early-diabetes.")
                     path = kagglehub.dataset_download("andrewmvd/early-diabetes-classification")
@@ -633,8 +641,8 @@ def main():
         '--dataset-choice',
         type=str,
         default='early-diabetes',
-        choices=['early-diabetes', 'early-stage'],
-        help='Which dataset to use: early-diabetes or early-stage (default: early-diabetes)'
+        choices=['early-diabetes', 'early-stage', 'akshay-diabetes', 'mathchi-diabetes'],
+        help='Which dataset to use: early-diabetes, early-stage, akshay-diabetes, or mathchi-diabetes (default: early-diabetes)'
     )
     parser.add_argument(
         '--output-dir', 

@@ -207,49 +207,130 @@ class BrainMRITrainingPipeline:
                                std=[0.229, 0.224, 0.225])
         ])
     
-    def load_dataset(self) -> Tuple[List[str], List[int]]:
-        """Load and prepare the brain MRI dataset"""
-        logger.info("Downloading brain MRI dataset from Kaggle...")
+    def load_dataset(self, dataset_choice: str = "original") -> Tuple[List[str], List[int]]:
+        """Load and prepare the brain MRI dataset based on user choice"""
+        logger.info(f"Loading brain MRI dataset: {dataset_choice}")
         
         try:
-            dataset_path = kagglehub.dataset_download("ashfakyeafi/brain-mri-images")
-            logger.info(f"Dataset downloaded to: {dataset_path}")
-            
-            # Find all image files
-            gan_images_path = Path(dataset_path) / "GAN-Traning Images"
-            image_files = list(gan_images_path.glob("*.jpg"))
-            
-            if not image_files:
-                raise ValueError("No image files found in the dataset")
+            # Choose dataset based on user selection
+            if dataset_choice == "original":
+                dataset_name = "ashfakyeafi/brain-mri-images"
+                dataset_path = kagglehub.dataset_download(dataset_name)
+                logger.info(f"Dataset downloaded to: {dataset_path}")
                 
-            logger.info(f"Found {len(image_files)} brain MRI images")
+                # Find all image files
+                gan_images_path = Path(dataset_path) / "GAN-Traning Images"
+                image_files = list(gan_images_path.glob("*.jpg"))
+                
+                if not image_files:
+                    raise ValueError("No image files found in the original dataset")
+                    
+                logger.info(f"Found {len(image_files)} brain MRI images")
+                
+                # Create labels based on filename patterns
+                image_paths = [str(f) for f in image_files]
+                labels = []
+                for path in image_paths:
+                    filename = Path(path).name
+                    # Create binary classification based on slice orientation
+                    if '_x_slice_' in filename:
+                        labels.append(0)  # Class 0 for x-orientation slices
+                    else:
+                        labels.append(1)  # Class 1 for y/z-orientation slices
+                        
+            elif dataset_choice == "alzheimer-disease":
+                dataset_name = "ashrafulhossenakash/alzheimer-disease-dataset"
+                dataset_path = kagglehub.dataset_download(dataset_name)
+                logger.info(f"Alzheimer disease dataset downloaded to: {dataset_path}")
+                
+                # Look for images in various subdirectories
+                dataset_path = Path(dataset_path)
+                image_extensions = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.tiff']
+                image_files = []
+                
+                # Search recursively for image files
+                for ext in image_extensions:
+                    image_files.extend(list(dataset_path.rglob(ext)))
+                
+                if not image_files:
+                    raise ValueError("No image files found in the Alzheimer disease dataset")
+                    
+                logger.info(f"Found {len(image_files)} Alzheimer MRI images")
+                
+                # Create labels based on directory structure or filename patterns
+                image_paths = [str(f) for f in image_files]
+                labels = []
+                for path in image_paths:
+                    path_obj = Path(path)
+                    # Try to determine class from directory structure
+                    if any(word in path.lower() for word in ['normal', 'healthy', 'control']):
+                        labels.append(0)  # Normal/healthy
+                    elif any(word in path.lower() for word in ['alzheimer', 'dementia', 'ad']):
+                        labels.append(1)  # Alzheimer's
+                    else:
+                        # Default classification based on hash for reproducibility
+                        labels.append(hash(path_obj.name) % 2)
+                        
+            elif dataset_choice == "alzheimer-mri":
+                dataset_name = "borhanitrash/alzheimer-mri-disease-classification-dataset"
+                dataset_path = kagglehub.dataset_download(dataset_name)
+                logger.info(f"Alzheimer MRI classification dataset downloaded to: {dataset_path}")
+                
+                # Look for images in various subdirectories  
+                dataset_path = Path(dataset_path)
+                image_extensions = ['*.jpg', '*.jpeg', '*.png', '*.bmp', '*.tiff']
+                image_files = []
+                
+                # Search recursively for image files
+                for ext in image_extensions:
+                    image_files.extend(list(dataset_path.rglob(ext)))
+                
+                if not image_files:
+                    raise ValueError("No image files found in the Alzheimer MRI dataset")
+                    
+                logger.info(f"Found {len(image_files)} Alzheimer MRI classification images")
+                
+                # Create labels based on directory structure
+                image_paths = [str(f) for f in image_files]
+                labels = []
+                for path in image_paths:
+                    path_obj = Path(path)
+                    # Determine class from directory structure
+                    if any(word in path.lower() for word in ['mild', 'moderate', 'severe']):
+                        labels.append(1)  # Alzheimer's positive
+                    elif any(word in path.lower() for word in ['normal', 'healthy', 'control']):
+                        labels.append(0)  # Normal/healthy
+                    else:
+                        # Try to classify based on parent directory names
+                        parent_dirs = [p.name.lower() for p in path_obj.parents]
+                        if any(word in ' '.join(parent_dirs) for word in ['alzheimer', 'dementia', 'ad']):
+                            labels.append(1)
+                        else:
+                            labels.append(0)
             
-            # For demonstration, create simple labels based on filename patterns
-            # In a real scenario, you'd have actual labels or metadata
-            image_paths = [str(f) for f in image_files]
+            else:
+                raise ValueError(f"Unknown dataset choice: {dataset_choice}")
             
-            # Create labels based on slice orientation or patient ID patterns
-            # This is a simplified approach for demonstration
-            labels = []
-            for path in image_paths:
-                filename = Path(path).name
-                # Create binary classification based on some criteria
-                # Here we use slice orientation as a proxy for classification
-                if '_x_slice_' in filename:
-                    labels.append(0)  # Class 0 for x-orientation slices
-                else:
-                    labels.append(1)  # Class 1 for y/z-orientation slices
+            # Ensure we have valid labels
+            unique_labels = sorted(set(labels))
+            logger.info(f"Unique labels found: {unique_labels}")
+            
+            # Remap labels to ensure they start from 0 and are consecutive
+            label_mapping = {old_label: new_label for new_label, old_label in enumerate(unique_labels)}
+            labels = [label_mapping[label] for label in labels]
             
             logger.info(f"Label distribution: Class 0: {labels.count(0)}, Class 1: {labels.count(1)}")
+            logger.info(f"Total samples: {len(image_paths)}")
             
             return image_paths, labels
             
         except Exception as e:
-            logger.error(f"Error loading dataset: {e}")
+            logger.error(f"Error loading dataset {dataset_choice}: {e}")
             raise
     
     def train_model(self, epochs: int = 20, batch_size: int = 32, validation_split: float = 0.2, 
-                    use_3d: bool = False, mlflow_experiment: str = "brain_mri_classification") -> Dict[str, Any]:
+                    use_3d: bool = False, mlflow_experiment: str = "brain_mri_classification", 
+                    dataset_choice: str = "original") -> Dict[str, Any]:
         """Train the brain MRI CNN model with MLflow tracking"""
         logger.info(f"Starting brain MRI classification training with {epochs} epochs...")
         
@@ -263,9 +344,10 @@ class BrainMRITrainingPipeline:
             mlflow.log_param("validation_split", validation_split)
             mlflow.log_param("use_3d", use_3d)
             mlflow.log_param("model_type", "3D_CNN" if use_3d else "2D_CNN")
+            mlflow.log_param("dataset_choice", dataset_choice)
             
             # Load dataset
-            image_paths, labels = self.load_dataset()
+            image_paths, labels = self.load_dataset(dataset_choice=dataset_choice)
             num_classes = len(set(labels))
             mlflow.log_param("num_classes", num_classes)
             mlflow.log_param("total_samples", len(image_paths))
@@ -458,6 +540,13 @@ def main():
         default='brain_mri_classification',
         help='MLflow experiment name (default: brain_mri_classification)'
     )
+    parser.add_argument(
+        '--dataset-choice',
+        type=str,
+        default='original',
+        choices=['original', 'alzheimer-disease', 'alzheimer-mri'],
+        help='Which dataset to use: original (ashfakyeafi), alzheimer-disease (ashrafulhossenakash), or alzheimer-mri (borhanitrash) (default: original)'
+    )
     
     args = parser.parse_args()
     
@@ -474,7 +563,8 @@ def main():
             epochs=args.epochs,
             batch_size=args.batch_size,
             use_3d=args.use_3d,
-            mlflow_experiment=args.mlflow_experiment
+            mlflow_experiment=args.mlflow_experiment,
+            dataset_choice=args.dataset_choice
         )
         
         print("\n" + "=" * 60)

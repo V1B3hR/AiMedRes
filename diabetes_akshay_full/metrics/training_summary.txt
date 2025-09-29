@@ -1,0 +1,34 @@
+DIABETES RISK CLASSIFICATION TRAINING REPORT
+==================================================
+
+Generated: 20250929_101045
+Dataset Shape: (768, 9)
+Features: 8
+
+CLASSICAL MODELS RESULTS:
+-------------------------
+Logistic Regression:
+  Accuracy: 0.7747 (±0.0147)
+  Balanced Accuracy: 0.7275 (±0.0081)
+  F1-Score: 0.7374 (±0.0111)
+  ROC AUC: 0.8305 (±0.0222)
+
+Random Forest:
+  Accuracy: 0.7721 (±0.0135)
+  Balanced Accuracy: 0.7341 (±0.0155)
+  F1-Score: 0.7407 (±0.0155)
+  ROC AUC: 0.8227 (±0.0222)
+
+XGBoost:
+  Accuracy: 0.7473 (±0.0201)
+  Balanced Accuracy: 0.7116 (±0.0271)
+  F1-Score: 0.7152 (±0.0262)
+  ROC AUC: 0.7914 (±0.0284)
+
+NEURAL NETWORK RESULTS:
+----------------------
+Training Epochs: 20
+Accuracy: 0.8268
+Balanced Accuracy: 0.7951
+F1-Score: 0.8034
+ROC AUC: 0.8999
