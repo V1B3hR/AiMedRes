@@ -11,7 +11,7 @@ Features:
 - Downloads datasets using kagglehub
 - Comprehensive data preprocessing  
 - Training of classical models with 5-fold cross-validation
-- Tabular neural network training (MLP) with 20 epochs
+- Tabular neural network training (MLP) with 50 epochs
 - Detailed metrics reporting
 - Model and preprocessing pipeline persistence
 """
@@ -404,7 +404,7 @@ class DiabetesTrainingPipeline:
         
         return results
     
-    def train_neural_network(self, epochs: int = 20, batch_size: int = 32) -> Dict[str, Any]:
+    def train_neural_network(self, epochs: int = 50, batch_size: int = 32) -> Dict[str, Any]:
         """
         Train neural network classifier
         
@@ -530,7 +530,7 @@ class DiabetesTrainingPipeline:
             'classical_models': classical_results,
             'neural_network': nn_results,
             'training_config': {
-                'epochs': nn_results.get('epochs', 20),
+                'epochs': nn_results.get('epochs', 50),
                 'cross_validation_folds': 5
             }
         }
@@ -570,7 +570,7 @@ class DiabetesTrainingPipeline:
         logger.info(f"Training report saved to {json_path} and {txt_path}")
     
     def run_full_pipeline(self, data_path: str = None, target_column: str = None, 
-                         epochs: int = 20, n_folds: int = 5, dataset_choice: str = "early-diabetes") -> Dict[str, Any]:
+                         epochs: int = 50, n_folds: int = 5, dataset_choice: str = "early-diabetes") -> Dict[str, Any]:
         """
         Run the complete training pipeline
         
@@ -645,8 +645,8 @@ def main():
     parser.add_argument(
         '--epochs', 
         type=int, 
-        default=20,
-        help='Number of epochs for neural network training (default: 20)'
+        default=50,
+        help='Number of epochs for neural network training (default: 50)'
     )
     parser.add_argument(
         '--folds', 
