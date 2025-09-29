@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-09-29T14:38:53.453450",
+  "timestamp": "2025-09-29T14:59:52.180703",
   "python": {
     "version": "3.12.3",
     "implementation": "CPython",
@@ -39,7 +39,6 @@
     "incremental": "22.10.0",
     "Jinja2": "3.1.2",
     "jmespath": "1.0.1",
-    "joblib": "1.5.2",
     "jsonpatch": "1.32",
     "jsonpointer": "2.0",
     "jsonschema": "4.10.3",
@@ -52,10 +51,8 @@
     "mercurial": "6.7.2",
     "netaddr": "0.8.0",
     "netifaces": "0.11.0",
-    "numpy": "2.3.3",
     "oauthlib": "3.2.2",
     "packaging": "24.0",
-    "pandas": "2.3.2",
     "pexpect": "4.9.0",
     "pip": "24.0",
     "pipx": "1.7.1",
@@ -81,18 +78,14 @@
     "requests": "2.31.0",
     "rich": "13.7.1",
     "s3transfer": "0.10.1",
-    "scikit-learn": "1.7.2",
-    "scipy": "1.16.2",
     "service-identity": "24.1.0",
     "setuptools": "68.1.2",
     "six": "1.16.0",
     "sos": "4.8.2",
     "ssh-import-id": "5.11",
     "systemd-python": "235",
-    "threadpoolctl": "3.6.0",
     "Twisted": "24.3.0",
     "typing_extensions": "4.10.0",
-    "tzdata": "2025.2",
     "ubuntu-pro-client": "8001",
     "ufw": "0.36.2",
     "urllib3": "2.0.7",
@@ -104,15 +97,12 @@
     "zstandard": "0.22.0"
   },
   "environment_variables": {
-    "PATH": "/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin",
-    "LOG_LEVEL": "INFO",
-    "EMBEDDING_MODEL": "all-MiniLM-L6-v2",
-    "DATABASE_URL": "postgresql://duetmind:duetmind_secret@localhost:5432/duetmind"
+    "PATH": "/snap/bin:/home/runner/.local/bin:/opt/pipx_bin:/home/runner/.cargo/bin:/home/runner/.config/composer/vendor/bin:/usr/local/.ghcup/bin:/home/runner/.dotnet/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
   },
   "git_info": {
     "is_repo": true,
-    "branch": "copilot/fix-1e2a0620-3a15-4d11-a68d-dcaea1a5d26f",
-    "uncommitted_files": 1,
-    "last_commit": "62d97db4"
+    "branch": "copilot/fix-9a1d0d14-bda8-4415-8fdb-a5ddd445c8cf",
+    "uncommitted_files": 0,
+    "last_commit": "164decf3"
   }
 }
