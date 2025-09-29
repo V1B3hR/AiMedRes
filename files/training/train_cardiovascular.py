@@ -158,6 +158,7 @@ class CardiovascularTrainingPipeline:
                 - "colewelkins": colewelkins/cardiovascular-disease
                 - "thedevastator": thedevastator/exploring-risk-factors-for-cardiovascular-diseas
                 - "jocelyndumlao": jocelyndumlao/cardiovascular-disease-dataset
+                - "sulianova": sulianova/cardiovascular-disease-dataset
         
         Returns:
             pandas DataFrame with loaded data
@@ -201,6 +202,9 @@ class CardiovascularTrainingPipeline:
             elif dataset_choice == "jocelyndumlao":
                 logger.info("Downloading Jocelyn Dumlao cardiovascular disease dataset...")
                 path = kagglehub.dataset_download("jocelyndumlao/cardiovascular-disease-dataset")
+            elif dataset_choice == "sulianova":
+                logger.info("Downloading Sulianova cardiovascular disease dataset...")
+                path = kagglehub.dataset_download("sulianova/cardiovascular-disease-dataset")
             else:
                 logger.warning(f"Unknown dataset choice: {dataset_choice}. Using colewelkins dataset.")
                 path = kagglehub.dataset_download("colewelkins/cardiovascular-disease")
@@ -646,8 +650,8 @@ def main():
         '--dataset-choice',
         type=str,
         default='colewelkins',
-        choices=['colewelkins', 'thedevastator', 'jocelyndumlao'],
-        help='Which dataset to use: colewelkins, thedevastator, or jocelyndumlao (default: colewelkins)'
+        choices=['colewelkins', 'thedevastator', 'jocelyndumlao', 'sulianova'],
+        help='Which dataset to use: colewelkins, thedevastator, jocelyndumlao, or sulianova (default: colewelkins)'
     )
     parser.add_argument(
         '--output-dir', 
