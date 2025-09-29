@@ -107,6 +107,8 @@ plt, MPL_AVAILABLE = _try_import("matplotlib.pyplot")
 sns, SEABORN_AVAILABLE = _try_import("seaborn")
 
 
+# ... (imports and previous code remain unchanged)
+
 # ------------------------- Configuration Dataclass ------------------------- #
 @dataclass
 class TrainingConfig:
@@ -116,8 +118,8 @@ class TrainingConfig:
     target_column: Optional[str] = None
 
     # Training parameters
-    epochs: int = 80
-    batch_size: int = 32
+    epochs: int = 50           # <--- Changed from 80 to 50
+    batch_size: int = 64       # <--- Changed from 32 to 64
     folds: int = 5
     random_seed: int = 42
 
@@ -157,6 +159,40 @@ class TrainingConfig:
     def to_json(self) -> str:
         return json.dumps(asdict(self), indent=2)
 
+# ... (rest of the file remains unchanged)
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Advanced ALS Progression Prediction Training Pipeline")
+    p.add_argument('--data-path', type=str, default=None, help='Path to CSV (optional)')
+    p.add_argument('--output-dir', type=str, default='als_outputs')
+    p.add_argument('--dataset-choice', choices=['als-progression', 'bram-als'], default='als-progression')
+    p.add_argument('--task-type', choices=['regression', 'classification', 'auto'], default='auto')
+    p.add_argument('--target-column', type=str, default=None)
+
+    p.add_argument('--epochs', type=int, default=50)      # <--- Changed default from 80 to 50
+    p.add_argument('--batch-size', type=int, default=64)  # <--- Changed default from 32 to 64
+    p.add_argument('--folds', type=int, default=5)
+    p.add_argument('--seed', type=int, default=42)
+
+    p.add_argument('--disable-nn', action='store_true')
+    p.add_argument('--disable-classic', action='store_true')
+
+    p.add_argument('--use-hyperparam-search', action='store_true')
+    p.add_argument('--hyperparam-iter', type=int, default=20)
+
+    p.add_argument('--no-xgboost', action='store_true')
+    p.add_argument('--no-svm', action='store_true')
+    p.add_argument('--no-gb', action='store_true')
+
+    p.add_argument('--compute-shap', action='store_true')
+    p.add_argument('--no-importance-plot', action='store_true')
+    p.add_argument('--save-feature-matrix', action='store_true')
+
+    p.add_argument('--verbose', action='store_true')
+    return p
+
+# ... (rest of the file remains unchanged)
 
 # ------------------------- Utility Functions ------------------------- #
 def set_global_seed(seed: int):
