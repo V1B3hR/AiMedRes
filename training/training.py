@@ -25,6 +25,9 @@ from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, Network
 # from files.dataset.create_test_data import create_test_alzheimer_data  # Removed redundant files
 from scripts.data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
 
+# Import Phase 5 cross-validation functionality
+from training.cross_validation import Phase5CrossValidator, CrossValidationConfig
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AiMedResTraining")
 
@@ -540,6 +543,178 @@ class AdvancedTrainingRunner:
         
         logger.info(f"✅ Advanced training completed. Best: {best_model_name} ({best_accuracy:.3f}), Ensemble: {ensemble_accuracy:.3f}")
         return results
+
+
+class Phase5TrainingRunner:
+    """
+    Phase 5 Cross-Validation Implementation for AiMedRes
+    
+    Implements the requirements from debuglist.md Phase 5:
+    - Subphase 5.1: Use k-fold cross-validation for generalization check
+    - Subphase 5.2: Apply stratified sampling for imbalanced datasets
+    - Subphase 5.3: Optionally, use leave-one-out cross-validation for small datasets
+    """
+    
+    def __init__(self, trainer: AlzheimerTrainer, cv_config: Optional[CrossValidationConfig] = None):
+        self.trainer = trainer
+        self.cv_config = cv_config or CrossValidationConfig()
+        self.cross_validator = Phase5CrossValidator(self.cv_config)
+        
+    def run_phase_5_training(self) -> Dict[str, Any]:
+        """
+        Run complete Phase 5 training with comprehensive cross-validation
+        
+        Returns:
+            Dictionary containing all Phase 5 results and analysis
+        """
+        logger.info("🚀 Starting Phase 5: Cross-Validation Implementation")
+        
+        # Load and preprocess data
+        df = self.trainer.load_data()
+        X, y = self.trainer.preprocess_data(df)
+        
+        # Phase 5 comprehensive cross-validation analysis
+        cv_results = self.cross_validator.comprehensive_cross_validation(self.trainer.model or 
+                                                                        RandomForestClassifier(random_state=42), 
+                                                                        X, y)
+        
+        # Train final model based on CV recommendations
+        final_model_results = self._train_final_model_with_cv(X, y, cv_results)
+        
+        # Combine all results
+        phase_5_results = {
+            'phase_5_cross_validation': cv_results,
+            'final_model_training': final_model_results,
+            'phase_5_summary': self._generate_phase_5_summary(cv_results, final_model_results)
+        }
+        
+        logger.info("✅ Phase 5: Cross-Validation Implementation completed successfully")
+        return phase_5_results
+    
+    def _train_final_model_with_cv(self, X: np.ndarray, y: np.ndarray, 
+                                  cv_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Train final model using the recommended CV strategy"""
+        recommended_strategy = cv_results['recommended_strategy']
+        
+        logger.info(f"🎯 Training final model using recommended strategy: {recommended_strategy}")
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=self.cv_config.random_state, 
+            stratify=y if len(np.unique(y)) > 1 else None
+        )
+        
+        # Use RandomForest as base model
+        model = RandomForestClassifier(
+            n_estimators=100,
+            random_state=self.cv_config.random_state,
+            max_depth=10,
+            min_samples_split=5
+        )
+        
+        # Apply the recommended cross-validation strategy
+        if recommended_strategy == 'stratified_k_fold':
+            from sklearn.model_selection import StratifiedKFold
+            cv_strategy = StratifiedKFold(n_splits=self.cv_config.k_folds, shuffle=True, 
+                                        random_state=self.cv_config.random_state)
+        elif recommended_strategy == 'leave_one_out':
+            from sklearn.model_selection import LeaveOneOut
+            cv_strategy = LeaveOneOut()
+        else:  # k_fold
+            from sklearn.model_selection import KFold
+            cv_strategy = KFold(n_splits=self.cv_config.k_folds, shuffle=True, 
+                              random_state=self.cv_config.random_state)
+        
+        # Perform cross-validation with the recommended strategy
+        cv_scores = cross_val_score(model, X_train, y_train, cv=cv_strategy, 
+                                   scoring='accuracy', n_jobs=-1)
+        
+        # Train final model
+        model.fit(X_train, y_train)
+        
+        # Evaluate on test set
+        y_pred = model.predict(X_test)
+        test_accuracy = accuracy_score(y_test, y_pred)
+        
+        # Save the model
+        self.trainer.model = model
+        self.trainer.save_model("phase5_trained_model.pkl")
+        
+        return {
+            'recommended_strategy': recommended_strategy,
+            'cv_scores': cv_scores,
+            'cv_mean': np.mean(cv_scores),
+            'cv_std': np.std(cv_scores),
+            'test_accuracy': test_accuracy,
+            'classification_report': classification_report(y_test, y_pred, 
+                                                         target_names=self.trainer.label_encoder.classes_,
+                                                         output_dict=True),
+            'model_saved': True
+        }
+    
+    def _generate_phase_5_summary(self, cv_results: Dict[str, Any], 
+                                 final_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate comprehensive summary of Phase 5 implementation"""
+        dataset_analysis = cv_results['dataset_analysis']
+        cv_summary = cv_results['summary']
+        
+        # Check which phases were executed
+        phases_executed = []
+        if cv_results['phase_5_1_k_fold']:
+            phases_executed.append('5.1: k-fold cross-validation')
+        if cv_results['phase_5_2_stratified']:
+            phases_executed.append('5.2: stratified sampling')
+        if cv_results['phase_5_3_leave_one_out']:
+            phases_executed.append('5.3: leave-one-out cross-validation')
+        
+        summary = {
+            'phases_completed': phases_executed,
+            'dataset_characteristics': {
+                'samples': dataset_analysis['n_samples'],
+                'features': dataset_analysis['n_features'],
+                'classes': dataset_analysis['n_classes'],
+                'is_small': dataset_analysis['is_small'],
+                'is_imbalanced': dataset_analysis['is_imbalanced'],
+                'class_balance_ratio': dataset_analysis['class_balance_ratio']
+            },
+            'recommended_strategy': cv_results['recommended_strategy'],
+            'strategy_used': final_results['recommended_strategy'],
+            'final_performance': {
+                'cv_accuracy': final_results['cv_mean'],
+                'cv_std': final_results['cv_std'],
+                'test_accuracy': final_results['test_accuracy']
+            },
+            'phase_5_requirements_met': {
+                'subphase_5_1_k_fold': cv_results['phase_5_1_k_fold'] is not None,
+                'subphase_5_2_stratified': cv_results['phase_5_2_stratified'] is not None,
+                'subphase_5_3_leave_one_out': cv_results['phase_5_3_leave_one_out'] is not None
+            },
+            'recommendations': cv_summary.get('recommendations', [])
+        }
+        
+        # Add phase completion status
+        all_required_phases = []
+        if dataset_analysis['is_imbalanced']:
+            all_required_phases.append('stratified')
+        if dataset_analysis['is_small']:
+            all_required_phases.append('leave_one_out')
+        all_required_phases.append('k_fold')  # Always required
+        
+        completed_phases = []
+        if cv_results['phase_5_1_k_fold']:
+            completed_phases.append('k_fold')
+        if cv_results['phase_5_2_stratified']:
+            completed_phases.append('stratified')
+        if cv_results['phase_5_3_leave_one_out']:
+            completed_phases.append('leave_one_out')
+        
+        summary['phase_5_completion_status'] = {
+            'required_phases': all_required_phases,
+            'completed_phases': completed_phases,
+            'all_requirements_met': set(all_required_phases).issubset(set(completed_phases))
+        }
+        
+        return summary
 
 
 if __name__ == "__main__":

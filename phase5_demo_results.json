@@ -1,0 +1,8 @@
+{
+  "balanced_adequate": {
+    "dataset_analysis": {
+      "n_samples": 200,
+      "n_features": 15,
+      "n_classes": 3,
+      "class_counts": {
+        
