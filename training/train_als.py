@@ -695,8 +695,7 @@ class ALSTrainingPipeline:
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(
             optimizer,
             patience=self.cfg.lr_reduction_patience,
-            factor=self.cfg.lr_reduction_factor,
-            verbose=self.cfg.verbose
+            factor=self.cfg.lr_reduction_factor
         )
 
         scaler = torch.cuda.amp.GradScaler() if (torch.cuda.is_available()) else None

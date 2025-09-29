@@ -1,0 +1,84 @@
+{
+  "timestamp": "2025-09-29T09:47:05.008999",
+  "config": {
+    "output_dir": "als_training_results",
+    "dataset_choice": "als-progression",
+    "task_type": "auto",
+    "target_column": null,
+    "epochs": 50,
+    "batch_size": 32,
+    "folds": 5,
+    "random_seed": 42,
+    "nn_enabled": true,
+    "classical_enabled": true,
+    "lr": 0.001,
+    "early_stopping_patience": 15,
+    "lr_reduction_patience": 8,
+    "lr_reduction_factor": 0.5,
+    "grad_clip_norm": 5.0,
+    "use_hyperparam_search": false,
+    "hyperparam_iter": 20,
+    "compute_shap": false,
+    "plot_importance": true,
+    "save_feature_matrix": false,
+    "remove_constant_features": true,
+    "include_xgboost": true,
+    "include_svm": true,
+    "include_gradient_boosting": true,
+    "prefer_gpu": true,
+    "verbose": false,
+    "timestamp": "2025-09-29T09:46:58.635106"
+  },
+  "task_type": "regression",
+  "regression_results": {
+    "LinearRegression": {
+      "rmse_mean": 0.5994699539971329,
+      "mse_mean": 0.3593642257453247,
+      "mae_mean": 0.4876552755136059,
+      "r2_mean": -0.4694997146880787,
+      "r2_std": 0.48209209669827974
+    },
+    "Ridge": {
+      "rmse_mean": 0.5886520377628143,
+      "mse_mean": 0.3465112215623137,
+      "mae_mean": 0.48090511871420005,
+      "r2_mean": -0.41693531117903093,
+      "r2_std": 0.4661707327936651
+    },
+    "RandomForest": {
+      "rmse_mean": 0.39378675550874304,
+      "mse_mean": 0.15506800881410254,
+      "mae_mean": 0.3214262820512821,
+      "r2_mean": 0.36774398251488105,
+      "r2_std": 0.20418169169218758
+    },
+    "SVR": {
+      "rmse_mean": 0.4320563976007497,
+      "mse_mean": 0.1866727307077371,
+      "mae_mean": 0.39673903861148935,
+      "r2_mean": 0.23701592971640456,
+      "r2_std": 0.19344017268681732
+    },
+    "GradientBoosting": {
+      "rmse_mean": 0.517347076570199,
+      "mse_mean": 0.2676479976357313,
+      "mae_mean": 0.3208572301180623,
+      "r2_mean": -0.09576784365055199,
+      "r2_std": 0.4252692740324774
+    },
+    "XGBoost": {
+      "rmse_mean": 0.40756087434224914,
+      "mse_mean": 0.1661058662946186,
+      "mae_mean": 0.2918364990932437,
+      "r2_mean": 0.32268560290055043,
+      "r2_std": 0.3122306885706721
+    }
+  },
+  "classification_results": {},
+  "neural_results": {
+    "best_validation_rmse": 0.35705338958276633,
+    "validation_mae": 0.25655028223991394,
+    "validation_r2": 0.48701608180999756
+  },
+  "feature_count": 135
+}

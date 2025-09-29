@@ -1,0 +1,6 @@
+ALS TRAINING SUMMARY
+============================================================
+Timestamp: 2025-09-29T09:47:05.008999
+Task Type: regression
+Best Regression: RandomForest RMSE=0.3938 R2=0.3677
+Neural Best RMSE: 0.35705338958276633
