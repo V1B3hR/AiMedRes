@@ -1,65 +1,60 @@
 {
-  "timestamp": "2025-09-29T16:32:49.136943",
+  "timestamp": "2025-09-29T20:53:05.612060",
   "data_shape": [
     300,
-    6
+    15
   ],
-  "models_tuned": {
-    "random_forest": {
-      "hyperparameter_space": {
-        "n_estimators": [
-          50,
-          100,
-          200,
-          300
-        ],
-        "max_depth": [
-          null,
-          5,
-          10,
-          15,
-          20
-        ],
-        "min_samples_split": [
-          2,
-          5,
-          10
-        ],
-        "min_samples_leaf": [
-          1,
-          2,
-          4
-        ],
-        "max_features": [
-          "sqrt",
-          "log2",
-          null
-        ]
-      },
-      "search_results": [
-        {
-          "method": "Bayesian Optimization (Optuna)",
-          "best_score": 0.9166666666666666,
-          "best_params": {
-            "n_estimators": 136,
-            "max_depth": 11,
-            "min_samples_split": 6,
-            "min_samples_leaf": 1,
-            "max_features": null
-          },
-          "search_time": 51.35801720619202,
-          "n_trials": 50,
-          "study": "<optuna.study.study.Study object at 0x7f1360f9ce00>"
-        }
+  "methods_used": [
+    "bayesian_optimization"
+  ],
+  "models_tested": [
+    "decision_tree"
+  ],
+  "summary": {
+    "best_overall_score": 0.6233333333333333,
+    "best_method": "bayesian_optimization",
+    "best_model": "decision_tree",
+    "total_models_tested": 1,
+    "total_methods_used": 1
+  },
+  "identified_hyperparameters": {
+    "decision_tree": {
+      "max_depth": [
+        null,
+        5,
+        10,
+        15,
+        20
       ],
-      "best_method": "Bayesian Optimization (Optuna)",
-      "best_score": 0.9166666666666666
+      "min_samples_split": [
+        2,
+        5,
+        10
+      ],
+      "min_samples_leaf": [
+        1,
+        2,
+        4
+      ],
+      "criterion": [
+        "gini",
+        "entropy"
+      ]
     }
   },
-  "summary": {
-    "best_model_type": "random_forest",
-    "best_score": 0.9166666666666666,
-    "best_method": "Bayesian Optimization (Optuna)",
-    "total_models_tuned": 1
-  }
+  "decision_tree": [
+    {
+      "method": "Bayesian Optimization",
+      "best_score": 0.6233333333333333,
+      "best_params": {
+        "max_depth": 20,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "criterion": "entropy"
+      },
+      "search_time": 0.4926624298095703,
+      "n_trials": 20,
+      "study": "<optuna.study.study.Study object at 0x7f97e2be6840>"
+    }
+  ]
 }
