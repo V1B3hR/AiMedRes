@@ -13,114 +13,65 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from debug.phase6_hyperparameter_tuning import Phase6HyperparameterTuning
+from debug.phase6_hyperparameter_tuning import Phase6HyperparameterTuning, HyperparameterIdentifier, HyperparameterSearcher
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("Phase6Demo")
 
 
-def demo_comprehensive_hyperparameter_tuning():
-    """Demonstrate comprehensive hyperparameter tuning across multiple models and methods"""
-    
-    print("🚀 Phase 6 Demo: Comprehensive Hyperparameter Tuning")
-    print("=" * 60)
-    
-    # Initialize Phase 6 tuning system
-    phase6 = Phase6HyperparameterTuning(output_dir="debug")
-    
-    # Demo 1: Compare all search methods on Random Forest
-    print("\n📋 Demo 1: Random Forest with All Search Methods")
-    print("-" * 40)
-    
-    results_demo1 = phase6.run_hyperparameter_tuning(
-        model_types=['random_forest'],
-        methods=['grid_search', 'random_search', 'bayesian_optimization']
-    )
-    
-    if results_demo1.get('summary'):
-        print(f"🏆 Best Method for Random Forest: {results_demo1['summary']['best_method']}")
-        print(f"📈 Best Score: {results_demo1['summary']['best_score']:.4f}")
-    
-    # Demo 2: Compare multiple models with Grid Search
-    print("\n📋 Demo 2: Multiple Models with Grid Search")
-    print("-" * 40)
-    
-    results_demo2 = phase6.run_hyperparameter_tuning(
-        model_types=['random_forest', 'logistic_regression', 'svm'],
-        methods=['grid_search']
-    )
-    
-    if results_demo2.get('models_tuned'):
-        print("📊 Grid Search Results:")
-        for model, results in results_demo2['models_tuned'].items():
-            print(f"  {model}: {results['best_score']:.4f}")
-    
-    # Demo 3: Fast tuning with Random Search
-    print("\n📋 Demo 3: Fast Tuning with Random Search")
-    print("-" * 40)
-    
-    results_demo3 = phase6.run_hyperparameter_tuning(
-        model_types=['random_forest', 'logistic_regression'],
-        methods=['random_search']
-    )
-    
-    print("\n✅ Phase 6 Demo completed successfully!")
-    print("📊 Check debug/visualizations/ for generated plots")
-    print("📁 Check debug/phase6_results.json for detailed results")
-    
-    return results_demo1, results_demo2, results_demo3
-
-
 def demo_hyperparameter_identification():
     """Demonstrate hyperparameter identification (Subphase 6.1)"""
     
-    print("\n🔍 Subphase 6.1 Demo: Hyperparameter Identification")
+    print("\n🔍 Phase 6.1 Demo: Hyperparameter Identification")
     print("-" * 50)
-    
-    from debug.phase6_hyperparameter_tuning import HyperparameterIdentifier
     
     identifier = HyperparameterIdentifier()
     
-    models = ['random_forest', 'logistic_regression', 'svm', 'mlp', 'decision_tree']
+    # Demonstrate identification for all supported model types
+    model_types = ['random_forest', 'logistic_regression', 'svm', 'mlp', 'decision_tree']
     
-    for model_type in models:
-        param_space = identifier.get_hyperparameter_space(model_type)
-        print(f"\n📝 {model_type}:")
-        for param, values in param_space.items():
-            print(f"  • {param}: {values}")
+    for model_type in model_types:
+        print(f"\n📋 {model_type.replace('_', ' ').title()} Hyperparameters:")
+        
+        # Get hyperparameter space
+        params = identifier.get_hyperparameter_space(model_type)
+        
+        if params:
+            for param_name, param_values in params.items():
+                print(f"  • {param_name}: {param_values}")
+            
+            # Get model instance
+            model = identifier.get_model_instance(model_type)
+            print(f"  ✅ Model instance: {type(model).__name__}")
+        else:
+            print("  ⚠️  No hyperparameters defined")
 
 
 def demo_search_methods():
     """Demonstrate different search methods (Subphase 6.2)"""
     
-    print("\n🔍 Subphase 6.2 Demo: Search Methods Comparison")
+    print("\n🔍 Phase 6.2 Demo: Search Methods Comparison")
     print("-" * 50)
     
-    from debug.phase6_hyperparameter_tuning import HyperparameterSearcher, HyperparameterIdentifier
-    from training.training import create_test_alzheimer_data
+    # Create synthetic data for demonstration
+    from sklearn.datasets import make_classification
     from sklearn.preprocessing import StandardScaler, LabelEncoder
     
-    # Prepare data
-    df = create_test_alzheimer_data(n_samples=200)
-    X = df.drop('diagnosis', axis=1)
-    y = df['diagnosis']
+    X, y = make_classification(
+        n_samples=200, n_features=10, n_classes=2,
+        n_informative=8, random_state=42
+    )
     
-    # Encode categorical variables
-    for col in X.select_dtypes(include=['object']).columns:
-        le = LabelEncoder()
-        X[col] = le.fit_transform(X[col])
-    
-    # Scale features
+    # Preprocess data
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # Encode target
-    le_target = LabelEncoder()
-    y_encoded = le_target.fit_transform(y)
+    encoder = LabelEncoder()
+    y_encoded = encoder.fit_transform(y)
     
     # Initialize components
-    searcher = HyperparameterSearcher()
+    searcher = HyperparameterSearcher(cv_folds=3, scoring='accuracy')  # Reduced CV for demo speed
     identifier = HyperparameterIdentifier()
     
     # Demonstrate on logistic regression (fast)
@@ -144,6 +95,55 @@ def demo_search_methods():
             print(f"  Bayesian Opt: {bayesian_result['best_score']:.4f} in {bayesian_result['search_time']:.2f}s")
     except Exception as e:
         print(f"  Bayesian Opt: Failed ({e})")
+
+
+def demo_comprehensive_hyperparameter_tuning():
+    """Demonstrate comprehensive hyperparameter tuning across multiple models and methods"""
+    
+    print("\n🚀 Phase 6 Demo: Comprehensive Hyperparameter Tuning")
+    print("=" * 60)
+    
+    # Initialize Phase 6 tuning system
+    phase6 = Phase6HyperparameterTuning(output_dir="debug")
+    
+    # Demo 1: Compare all search methods on Random Forest
+    print("\n📋 Demo 1: Random Forest with All Search Methods")
+    print("-" * 40)
+    
+    results_demo1 = phase6.run_hyperparameter_tuning(
+        model_types=['random_forest'],
+        methods=['grid_search', 'random_search', 'bayesian_optimization']
+    )
+    
+    if results_demo1.get('summary'):
+        print(f"🏆 Best Method for Random Forest: {results_demo1['summary']['best_method']}")
+        print(f"📈 Best Score: {results_demo1['summary']['best_score']:.4f}")
+    
+    # Demo 2: Compare multiple models with Grid Search
+    print("\n📋 Demo 2: Multiple Models with Grid Search")
+    print("-" * 40)
+    
+    results_demo2 = phase6.run_hyperparameter_tuning(
+        model_types=['random_forest', 'logistic_regression', 'decision_tree'],
+        methods=['grid_search']
+    )
+    
+    if results_demo2.get('summary'):
+        print(f"🏆 Best Model with Grid Search: {results_demo2['summary']['best_model']}")
+        print(f"📈 Best Score: {results_demo2['summary']['best_overall_score']:.4f}")
+    
+    # Demo 3: Fast comparison with Random Search
+    print("\n📋 Demo 3: Fast Comparison with Random Search")
+    print("-" * 40)
+    
+    results_demo3 = phase6.run_hyperparameter_tuning(
+        model_types=['logistic_regression', 'decision_tree'],
+        methods=['random_search']
+    )
+    
+    if results_demo3.get('summary'):
+        print(f"🏆 Best Model with Random Search: {results_demo3['summary']['best_model']}")
+        print(f"📈 Best Score: {results_demo3['summary']['best_overall_score']:.4f}")
 
 
 def main():

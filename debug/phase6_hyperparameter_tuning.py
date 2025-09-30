@@ -28,7 +28,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, make_scorer, confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -41,10 +41,11 @@ import seaborn as sns
 # Try to import Optuna for Bayesian optimization
 try:
     import optuna
+    from optuna.samplers import TPESampler
     OPTUNA_AVAILABLE = True
 except ImportError:
     OPTUNA_AVAILABLE = False
-    print("⚠️  Optuna not available. Bayesian optimization will be skipped.")
+    print("⚠️  Warning: Optuna not available. Bayesian optimization will be disabled.")
 
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore")
@@ -115,6 +116,22 @@ class HyperparameterIdentifier:
             'decision_tree': DecisionTreeClassifier(random_state=42)
         }
         return models.get(model_type)
+    
+    def identify_key_hyperparameters(self, model_types: List[str] = None) -> Dict[str, Dict]:
+        """Identify key hyperparameters for specified model types"""
+        if model_types is None:
+            model_types = ['random_forest', 'logistic_regression', 'svm', 'mlp', 'decision_tree']
+        
+        identified_params = {}
+        for model_type in model_types:
+            params = self.get_hyperparameter_space(model_type)
+            if params:
+                identified_params[model_type] = params
+                logger.info(f"✅ Identified {len(params)} hyperparameters for {model_type}")
+            else:
+                logger.warning(f"⚠️  No hyperparameters defined for {model_type}")
+        
+        return identified_params
 
 
 class HyperparameterSearcher:
@@ -128,14 +145,24 @@ class HyperparameterSearcher:
     
     def grid_search(self, model, param_grid: Dict, X_train, y_train) -> Dict[str, Any]:
         """Perform grid search hyperparameter tuning"""
-        logger.info(f"🔍 Starting Grid Search with {len(param_grid)} parameter combinations...")
+        logger.info(f"🔍 Starting Grid Search with {len(param_grid)} parameter groups...")
         
         start_time = time.time()
+        
+        # Calculate total combinations
+        total_combinations = 1
+        for param_values in param_grid.values():
+            total_combinations *= len(param_values)
+        
+        logger.info(f"📊 Testing {total_combinations} parameter combinations")
+        
         grid_search = GridSearchCV(
             model, param_grid, cv=self.cv_folds, 
             scoring=self.scoring, n_jobs=-1, verbose=0
         )
+        
         grid_search.fit(X_train, y_train)
+        
         duration = time.time() - start_time
         
         results = {
@@ -143,9 +170,8 @@ class HyperparameterSearcher:
             'best_score': grid_search.best_score_,
             'best_params': grid_search.best_params_,
             'search_time': duration,
-            'n_combinations_tested': len(grid_search.cv_results_['params']),
-            'cv_results': grid_search.cv_results_,
-            'best_estimator': grid_search.best_estimator_
+            'n_combinations_tested': total_combinations,
+            'cv_results': grid_search.cv_results_
         }
         
         logger.info(f"✅ Grid Search completed in {duration:.2f}s")
@@ -159,11 +185,14 @@ class HyperparameterSearcher:
         logger.info(f"🎲 Starting Random Search with {n_iter} iterations...")
         
         start_time = time.time()
+        
         random_search = RandomizedSearchCV(
             model, param_grid, n_iter=n_iter, cv=self.cv_folds,
-            scoring=self.scoring, n_jobs=-1, random_state=self.random_state, verbose=0
+            scoring=self.scoring, random_state=self.random_state, n_jobs=-1, verbose=0
         )
+        
         random_search.fit(X_train, y_train)
+        
         duration = time.time() - start_time
         
         results = {
@@ -171,9 +200,8 @@ class HyperparameterSearcher:
             'best_score': random_search.best_score_,
             'best_params': random_search.best_params_,
             'search_time': duration,
-            'n_combinations_tested': n_iter,
-            'cv_results': random_search.cv_results_,
-            'best_estimator': random_search.best_estimator_
+            'n_trials': n_iter,
+            'cv_results': random_search.cv_results_
         }
         
         logger.info(f"✅ Random Search completed in {duration:.2f}s")
@@ -186,9 +214,11 @@ class HyperparameterSearcher:
         """Perform Bayesian optimization using Optuna"""
         if not OPTUNA_AVAILABLE:
             logger.warning("⚠️  Optuna not available. Skipping Bayesian optimization.")
-            return {}
+            return None
         
         logger.info(f"🧠 Starting Bayesian Optimization with {n_trials} trials...")
+        
+        start_time = time.time()
         
         def objective(trial):
             # Define hyperparameter suggestions based on model type
@@ -217,27 +247,56 @@ class HyperparameterSearcher:
                     'kernel': trial.suggest_categorical('kernel', ['linear', 'rbf', 'poly']),
                     'gamma': trial.suggest_categorical('gamma', ['scale', 'auto'])
                 }
+                if params['kernel'] in ['rbf', 'poly']:
+                    params['gamma'] = trial.suggest_float('gamma', 0.001, 1, log=True)
                 model = SVC(random_state=self.random_state, **params)
             
-            else:
-                raise ValueError(f"Bayesian optimization not implemented for {model_type}")
+            elif model_type == 'mlp':
+                hidden_size = trial.suggest_int('hidden_size', 50, 200)
+                n_layers = trial.suggest_int('n_layers', 1, 2)
+                if n_layers == 1:
+                    hidden_layer_sizes = (hidden_size,)
+                else:
+                    hidden_layer_sizes = (hidden_size, hidden_size // 2)
+                
+                params = {
+                    'hidden_layer_sizes': hidden_layer_sizes,
+                    'activation': trial.suggest_categorical('activation', ['relu', 'tanh']),
+                    'solver': trial.suggest_categorical('solver', ['adam', 'lbfgs']),
+                    'learning_rate_init': trial.suggest_float('learning_rate_init', 0.001, 0.1, log=True),
+                    'max_iter': trial.suggest_int('max_iter', 500, 2000)
+                }
+                model = MLPClassifier(random_state=self.random_state, **params)
             
-            # Evaluate using cross-validation
+            elif model_type == 'decision_tree':
+                params = {
+                    'max_depth': trial.suggest_int('max_depth', 3, 20),
+                    'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
+                    'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 4),
+                    'criterion': trial.suggest_categorical('criterion', ['gini', 'entropy'])
+                }
+                model = DecisionTreeClassifier(random_state=self.random_state, **params)
+            
+            else:
+                raise ValueError(f"Unsupported model type: {model_type}")
+            
+            # Perform cross-validation
             scores = cross_val_score(model, X_train, y_train, cv=self.cv_folds, scoring=self.scoring)
             return scores.mean()
         
-        start_time = time.time()
-        study = optuna.create_study(direction='maximize')
+        # Create and run study
+        study = optuna.create_study(direction='maximize', sampler=TPESampler(seed=self.random_state))
         study.optimize(objective, n_trials=n_trials, show_progress_bar=False)
+        
         duration = time.time() - start_time
         
         results = {
-            'method': 'Bayesian Optimization (Optuna)',
+            'method': 'Bayesian Optimization',
             'best_score': study.best_value,
             'best_params': study.best_params,
             'search_time': duration,
             'n_trials': n_trials,
-            'study': study
+            'study': study  # Keep study object for visualization
         }
         
         logger.info(f"✅ Bayesian Optimization completed in {duration:.2f}s")
@@ -271,11 +330,11 @@ class ResultsVisualizer:
         # Plot 1: Best scores comparison
         axes[0, 0].bar(methods, scores, color=['skyblue', 'lightgreen', 'lightcoral'][:len(methods)])
         axes[0, 0].set_title('Best CV Scores')
-        axes[0, 0].set_ylabel('Cross-Validation Score')
+        axes[0, 0].set_ylabel('Score')
         axes[0, 0].tick_params(axis='x', rotation=45)
         
-        # Plot 2: Search time comparison
-        axes[0, 1].bar(methods, times, color=['skyblue', 'lightgreen', 'lightcoral'][:len(methods)])
+        # Plot 2: Time comparison
+        axes[0, 1].bar(methods, times, color=['orange', 'purple', 'brown'][:len(methods)])
         axes[0, 1].set_title('Search Time')
         axes[0, 1].set_ylabel('Time (seconds)')
         axes[0, 1].tick_params(axis='x', rotation=45)
@@ -288,278 +347,319 @@ class ResultsVisualizer:
         
         # Plot 4: Efficiency (score per second)
         efficiency = [s/t if t > 0 else 0 for s, t in zip(scores, times)]
-        axes[1, 1].bar(methods, efficiency, color=['skyblue', 'lightgreen', 'lightcoral'][:len(methods)])
+        axes[1, 1].bar(methods, efficiency, color=['gold', 'silver', 'bronze'][:len(methods)])
         axes[1, 1].set_title('Efficiency (Score/Second)')
         axes[1, 1].set_ylabel('Score per Second')
         axes[1, 1].tick_params(axis='x', rotation=45)
         
         plt.tight_layout()
-        plt.savefig(self.output_dir / f'hyperparameter_comparison_{model_name.lower()}.png', 
-                   dpi=300, bbox_inches='tight')
+        save_path = self.output_dir / f'search_comparison_{model_name}.png'
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
         plt.close()
         
-        logger.info(f"📊 Saved comparison plot: {self.output_dir}/hyperparameter_comparison_{model_name.lower()}.png")
+        logger.info(f"📊 Comparison plot saved to: {save_path}")
+        return save_path
     
     def plot_bayesian_optimization_history(self, study, model_name: str):
         """Plot Bayesian optimization history if available"""
-        if not OPTUNA_AVAILABLE or not study:
-            return
+        if not OPTUNA_AVAILABLE or study is None:
+            return None
         
-        fig, axes = plt.subplots(1, 2, figsize=(15, 6))
-        
-        # Plot optimization history
-        trials = study.trials
-        trial_numbers = [t.number for t in trials]
-        values = [t.value for t in trials]
-        
-        axes[0].plot(trial_numbers, values, 'b-', alpha=0.7)
-        axes[0].scatter(trial_numbers, values, c='blue', alpha=0.7)
-        axes[0].set_title('Optimization History')
-        axes[0].set_xlabel('Trial Number')
-        axes[0].set_ylabel('Objective Value')
-        axes[0].grid(True, alpha=0.3)
-        
-        # Plot parameter importance (if available)
         try:
-            importance = optuna.importance.get_param_importances(study)
-            params = list(importance.keys())
-            importances = list(importance.values())
+            fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+            fig.suptitle(f'Bayesian Optimization History - {model_name}', fontsize=16)
             
-            axes[1].barh(params, importances)
-            axes[1].set_title('Parameter Importance')
-            axes[1].set_xlabel('Importance')
-        except Exception:
-            axes[1].text(0.5, 0.5, 'Parameter importance\nnot available', 
-                        ha='center', va='center', transform=axes[1].transAxes)
-            axes[1].set_title('Parameter Importance')
+            # Plot 1: Optimization history
+            trials = study.trials
+            values = [trial.value for trial in trials if trial.value is not None]
+            trial_numbers = list(range(1, len(values) + 1))
+            
+            axes[0].plot(trial_numbers, values, 'b-', alpha=0.6, label='Trial values')
+            best_values = []
+            best_so_far = float('-inf')
+            for value in values:
+                if value > best_so_far:
+                    best_so_far = value
+                best_values.append(best_so_far)
+            
+            axes[0].plot(trial_numbers, best_values, 'r-', linewidth=2, label='Best value so far')
+            axes[0].set_xlabel('Trial Number')
+            axes[0].set_ylabel('CV Score')
+            axes[0].set_title('Optimization Progress')
+            axes[0].legend()
+            axes[0].grid(True, alpha=0.3)
+            
+            # Plot 2: Parameter importance (if available)
+            try:
+                importance = optuna.importance.get_param_importances(study)
+                if importance:
+                    params = list(importance.keys())
+                    importances = list(importance.values())
+                    
+                    axes[1].barh(params, importances)
+                    axes[1].set_xlabel('Importance')
+                    axes[1].set_title('Parameter Importance')
+                else:
+                    axes[1].text(0.5, 0.5, 'Parameter importance\nnot available', 
+                               ha='center', va='center', transform=axes[1].transAxes)
+            except Exception as e:
+                axes[1].text(0.5, 0.5, f'Error calculating\nparameter importance:\n{str(e)}', 
+                           ha='center', va='center', transform=axes[1].transAxes)
+            
+            plt.tight_layout()
+            save_path = self.output_dir / f'bayesian_optimization_{model_name}.png'
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            plt.close()
+            
+            logger.info(f"📊 Bayesian optimization plot saved to: {save_path}")
+            return save_path
+            
+        except Exception as e:
+            logger.warning(f"⚠️  Could not create Bayesian optimization plot: {e}")
+            return None
+    
+    def save_results_json(self, results: Dict, filename: str = "phase6_results.json"):
+        """Save results to JSON file"""
+        save_path = self.output_dir.parent / filename
         
-        plt.tight_layout()
-        plt.savefig(self.output_dir / f'bayesian_optimization_{model_name.lower()}.png', 
-                   dpi=300, bbox_inches='tight')
-        plt.close()
+        # Clean results for JSON serialization
+        json_results = {}
+        for key, value in results.items():
+            if isinstance(value, dict):
+                json_results[key] = {}
+                for k, v in value.items():
+                    if k == 'study':  # Skip study objects
+                        continue
+                    elif k == 'cv_results':  # Simplify cv_results
+                        json_results[key][k] = {'mean_test_score': list(v.get('mean_test_score', []))}
+                    else:
+                        json_results[key][k] = v
+            else:
+                json_results[key] = value
         
-        logger.info(f"📊 Saved Bayesian optimization plot: {self.output_dir}/bayesian_optimization_{model_name.lower()}.png")
+        with open(save_path, 'w') as f:
+            json.dump(json_results, f, indent=2, default=str)
+        
+        logger.info(f"💾 Results saved to: {save_path}")
+        return save_path
 
 
 class Phase6HyperparameterTuning:
     """Main class orchestrating Phase 6 hyperparameter tuning"""
     
-    def __init__(self, output_dir: str = "debug"):
-        self.output_dir = Path(output_dir)
-        self.results_dir = self.output_dir / "visualizations"
-        self.results_dir.mkdir(parents=True, exist_ok=True)
-        
+    def __init__(self, output_dir: str = "debug", cv_folds: int = 5, random_state: int = 42):
         self.identifier = HyperparameterIdentifier()
-        self.searcher = HyperparameterSearcher()
-        self.visualizer = ResultsVisualizer(str(self.results_dir))
-        
-        self.all_results = {}
+        self.searcher = HyperparameterSearcher(cv_folds=cv_folds, random_state=random_state)
+        self.visualizer = ResultsVisualizer(output_dir=f"{output_dir}/visualizations")
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.random_state = random_state
     
-    def load_sample_data(self) -> Tuple[np.ndarray, np.ndarray]:
-        """Load sample data for hyperparameter tuning"""
-        try:
-            # Try to use existing data generation
-            df = create_test_alzheimer_data(n_samples=300)
-            
-            # Preprocess data
-            X = df.drop('diagnosis', axis=1)
-            y = df['diagnosis']
-            
-            # Encode categorical variables
-            for col in X.select_dtypes(include=['object']).columns:
-                le = LabelEncoder()
-                X[col] = le.fit_transform(X[col])
-            
-            # Scale numerical features
-            scaler = StandardScaler()
-            X_scaled = scaler.fit_transform(X)
-            
-            # Encode target
-            le_target = LabelEncoder()
-            y_encoded = le_target.fit_transform(y)
-            
-            logger.info(f"✅ Loaded data: {X_scaled.shape[0]} samples, {X_scaled.shape[1]} features")
-            return X_scaled, y_encoded
-            
-        except Exception as e:
-            logger.warning(f"⚠️  Could not load project data: {e}")
-            logger.info("🔧 Generating synthetic data...")
-            
-            # Generate synthetic data as fallback
-            from sklearn.datasets import make_classification
-            X, y = make_classification(n_samples=300, n_features=10, n_classes=2, 
-                                     n_informative=7, random_state=42)
-            return X, y
-    
-    def run_hyperparameter_tuning(self, model_types: List[str] = None, 
-                                 methods: List[str] = None) -> Dict[str, Any]:
-        """Run complete hyperparameter tuning for specified models and methods"""
+    def run_hyperparameter_tuning(self, 
+                                 model_types: List[str] = None,
+                                 methods: List[str] = None,
+                                 X_data=None, y_data=None) -> Dict[str, Any]:
+        """Run complete hyperparameter tuning process"""
+        logger.info("🚀 Starting Phase 6: Hyperparameter Tuning & Search")
+        logger.info("=" * 60)
         
         if model_types is None:
-            model_types = ['random_forest', 'logistic_regression', 'svm']
+            model_types = ['random_forest', 'logistic_regression']  # Start with fast models
         
         if methods is None:
             methods = ['grid_search', 'random_search']
             if OPTUNA_AVAILABLE:
                 methods.append('bayesian_optimization')
         
-        logger.info("🚀 Starting Phase 6: Hyperparameter Tuning & Search")
-        logger.info(f"📋 Models to tune: {model_types}")
-        logger.info(f"📋 Methods to use: {methods}")
+        # Generate or use provided data
+        if X_data is None or y_data is None:
+            logger.info("📊 Generating synthetic dataset for tuning...")
+            from sklearn.datasets import make_classification
+            X_data, y_data = make_classification(
+                n_samples=500, n_features=20, n_classes=3, 
+                n_informative=15, n_redundant=3, random_state=self.random_state
+            )
         
-        # Load data
-        X, y = self.load_sample_data()
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, 
-                                                          random_state=42, stratify=y)
+        # Preprocess data
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X_data)
         
-        phase6_results = {
+        # Encode labels if necessary
+        if y_data.dtype == 'object':
+            encoder = LabelEncoder()
+            y_encoded = encoder.fit_transform(y_data)
+        else:
+            y_encoded = y_data
+        
+        results = {
             'timestamp': datetime.now().isoformat(),
-            'data_shape': X.shape,
-            'models_tuned': {},
+            'data_shape': X_scaled.shape,
+            'methods_used': methods,
+            'models_tested': model_types,
             'summary': {}
         }
         
+        # Phase 6.1: Identify hyperparameters
+        logger.info("\n📋 Phase 6.1: Identifying key hyperparameters...")
+        identified_params = self.identifier.identify_key_hyperparameters(model_types)
+        results['identified_hyperparameters'] = identified_params
+        
+        # Phase 6.2 & 6.3: Search and visualize for each model
+        best_overall_score = 0
+        best_overall_method = None
+        best_overall_model = None
+        
         for model_type in model_types:
-            logger.info(f"\n🔧 Tuning {model_type}...")
-            
-            # Subphase 6.1: Identify key hyperparameters
-            param_space = self.identifier.get_hyperparameter_space(model_type)
-            if not param_space:
-                logger.warning(f"⚠️  No hyperparameter space defined for {model_type}")
-                continue
+            logger.info(f"\n🔧 Testing {model_type.replace('_', ' ').title()}...")
+            logger.info("-" * 40)
             
             model = self.identifier.get_model_instance(model_type)
-            if model is None:
-                logger.warning(f"⚠️  Could not create model instance for {model_type}")
-                continue
+            param_space = identified_params.get(model_type, {})
             
-            logger.info(f"📝 Identified {len(param_space)} hyperparameters for {model_type}")
+            if not param_space:
+                logger.warning(f"⚠️  No hyperparameters defined for {model_type}")
+                continue
             
             model_results = []
             
-            # Subphase 6.2: Apply different search methods
-            if 'grid_search' in methods:
-                try:
-                    grid_result = self.searcher.grid_search(model, param_space, X_train, y_train)
-                    model_results.append(grid_result)
-                except Exception as e:
-                    logger.error(f"❌ Grid search failed for {model_type}: {e}")
-            
-            if 'random_search' in methods:
-                try:
-                    random_result = self.searcher.random_search(model, param_space, X_train, y_train)
-                    model_results.append(random_result)
-                except Exception as e:
-                    logger.error(f"❌ Random search failed for {model_type}: {e}")
-            
-            if 'bayesian_optimization' in methods and OPTUNA_AVAILABLE:
-                try:
-                    bayesian_result = self.searcher.bayesian_optimization(model_type, X_train, y_train)
-                    if bayesian_result:
-                        model_results.append(bayesian_result)
-                except Exception as e:
-                    logger.error(f"❌ Bayesian optimization failed for {model_type}: {e}")
-            
-            if model_results:
-                # Store results
-                phase6_results['models_tuned'][model_type] = {
-                    'hyperparameter_space': param_space,
-                    'search_results': model_results,
-                    'best_method': max(model_results, key=lambda x: x['best_score'])['method'],
-                    'best_score': max(model_results, key=lambda x: x['best_score'])['best_score']
-                }
+            # Run each search method
+            for method in methods:
+                logger.info(f"\n🔍 Running {method.replace('_', ' ').title()}...")
                 
-                # Subphase 6.3: Visualize results
+                try:
+                    if method == 'grid_search':
+                        result = self.searcher.grid_search(model, param_space, X_scaled, y_encoded)
+                    elif method == 'random_search':
+                        result = self.searcher.random_search(model, param_space, X_scaled, y_encoded, n_iter=20)
+                    elif method == 'bayesian_optimization':
+                        result = self.searcher.bayesian_optimization(model_type, X_scaled, y_encoded, n_trials=20)
+                    else:
+                        logger.warning(f"⚠️  Unknown method: {method}")
+                        continue
+                    
+                    if result:
+                        model_results.append(result)
+                        
+                        # Track best overall
+                        if result['best_score'] > best_overall_score:
+                            best_overall_score = result['best_score']
+                            best_overall_method = method
+                            best_overall_model = model_type
+                
+                except Exception as e:
+                    logger.error(f"❌ Error running {method} for {model_type}: {e}")
+            
+            # Store results and create visualizations
+            results[model_type] = model_results
+            
+            # Phase 6.3: Visualize results
+            if model_results:
                 self.visualizer.plot_search_comparison(model_results, model_type)
                 
-                # If Bayesian optimization was used, create additional plots
+                # Create Bayesian optimization plot if available
                 for result in model_results:
-                    if result.get('method') == 'Bayesian Optimization (Optuna)':
-                        self.visualizer.plot_bayesian_optimization_history(
-                            result.get('study'), model_type)
+                    if result['method'] == 'Bayesian Optimization' and 'study' in result:
+                        self.visualizer.plot_bayesian_optimization_history(result['study'], model_type)
         
-        # Generate summary
-        if phase6_results['models_tuned']:
-            best_overall = max(
-                phase6_results['models_tuned'].items(),
-                key=lambda x: x[1]['best_score']
-            )
-            phase6_results['summary'] = {
-                'best_model_type': best_overall[0],
-                'best_score': best_overall[1]['best_score'],
-                'best_method': best_overall[1]['best_method'],
-                'total_models_tuned': len(phase6_results['models_tuned'])
-            }
+        # Create summary
+        results['summary'] = {
+            'best_overall_score': best_overall_score,
+            'best_method': best_overall_method,
+            'best_model': best_overall_model,
+            'total_models_tested': len(model_types),
+            'total_methods_used': len(methods)
+        }
         
         # Save results
-        results_file = self.output_dir / "phase6_results.json"
-        with open(results_file, 'w') as f:
-            # Convert non-serializable objects for JSON
-            serializable_results = self._make_serializable(phase6_results)
-            json.dump(serializable_results, f, indent=2)
+        self.visualizer.save_results_json(results)
         
-        logger.info(f"💾 Results saved to: {results_file}")
-        logger.info("✅ Phase 6: Hyperparameter Tuning & Search completed!")
+        logger.info("\n" + "=" * 60)
+        logger.info("✅ Phase 6 Hyperparameter Tuning Complete!")
+        logger.info(f"🏆 Best Overall: {best_overall_method} on {best_overall_model} (Score: {best_overall_score:.4f})")
+        logger.info("=" * 60)
         
-        self.all_results = phase6_results
-        return phase6_results
+        return results
+
+
+def create_synthetic_data(data_type: str = "balanced") -> Tuple[np.ndarray, np.ndarray]:
+    """Create synthetic data for testing"""
+    from sklearn.datasets import make_classification
     
-    def _make_serializable(self, obj):
-        """Convert non-serializable objects to serializable format"""
-        if isinstance(obj, dict):
-            return {k: self._make_serializable(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [self._make_serializable(item) for item in obj]
-        elif hasattr(obj, '__dict__'):
-            return str(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        elif hasattr(obj, 'to_dict'):
-            return obj.to_dict()
-        else:
-            return obj
+    if data_type == "balanced":
+        return make_classification(
+            n_samples=300, n_features=15, n_classes=3,
+            n_informative=10, n_redundant=3, random_state=42
+        )
+    elif data_type == "imbalanced":
+        return make_classification(
+            n_samples=300, n_features=15, n_classes=2,
+            n_informative=10, weights=[0.9, 0.1], random_state=42
+        )
+    else:
+        return make_classification(
+            n_samples=200, n_features=10, n_classes=2,
+            n_informative=8, random_state=42
+        )
 
 
 def main():
     """Main execution function"""
-    parser = argparse.ArgumentParser(description='Phase 6: Hyperparameter Tuning & Search')
-    parser.add_argument('--models', nargs='+', 
-                       choices=['random_forest', 'logistic_regression', 'svm', 'mlp', 'decision_tree'],
-                       default=['random_forest', 'logistic_regression', 'svm'],
-                       help='Models to tune')
-    parser.add_argument('--methods', nargs='+',
-                       choices=['grid_search', 'random_search', 'bayesian_optimization'],
-                       default=['grid_search', 'random_search', 'bayesian_optimization'],
-                       help='Search methods to use')
-    parser.add_argument('--output-dir', default='debug',
-                       help='Output directory for results')
-    parser.add_argument('--verbose', action='store_true',
-                       help='Verbose output')
+    parser = argparse.ArgumentParser(description="Phase 6: Hyperparameter Tuning & Search")
+    parser.add_argument("--data-source", choices=["synthetic", "alzheimer"], 
+                       default="synthetic", help="Data source to use")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
+    parser.add_argument("--method", choices=["all", "grid", "random", "bayesian"], 
+                       default="all", help="Search methods to use")
+    parser.add_argument("--models", nargs="+", 
+                       choices=["random_forest", "logistic_regression", "svm", "mlp", "decision_tree"],
+                       default=["random_forest", "logistic_regression"],
+                       help="Models to tune")
     
     args = parser.parse_args()
     
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     
-    # Initialize Phase 6 tuning
-    phase6 = Phase6HyperparameterTuning(output_dir=args.output_dir)
+    # Determine methods to use
+    if args.method == "all":
+        methods = ["grid_search", "random_search"]
+        if OPTUNA_AVAILABLE:
+            methods.append("bayesian_optimization")
+    elif args.method == "grid":
+        methods = ["grid_search"]
+    elif args.method == "random":
+        methods = ["random_search"]
+    elif args.method == "bayesian":
+        methods = ["bayesian_optimization"] if OPTUNA_AVAILABLE else ["random_search"]
     
-    # Run hyperparameter tuning
+    # Load or create data
+    X_data, y_data = None, None
+    if args.data_source == "synthetic":
+        X_data, y_data = create_synthetic_data("balanced")
+    elif args.data_source == "alzheimer":
+        try:
+            X_data, y_data = create_test_alzheimer_data()
+        except Exception as e:
+            logger.warning(f"⚠️  Could not load Alzheimer data: {e}")
+            logger.info("📊 Using synthetic data instead")
+            X_data, y_data = create_synthetic_data("balanced")
+    
+    # Run Phase 6
+    phase6 = Phase6HyperparameterTuning()
     results = phase6.run_hyperparameter_tuning(
         model_types=args.models,
-        methods=args.methods
+        methods=methods,
+        X_data=X_data,
+        y_data=y_data
     )
     
     # Print summary
     if results.get('summary'):
-        print("\n" + "="*50)
-        print("📊 PHASE 6 SUMMARY")
-        print("="*50)
-        print(f"🏆 Best Model: {results['summary']['best_model_type']}")
-        print(f"📈 Best Score: {results['summary']['best_score']:.4f}")
-        print(f"🔍 Best Method: {results['summary']['best_method']}")
-        print(f"🎯 Models Tuned: {results['summary']['total_models_tuned']}")
-        print("="*50)
+        print(f"\n🎯 Phase 6 Summary:")
+        print(f"   📊 Models tested: {results['summary']['total_models_tested']}")
+        print(f"   🔍 Methods used: {results['summary']['total_methods_used']}")
+        print(f"   🏆 Best result: {results['summary']['best_method']} on {results['summary']['best_model']}")
+        print(f"   📈 Best score: {results['summary']['best_overall_score']:.4f}")
 
 
 if __name__ == "__main__":
