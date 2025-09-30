@@ -97,7 +97,7 @@ The Phase 2 script generates several output files:
    - `missing_data_*.png` - Missing data pattern heatmaps
    - `class_balance_*.png` - Class balance visualizations
 
-### Current Status: All Phases Complete
+### Current Status: Multiple Phases Complete
 
 #### ✅ Phase 1 Complete
 - All environment dependencies installed and verified
@@ -109,11 +109,121 @@ The Phase 2 script generates several output files:
 - Preprocessing routines verified
 - Visualizations generated successfully
 
+#### ✅ Phase 8 Complete
+- Feature importance plots for tree-based models generated
+- Partial dependence plots created for key features
+- Enhanced confusion matrices with precision, recall, F1 displayed
+- 15+ high-quality visualizations produced
+
+## Phase 8: Model Visualization & Interpretability ✅ COMPLETE
+
+### Running Phase 8 Debugging
+
+#### Basic Usage
+```bash
+python debug/phase8_model_visualization.py
+```
+
+#### With Verbose Output
+```bash
+python debug/phase8_model_visualization.py --verbose
+```
+
+#### Custom Data Source
+```bash
+# Use synthetic data (default)
+python debug/phase8_model_visualization.py --data-source synthetic
+
+# Use custom CSV file
+python debug/phase8_model_visualization.py --data-source path/to/data.csv
+```
+
+### What Phase 8 Analyzes
+
+#### Subphase 8.1: Feature Importance for Tree-Based Models ✅ COMPLETE
+- ✅ Extracts feature importances from DecisionTree, RandomForest, and GradientBoosting
+- ✅ Generates bar plots showing top 15 most important features
+- ✅ Saves feature importance data to CSV files for further analysis
+- ✅ Creates color-coded visualizations with viridis palette
+- ✅ Logs top 5 features for each model with importance scores
+
+#### Subphase 8.2: Partial Dependence Plots ✅ COMPLETE
+- ✅ Identifies top 4 most important features from each model
+- ✅ Generates 1D partial dependence plots showing individual feature effects
+- ✅ Creates 2D partial dependence plots for top feature interactions
+- ✅ Uses sklearn.inspection.partial_dependence for accurate calculations
+- ✅ Visualizes how predictions change with feature values
+
+#### Subphase 8.3: Enhanced Confusion Matrices ✅ COMPLETE
+- ✅ Generates confusion matrices with raw counts
+- ✅ Creates normalized confusion matrices showing percentages
+- ✅ Produces per-class metrics visualizations (precision, recall, F1)
+- ✅ Displays accuracy and macro-averaged metrics
+- ✅ Saves comprehensive classification reports to results JSON
+
+### Phase 8 Generated Files
+
+The Phase 8 script generates several output files:
+
+1. **`debug/phase8_results.json`** - Comprehensive Phase 8 results including:
+   - Feature importance rankings for each model
+   - Partial dependence analysis results
+   - Confusion matrix data and classification reports
+   - Model performance metrics
+
+2. **`debug/visualizations/`** - Directory containing:
+   - `feature_importance_*.png` - Feature importance bar plots (3 files)
+   - `feature_importance_*.csv` - Feature importance data tables (3 files)
+   - `partial_dependence_*.png` - 1D PDP plots showing individual feature effects (3 files)
+   - `partial_dependence_2d_*.png` - 2D PDP plots showing feature interactions (3 files)
+   - `confusion_matrix_*.png` - Enhanced confusion matrices with counts and percentages (3 files)
+   - `classification_metrics_*.png` - Per-class precision, recall, F1 visualizations (3 files)
+
+### Phase 8 Key Features
+
+- **Automated Model Training**: Trains DecisionTree, RandomForest, and GradientBoosting classifiers
+- **Multiple Visualization Types**: 15+ plots generated automatically
+- **Feature Insights**: Identifies most important features across all models
+- **Interactive Analysis**: Partial dependence shows how features affect predictions
+- **Performance Metrics**: Detailed per-class and overall performance evaluation
+- **Publication Quality**: High-resolution (300 DPI) plots ready for reports
+
+### Example Output
+
+```
+🚀 Starting Phase 8: Model Visualization & Interpretability
+
+SUBPHASE 8.1: FEATURE IMPORTANCE FOR TREE-BASED MODELS
+  ✓ RandomForest trained (Test Accuracy: 0.770)
+  Top 5 features for RandomForest:
+    age: 0.3178
+    bmi: 0.1838
+    blood_pressure: 0.1755
+    cholesterol: 0.1215
+    glucose: 0.1089
+
+SUBPHASE 8.2: PARTIAL DEPENDENCE PLOTS
+  ✓ Saved 1D partial dependence plots
+  ✓ Saved 2D partial dependence plot
+
+SUBPHASE 8.3: ENHANCED CONFUSION MATRICES
+  Overall metrics for RandomForest:
+    Accuracy:  0.770
+    Macro Avg - Precision: 0.770, Recall: 0.770, F1: 0.770
+
+✅ Phase 8 Model Visualization & Interpretability COMPLETE
+```
+
 ## Next Steps
 
-With Phases 1 and 2 complete, you can proceed to:
+With Phases 1, 2, and 8 complete, you can proceed to:
 - Phase 3: Code Sanity & Logical Error Checks
 - Phase 4: Model Architecture Verification
+- Phase 5: Cross-Validation Implementation
+- Phase 6: Hyperparameter Tuning & Search
+- Phase 7: Model Training & Evaluation
+- Phase 9: Error Analysis & Edge Cases
+- Phase 10: Final Model & System Validation
 - etc. (as outlined in debug/debuglist.md)
 
 ## Troubleshooting
@@ -130,6 +240,13 @@ With Phases 1 and 2 complete, you can proceed to:
 1. **No data files found**: Ensure CSV data files exist in the repository
 2. **Visualization errors**: Check matplotlib backend configuration for headless environments
 3. **Preprocessing analysis incomplete**: Review training scripts for standard preprocessing patterns
+
+### Phase 8 Common Issues
+
+1. **Import errors**: Ensure sklearn, matplotlib, seaborn, numpy, pandas are installed
+2. **Partial dependence errors**: Some models may not support PDP - only tree-based models are used
+3. **Memory issues with large datasets**: Phase 8 uses full dataset - consider sampling for very large datasets
+4. **Missing models**: Phase 8 trains its own models - Phase 7 results are optional
 
 ### Clean Environment Test
 To test in a clean environment:
