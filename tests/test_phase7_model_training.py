@@ -303,7 +303,12 @@ class TestPhase7ModelTrainingEvaluator(unittest.TestCase):
         X = data.drop(columns=['target'])
         y = data['target']
         
-        # Train with categorical features
+        # Encode categorical features before passing to subphase
+        from sklearn.preprocessing import LabelEncoder
+        le = LabelEncoder()
+        X['category'] = le.fit_transform(X['category'])
+        
+        # Train with categorical features (now encoded)
         results = evaluator.subphase_7_1_train_with_cross_validation(X, y, n_folds=3)
         
         # Should handle categorical features without error
