@@ -115,6 +115,13 @@ The Phase 2 script generates several output files:
 - Enhanced confusion matrices with precision, recall, F1 displayed
 - 15+ high-quality visualizations produced
 
+#### ✅ Phase 9 Complete
+- Misclassified samples analyzed with error patterns
+- Model bias investigated with statistical tests
+- Edge cases and adversarial examples tested
+- 9 comprehensive visualizations created
+- Robustness scores calculated for all models
+
 ## Phase 8: Model Visualization & Interpretability ✅ COMPLETE
 
 ### Running Phase 8 Debugging
@@ -214,15 +221,163 @@ SUBPHASE 8.3: ENHANCED CONFUSION MATRICES
 ✅ Phase 8 Model Visualization & Interpretability COMPLETE
 ```
 
+## Phase 9: Error Analysis & Edge Cases ✅ COMPLETE
+
+### Running Phase 9 Debugging
+
+#### Basic Usage
+```bash
+python debug/phase9_error_analysis_edge_cases.py
+```
+
+#### With Verbose Output
+```bash
+python debug/phase9_error_analysis_edge_cases.py --verbose
+```
+
+#### With Custom Data Source
+```bash
+python debug/phase9_error_analysis_edge_cases.py --data-source synthetic
+```
+
+### What Phase 9 Analyzes
+
+#### Subphase 9.1: Misclassified Samples & Residuals ✅ COMPLETE
+- **Identifies misclassified samples** across all models
+- **Computes error statistics** (total errors, error rates, class-wise errors)
+- **Analyzes confusion patterns** (which classes get confused with which)
+- **Calculates residuals** (predicted - true class) for regression-style analysis
+- **Generates error visualizations**:
+  - Confusion matrices
+  - Error rate by class bar charts
+  - Residual distribution histograms
+  - Misclassification pattern heatmaps
+
+#### Subphase 9.2: Model Bias Investigation ✅ COMPLETE
+- **Class-wise performance analysis** (precision, recall, F1-score for each class)
+- **Statistical bias metrics**:
+  - Demographic parity difference
+  - Balanced accuracy
+  - Class imbalance ratio
+- **Chi-square tests** for prediction distribution bias
+- **Bias detection warnings** for:
+  - High demographic parity differences (>0.2)
+  - Significant prediction distribution bias (>0.15)
+  - Large performance disparities across classes (>0.3 F1 difference)
+- **Generates bias visualizations**:
+  - Class-wise performance metrics bar charts
+  - Prediction vs true distribution comparisons
+  - Performance heatmaps
+  - Bias indicator metrics
+
+#### Subphase 9.3: Edge Cases & Adversarial Testing ✅ COMPLETE
+- **Edge case testing**:
+  - Boundary value testing (min/max for each feature)
+  - All-minimum and all-maximum feature combinations
+  - 14 edge cases per model
+- **Adversarial perturbation testing**:
+  - Multiple epsilon values (0.01, 0.05, 0.1, 0.2)
+  - Prediction consistency analysis
+  - Accuracy degradation measurement
+- **Robustness scoring**:
+  - Overall robustness score (0-1)
+  - Adversarial robustness rate
+  - Stability score
+- **Generates adversarial visualizations**:
+  - Accuracy under perturbation plots
+  - Prediction consistency rate plots
+  - Accuracy drop bar charts
+  - Robustness metrics summary
+
+### Phase 9 Generated Files
+
+The Phase 9 script generates several output files:
+
+1. **`debug/phase9_results.json`** - Comprehensive Phase 9 results including:
+   - Misclassification analysis for each model
+   - Error patterns and residual statistics
+   - Bias metrics and statistical tests
+   - Class-wise performance metrics
+   - Edge case test results
+   - Adversarial testing results
+   - Robustness scores
+
+2. **`debug/visualizations/`** - Directory containing 9 visualizations:
+   - `error_distribution_*.png` - Error analysis plots (3 files)
+   - `bias_analysis_*.png` - Bias investigation plots (3 files)
+   - `adversarial_tests_*.png` - Adversarial testing plots (3 files)
+
+### Phase 9 Key Features
+
+- **Multi-model analysis**: Analyzes DecisionTree, RandomForest, and GradientBoosting
+- **Comprehensive error metrics**: Error rates, confusion patterns, residuals
+- **Statistical bias detection**: Chi-square tests, demographic parity, balanced accuracy
+- **Adversarial robustness**: Tests with multiple perturbation strengths
+- **Automated warnings**: Flags significant bias and performance issues
+- **Rich visualizations**: 9 high-quality plots with detailed metrics
+
+### Example Output
+
+```
+🔍 PHASE 9: ERROR ANALYSIS & EDGE CASES
+
+SUBPHASE 9.1: Analyzing Misclassified Samples & Residuals
+  Analyzing errors for DecisionTree...
+    • Total misclassified: 82/300 (27.3%)
+    • Error rate by class:
+      - Class 0: 24/27 (88.9%)
+      - Class 1: 19/229 (8.3%)
+      - Class 2: 39/44 (88.6%)
+
+SUBPHASE 9.2: Investigating Model Bias
+  Analyzing bias for RandomForest...
+    • Balanced Accuracy: 0.372
+    • Demographic Parity Difference: 0.947
+    • Chi-square p-value: 0.0000
+    • Class-wise Performance:
+      - Class 0: P=0.400, R=0.074, F1=0.125
+      - Class 1: P=0.772, R=0.974, F1=0.861
+      - Class 2: P=0.500, R=0.068, F1=0.120
+    ⚠️  Bias warnings:
+      - High demographic parity difference detected
+      - Significant prediction distribution bias
+      - Large performance disparity across classes
+
+SUBPHASE 9.3: Testing Edge Cases & Adversarial Examples
+  Testing GradientBoosting on edge cases...
+    • Edge cases tested: 14
+    • Adversarial robustness: 93.8%
+    • Average accuracy drop: 1.2%
+    • Overall robustness score: 0.963
+
+📊 PHASE 9 SUMMARY
+  ✅ Phase 9 Complete!
+    • Models analyzed: 3
+    • Subphases completed: 3/3
+    • Visualizations created: 9
+    • Execution time: 7.2s
+  
+  📈 Error Analysis:
+    • Average error rate: 25.7%
+  
+  ⚖️  Bias Analysis:
+    • Average balanced accuracy: 0.395
+    • Significant bias detected: Yes
+  
+  🛡️  Robustness Testing:
+    • Average robustness score: 0.980
+
+✅ Phase 9 Error Analysis & Edge Cases COMPLETE
+```
+
 ## Next Steps
 
-With Phases 1, 2, and 8 complete, you can proceed to:
+With Phases 1, 2, 8, and 9 complete, you can proceed to:
 - Phase 3: Code Sanity & Logical Error Checks
 - Phase 4: Model Architecture Verification
 - Phase 5: Cross-Validation Implementation
 - Phase 6: Hyperparameter Tuning & Search
 - Phase 7: Model Training & Evaluation
-- Phase 9: Error Analysis & Edge Cases
 - Phase 10: Final Model & System Validation
 - etc. (as outlined in debug/debuglist.md)
 
