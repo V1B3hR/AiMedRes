@@ -1,0 +1,290 @@
+{
+  "timestamp": "2025-09-30T09:13:58.180554",
+  "data_source": "synthetic",
+  "data_shape": {
+    "n_samples": 1000,
+    "n_features": 6,
+    "n_classes": 2
+  },
+  "models_analyzed": [
+    "DecisionTree",
+    "RandomForest",
+    "GradientBoosting"
+  ],
+  "feature_importance": {
+    "models_analyzed": [
+      "DecisionTree",
+      "RandomForest",
+      "GradientBoosting"
+    ],
+    "feature_importance_plots": [
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/feature_importance_DecisionTree.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/feature_importance_RandomForest.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/feature_importance_GradientBoosting.png"
+    ],
+    "top_features_by_model": {
+      "DecisionTree": [
+        {
+          "feature": "age",
+          "importance": 0.4550755603352496
+        },
+        {
+          "feature": "bmi",
+          "importance": 0.19776447419116167
+        },
+        {
+          "feature": "blood_pressure",
+          "importance": 0.1673493137540254
+        },
+        {
+          "feature": "glucose",
+          "importance": 0.0726550570870204
+        },
+        {
+          "feature": "cholesterol",
+          "importance": 0.0724101369686316
+        }
+      ],
+      "RandomForest": [
+        {
+          "feature": "age",
+          "importance": 0.31776076803081543
+        },
+        {
+          "feature": "bmi",
+          "importance": 0.1838490509615034
+        },
+        {
+          "feature": "blood_pressure",
+          "importance": 0.17550431494325178
+        },
+        {
+          "feature": "cholesterol",
+          "importance": 0.12148099757499006
+        },
+        {
+          "feature": "glucose",
+          "importance": 0.10893910977776067
+        }
+      ],
+      "GradientBoosting": [
+        {
+          "feature": "age",
+          "importance": 0.3576567766535545
+        },
+        {
+          "feature": "bmi",
+          "importance": 0.19323740723000987
+        },
+        {
+          "feature": "blood_pressure",
+          "importance": 0.17557464702321132
+        },
+        {
+          "feature": "cholesterol",
+          "importance": 0.10740053112064495
+        },
+        {
+          "feature": "glucose",
+          "importance": 0.10241436033614358
+        }
+      ]
+    }
+  },
+  "partial_dependence": {
+    "models_analyzed": [
+      "DecisionTree",
+      "RandomForest",
+      "GradientBoosting"
+    ],
+    "pdp_plots_generated": [
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/partial_dependence_DecisionTree.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/partial_dependence_2d_DecisionTree.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/partial_dependence_RandomForest.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/partial_dependence_2d_RandomForest.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/partial_dependence_GradientBoosting.png",
+      "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/partial_dependence_2d_GradientBoosting.png"
+    ],
+    "features_analyzed": [
+      "age",
+      "bmi",
+      "blood_pressure",
+      "glucose",
+      "age",
+      "bmi",
+      "blood_pressure",
+      "cholesterol",
+      "age",
+      "bmi",
+      "blood_pressure",
+      "cholesterol"
+    ]
+  },
+  "confusion_matrices": {
+    "models_analyzed": [
+      "DecisionTree",
+      "RandomForest",
+      "GradientBoosting"
+    ],
+    "confusion_matrices": {
+      "DecisionTree": {
+        "matrix": [
+          [
+            74,
+            27
+          ],
+          [
+            29,
+            70
+          ]
+        ],
+        "normalized": [
+          [
+            0.7326732673267327,
+            0.26732673267326734
+          ],
+          [
+            0.29292929292929293,
+            0.7070707070707071
+          ]
+        ],
+        "plot_path": "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/confusion_matrix_DecisionTree.png"
+      },
+      "RandomForest": {
+        "matrix": [
+          [
+            77,
+            24
+          ],
+          [
+            22,
+            77
+          ]
+        ],
+        "normalized": [
+          [
+            0.7623762376237624,
+            0.2376237623762376
+          ],
+          [
+            0.2222222222222222,
+            0.7777777777777778
+          ]
+        ],
+        "plot_path": "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/confusion_matrix_RandomForest.png"
+      },
+      "GradientBoosting": {
+        "matrix": [
+          [
+            71,
+            30
+          ],
+          [
+            28,
+            71
+          ]
+        ],
+        "normalized": [
+          [
+            0.7029702970297029,
+            0.297029702970297
+          ],
+          [
+            0.2828282828282828,
+            0.7171717171717171
+          ]
+        ],
+        "plot_path": "/home/runner/work/AiMedRes/AiMedRes/debug/visualizations/confusion_matrix_GradientBoosting.png"
+      }
+    },
+    "classification_reports": {
+      "DecisionTree": {
+        "accuracy": 0.72,
+        "macro_avg": {
+          "precision": 0.720048043238915,
+          "recall": 0.7198719871987198,
+          "f1-score": 0.7198879551820728,
+          "support": 200.0
+        },
+        "weighted_avg": {
+          "precision": 0.7200320288259434,
+          "recall": 0.72,
+          "f1-score": 0.7199439775910363,
+          "support": 200.0
+        },
+        "per_class": {
+          "0": {
+            "precision": 0.7184466019417476,
+            "recall": 0.7326732673267327,
+            "f1-score": 0.7254901960784313,
+            "support": 101.0
+          },
+          "1": {
+            "precision": 0.7216494845360825,
+            "recall": 0.7070707070707071,
+            "f1-score": 0.7142857142857143,
+            "support": 99.0
+          }
+        }
+      },
+      "RandomForest": {
+        "accuracy": 0.77,
+        "macro_avg": {
+          "precision": 0.7700770077007701,
+          "recall": 0.7700770077007701,
+          "f1-score": 0.77,
+          "support": 200.0
+        },
+        "weighted_avg": {
+          "precision": 0.7701540154015402,
+          "recall": 0.77,
+          "f1-score": 0.77,
+          "support": 200.0
+        },
+        "per_class": {
+          "0": {
+            "precision": 0.7777777777777778,
+            "recall": 0.7623762376237624,
+            "f1-score": 0.77,
+            "support": 101.0
+          },
+          "1": {
+            "precision": 0.7623762376237624,
+            "recall": 0.7777777777777778,
+            "f1-score": 0.77,
+            "support": 99.0
+          }
+        }
+      },
+      "GradientBoosting": {
+        "accuracy": 0.71,
+        "macro_avg": {
+          "precision": 0.71007100710071,
+          "recall": 0.71007100710071,
+          "f1-score": 0.71,
+          "support": 200.0
+        },
+        "weighted_avg": {
+          "precision": 0.71014201420142,
+          "recall": 0.71,
+          "f1-score": 0.71,
+          "support": 200.0
+        },
+        "per_class": {
+          "0": {
+            "precision": 0.7171717171717171,
+            "recall": 0.7029702970297029,
+            "f1-score": 0.71,
+            "support": 101.0
+          },
+          "1": {
+            "precision": 0.7029702970297029,
+            "recall": 0.7171717171717171,
+            "f1-score": 0.71,
+            "support": 99.0
+          }
+        }
+      }
+    }
+  }
+}
