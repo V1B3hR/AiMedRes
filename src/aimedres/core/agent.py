@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class AgentState(Enum):
     """Agent operational states"""
     ACTIVE = "active"
-    Mindfulness = "mindful"
+    Mindful = "mindful"
     SLEEPING = "sleeping"
     LEARNING = "learning"
     COMMUNICATING = "communicating"
