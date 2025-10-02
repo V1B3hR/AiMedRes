@@ -84,3 +84,6 @@ diabetes_training.log
 build/
 dist/
 .test_env/
+
+# Training outputs
+summaries/
