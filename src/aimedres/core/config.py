@@ -1,23 +1,47 @@
 """
-Configuration Management for AiMedRes
+Enhanced Configuration Management for AiMedRes
 
-Provides secure, centralized configuration management with environment
-variable support and validation.
+Key Features:
+- Layered configuration (defaults < file(s) < environment < overrides)
+- Advanced validation (optional Pydantic if installed)
+- Rich environment variable parsing with automatic mapping
+- Hierarchical get/set with dot-notation
+- Secret management abstraction (Env, Vault, AWS Secrets Manager) + caching
+- Optional dynamic reloading (if watchdog installed)
+- Provenance tracking (where each value came from)
+- Schema + safe export (masking sensitive values)
+- Pluggable sections and secret providers
+
+NOTE:
+This module is self-contained and keeps optional dependencies lazy-loaded.
 """
 
+from __future__ import annotations
+
 import os
-import yaml
+import re
 import json
+import yaml
+import time
+import types
+import queue
+import hashlib
 import logging
-from typing import Dict, Any, Optional, Union
+import threading
+from typing import (
+    Dict, Any, Optional, Union, List, Callable, Type, Tuple, Iterable, get_type_hints
+)
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, is_dataclass, MISSING
 
 logger = logging.getLogger(__name__)
 
+# ------------------------------------------------------------------------------
+# Dataclass Section Definitions
+# ------------------------------------------------------------------------------
+
 @dataclass
 class SecurityConfig:
-    """Security configuration settings"""
     auth_enabled: bool = True
     api_key_required: bool = True
     rate_limit_enabled: bool = True
@@ -26,11 +50,11 @@ class SecurityConfig:
     encryption_key_length: int = 32
     password_min_length: int = 12
     enable_2fa: bool = False
-    allowed_origins: list = field(default_factory=lambda: ["localhost", "127.0.0.1"])
+    allowed_origins: List[str] = field(default_factory=lambda: ["localhost", "127.0.0.1"])
 
-@dataclass  
+
+@dataclass
 class DatabaseConfig:
-    """Database configuration settings"""
     type: str = "sqlite"
     host: str = "localhost"
     port: int = 5432
@@ -41,11 +65,11 @@ class DatabaseConfig:
     max_connections: int = 20
     connection_timeout: int = 30
 
+
 @dataclass
 class NeuralNetworkConfig:
-    """Neural network configuration settings"""
     input_size: int = 32
-    hidden_layers: list = field(default_factory=lambda: [64, 32, 16])
+    hidden_layers: List[int] = field(default_factory=lambda: [64, 32, 16])
     output_size: int = 2
     learning_rate: float = 0.001
     batch_size: int = 32
@@ -53,272 +77,638 @@ class NeuralNetworkConfig:
     dropout_rate: float = 0.3
     activation_function: str = "relu"
     optimizer: str = "adam"
-    
+
+
 @dataclass
 class APIConfig:
-    """API configuration settings"""
     host: str = "0.0.0.0"
     port: int = 8080
     debug: bool = False
     cors_enabled: bool = True
-    ssl_enabled: bool = False  # Default to False for development
+    ssl_enabled: bool = False
     ssl_cert_path: str = ""
     ssl_key_path: str = ""
     max_request_size: int = 16 * 1024 * 1024  # 16MB
 
+
+# ------------------------------------------------------------------------------
+# Utilities
+# ------------------------------------------------------------------------------
+
+SENSITIVE_KEY_PATTERN = re.compile(r"(pass(word)?|secret|token|key|credential)", re.IGNORECASE)
+
+
+def deep_merge(base: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
+    for k, v in new.items():
+        if isinstance(v, dict) and isinstance(base.get(k), dict):
+            base[k] = deep_merge(base[k], v)
+        else:
+            base[k] = v
+    return base
+
+
+def mask_value(key: str, value: Any) -> Any:
+    if value is None:
+        return None
+    if SENSITIVE_KEY_PATTERN.search(key):
+        return "***MASKED***"
+    return value
+
+
+def load_file_any(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        suffix = path.suffix.lower()
+        if suffix in (".yml", ".yaml"):
+            return yaml.safe_load(f) or {}
+        if suffix == ".json":
+            return json.load(f) or {}
+        raise ValueError(f"Unsupported config extension: {suffix}")
+
+
+# ------------------------------------------------------------------------------
+# Secret Providers
+# ------------------------------------------------------------------------------
+
+class SecretProvider:
+    name: str = "base"
+
+    def get(self, key: str) -> Optional[str]:
+        raise NotImplementedError
+
+
+class EnvSecretProvider(SecretProvider):
+    name = "env"
+
+    def get(self, key: str) -> Optional[str]:
+        return os.getenv(key)
+
+
+class VaultSecretProvider(SecretProvider):
+    name = "vault"
+
+    def __init__(self):
+        self._loaded = False
+        self._client = None
+
+    def _ensure(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        try:
+            import hvac  # type: ignore
+            vault_url = os.getenv("VAULT_URL")
+            vault_token = os.getenv("VAULT_TOKEN")
+            if not (vault_url and vault_token):
+                return
+            client = hvac.Client(url=vault_url, token=vault_token)
+            if client.is_authenticated():
+                self._client = client
+            else:
+                logger.warning("Vault authentication failed")
+        except ImportError:
+            logger.debug("hvac not installed; Vault provider inactive")
+        except Exception as e:
+            logger.warning(f"Vault provider init failed: {e}")
+
+    def get(self, key: str) -> Optional[str]:
+        self._ensure()
+        if not self._client:
+            return None
+        try:
+            vault_path = os.getenv("VAULT_SECRET_PATH", "aimedres")
+            response = self._client.secrets.kv.v2.read_secret_version(path=vault_path)
+            data = response["data"]["data"]
+            return data.get(key)
+        except Exception as e:
+            logger.debug(f"Vault get error for {key}: {e}")
+            return None
+
+
+class AWSSecretProvider(SecretProvider):
+    name = "aws"
+
+    def __init__(self):
+        self._loaded = False
+        self._client = None
+        self._cached: Dict[str, Any] = {}
+
+    def _ensure(self):
+        if self._loaded:
+            return
+        self._loaded = True
+        try:
+            import boto3  # type: ignore
+            from botocore.exceptions import ClientError  # type: ignore
+            secret_name = os.getenv("AWS_SECRET_NAME", "aimedres/secrets")
+            region_name = os.getenv("AWS_REGION", "us-east-1")
+            session = boto3.session.Session()
+            client = session.client("secretsmanager", region_name=region_name)
+            response = client.get_secret_value(SecretId=secret_name)
+            payload = response.get("SecretString")
+            if payload:
+                self._cached = json.loads(payload)
+        except ImportError:
+            logger.debug("boto3 not installed; AWS provider inactive")
+        except Exception as e:
+            logger.debug(f"AWS secrets load failed: {e}")
+
+    def get(self, key: str) -> Optional[str]:
+        self._ensure()
+        return self._cached.get(key)
+
+
+class SecretManager:
+    def __init__(self, providers: Optional[List[SecretProvider]] = None, cache_ttl: int = 300):
+        self.providers = providers or [
+            EnvSecretProvider(),
+            VaultSecretProvider(),
+            AWSSecretProvider(),
+        ]
+        self.cache: Dict[str, Tuple[float, Optional[str]]] = {}
+        self.cache_ttl = cache_ttl
+
+    def get(self, key: str) -> Optional[str]:
+        now = time.time()
+        if key in self.cache:
+            ts, val = self.cache[key]
+            if now - ts < self.cache_ttl:
+                return val
+        for provider in self.providers:
+            try:
+                val = provider.get(key)
+                if val is not None:
+                    self.cache[key] = (now, val)
+                    return val
+            except Exception as e:
+                logger.debug(f"Secret provider {provider.name} error: {e}")
+        self.cache[key] = (now, None)
+        return None
+
+
+# ------------------------------------------------------------------------------
+# Validation Framework (with optional Pydantic)
+# ------------------------------------------------------------------------------
+
+class ValidationErrorReport(Exception):
+    def __init__(self, errors: List[str]):
+        self.errors = errors
+        super().__init__("Configuration validation failed:\n" + "\n".join(f"- {e}" for e in errors))
+
+
+def validate_builtin(sections: Dict[str, Any]) -> None:
+    errors: List[str] = []
+    sec: SecurityConfig = sections["security"]
+    if sec.max_requests_per_minute < 1:
+        errors.append("security.max_requests_per_minute must be > 0")
+    if sec.session_timeout_minutes < 1:
+        errors.append("security.session_timeout_minutes must be > 0")
+    if sec.password_min_length < 8:
+        errors.append("security.password_min_length must be >= 8")
+
+    db: DatabaseConfig = sections["database"]
+    if not (1 <= db.port <= 65535):
+        errors.append("database.port must be between 1 and 65535")
+
+    api: APIConfig = sections["api"]
+    if not (1 <= api.port <= 65535):
+        errors.append("api.port must be between 1 and 65535")
+    if api.ssl_enabled and not (api.ssl_cert_path and api.ssl_key_path):
+        errors.append("api requires ssl_cert_path and ssl_key_path when ssl_enabled = True")
+
+    nn: NeuralNetworkConfig = sections["neural_network"]
+    if not (0 < nn.learning_rate <= 1):
+        errors.append("neural_network.learning_rate must be between 0 and 1")
+    if nn.batch_size < 1:
+        errors.append("neural_network.batch_size must be > 0")
+    if nn.epochs < 1:
+        errors.append("neural_network.epochs must be > 0")
+
+    if errors:
+        raise ValidationErrorReport(errors)
+
+
+def try_pydantic_validate(sections: Dict[str, Any]) -> Optional[Exception]:
+    try:
+        import pydantic  # type: ignore
+
+        class SecurityModel(pydantic.BaseModel):
+            auth_enabled: bool
+            api_key_required: bool
+            rate_limit_enabled: bool
+            max_requests_per_minute: int
+            session_timeout_minutes: int
+            encryption_key_length: int
+            password_min_length: int
+            enable_2fa: bool
+            allowed_origins: List[str]
+
+        class DatabaseModel(pydantic.BaseModel):
+            type: str
+            host: str
+            port: int
+            name: str
+            username: str
+            password: str
+            pool_size: int
+            max_connections: int
+            connection_timeout: int
+
+        class NeuralNetworkModel(pydantic.BaseModel):
+            input_size: int
+            hidden_layers: List[int]
+            output_size: int
+            learning_rate: float
+            batch_size: int
+            epochs: int
+            dropout_rate: float
+            activation_function: str
+            optimizer: str
+
+        class APIModel(pydantic.BaseModel):
+            host: str
+            port: int
+            debug: bool
+            cors_enabled: bool
+            ssl_enabled: bool
+            ssl_cert_path: str
+            ssl_key_path: str
+            max_request_size: int
+
+        # Validate each
+        SecurityModel(**sections["security"].__dict__)
+        DatabaseModel(**sections["database"].__dict__)
+        NeuralNetworkModel(**sections["neural_network"].__dict__)
+        APIModel(**sections["api"].__dict__)
+
+    except ImportError:
+        return None
+    except Exception as e:
+        return e
+    return None
+
+
+# ------------------------------------------------------------------------------
+# Configuration Core
+# ------------------------------------------------------------------------------
+
 class DuetMindConfig:
     """
-    Centralized configuration manager with security and validation.
-    
-    Supports loading from:
-    - Environment variables
-    - YAML/JSON configuration files
-    - Programmatic overrides
+    Centralized configuration manager with layering, validation, secrets & reload.
+
+    Precedence:
+        Defaults < File(s) < Environment < Overrides
+
+    Methods:
+        load_files([...])
+        load_environment()
+        load_overrides({...})
+        validate()
+        get(path), set(path, value)
+        explain()
+        to_dict(), to_safe_dict()
+        save_to_file(path, format='yaml')
+        enable_auto_reload(paths, debounce=1.0)
+
+    Provenance:
+        Tracked in self._provenance[(section, key)] = source_label
     """
-    
-    def __init__(self, config_path: Optional[Union[str, Path]] = None):
+
+    ENV_PREFIX = "AIMEDRES_"
+
+    def __init__(
+        self,
+        config_files: Optional[Union[str, Path, List[Union[str, Path]]]] = None,
+        overrides: Optional[Dict[str, Any]] = None,
+        auto_env: bool = True,
+        secret_manager: Optional[SecretManager] = None,
+    ):
+        # Sections
         self.security = SecurityConfig()
         self.database = DatabaseConfig()
         self.neural_network = NeuralNetworkConfig()
         self.api = APIConfig()
-        
-        # Load configuration hierarchy
-        self._load_defaults()
-        if config_path:
-            self._load_file_config(config_path)
-        self._load_environment_config()
-        self._validate_config()
-    
-    def _load_defaults(self):
-        """Load default configuration values"""
-        logger.info("Loading default configuration")
-        
-    def _load_file_config(self, config_path: Union[str, Path]):
-        """Load configuration from file"""
-        config_path = Path(config_path)
-        
-        if not config_path.exists():
-            logger.warning(f"Config file not found: {config_path}")
-            return
-            
-        try:
-            with open(config_path, 'r') as f:
-                if config_path.suffix.lower() in ['.yaml', '.yml']:
-                    config_data = yaml.safe_load(f)
-                elif config_path.suffix.lower() == '.json':
-                    config_data = json.load(f)
-                else:
-                    logger.error(f"Unsupported config file format: {config_path.suffix}")
-                    return
-                    
-            self._apply_config_data(config_data)
-            logger.info(f"Loaded configuration from {config_path}")
-            
-        except Exception as e:
-            logger.error(f"Error loading config file {config_path}: {e}")
-    
-    def _load_environment_config(self):
-        """Load configuration from environment variables"""
-        env_mappings = {
-            # Security
-            'AIMEDRES_AUTH_ENABLED': ('security', 'auth_enabled', bool),
-            'AIMEDRES_API_KEY_REQUIRED': ('security', 'api_key_required', bool),
-            'AIMEDRES_RATE_LIMIT_ENABLED': ('security', 'rate_limit_enabled', bool),
-            'AIMEDRES_MAX_REQUESTS_PER_MINUTE': ('security', 'max_requests_per_minute', int),
-            'AIMEDRES_SESSION_TIMEOUT': ('security', 'session_timeout_minutes', int),
-            
-            # Database  
-            'AIMEDRES_DB_TYPE': ('database', 'type', str),
-            'AIMEDRES_DB_HOST': ('database', 'host', str),
-            'AIMEDRES_DB_PORT': ('database', 'port', int),
-            'AIMEDRES_DB_NAME': ('database', 'name', str),
-            'AIMEDRES_DB_USER': ('database', 'username', str),
-            'AIMEDRES_DB_PASSWORD': ('database', 'password', str),
-            
-            # API
-            'AIMEDRES_API_HOST': ('api', 'host', str),
-            'AIMEDRES_API_PORT': ('api', 'port', int),
-            'AIMEDRES_API_DEBUG': ('api', 'debug', bool),
-            'AIMEDRES_SSL_ENABLED': ('api', 'ssl_enabled', bool),
-            'AIMEDRES_SSL_CERT_PATH': ('api', 'ssl_cert_path', str),
-            'AIMEDRES_SSL_KEY_PATH': ('api', 'ssl_key_path', str),
-            
-            # Neural Network
-            'AIMEDRES_NN_INPUT_SIZE': ('neural_network', 'input_size', int),
-            'AIMEDRES_NN_LEARNING_RATE': ('neural_network', 'learning_rate', float),
-            'AIMEDRES_NN_BATCH_SIZE': ('neural_network', 'batch_size', int),
-            'AIMEDRES_NN_EPOCHS': ('neural_network', 'epochs', int),
-        }
-        
-        for env_var, (section, key, type_func) in env_mappings.items():
-            value = os.getenv(env_var)
-            if value is not None:
+
+        self._section_names = ["security", "database", "neural_network", "api"]
+        self._provenance: Dict[Tuple[str, str], str] = {}
+        self._overrides: Dict[str, Any] = overrides or {}
+        self._secret_manager = secret_manager or SecretManager()
+        self._watch_threads: List[threading.Thread] = []
+        self._watch_stop_event = threading.Event()
+        self._reload_queue: "queue.Queue[Tuple[str, Dict[str, Any]]]" = queue.Queue()
+
+        if config_files:
+            self.load_files(config_files)
+
+        if auto_env:
+            self.load_environment()
+
+        if overrides:
+            self.load_overrides(overrides)
+
+        self.validate()
+
+    # ------------------------------ Loading ---------------------------------
+
+    def load_files(self, files: Union[str, Path, List[Union[str, Path]]]) -> None:
+        if isinstance(files, (str, Path)):
+            file_list = [files]
+        else:
+            file_list = files
+        for f in file_list:
+            path = Path(f).expanduser().resolve()
+            if not path.exists():
+                logger.warning(f"Config file does not exist: {path}")
+                continue
+            try:
+                data = load_file_any(path)
+                if not isinstance(data, dict):
+                    logger.warning(f"Config file {path} did not yield a dict root.")
+                    continue
+                self._apply_dict(data, provenance=f"file:{path.name}")
+                logger.info(f"Loaded config file: {path}")
+            except Exception as e:
+                logger.error(f"Error loading config file {path}: {e}")
+
+    def load_environment(self) -> None:
+        """
+        Auto-maps environment variables using pattern:
+        PREFIX + SECTION + '_' + FIELD
+        e.g. AIMEDRES_SECURITY_MAX_REQUESTS_PER_MINUTE=250
+        Supports JSON for lists/dicts (attempt parse).
+        """
+        for section_name in self._section_names:
+            section_obj = getattr(self, section_name)
+            for f in fields(section_obj):
+                env_name = f"{self.ENV_PREFIX}{section_name.upper()}_{f.name.upper()}"
+                val = os.getenv(env_name)
+                if val is None:
+                    continue
                 try:
-                    if type_func == bool:
-                        parsed_value = value.lower() in ('true', '1', 'yes', 'on')
-                    else:
-                        parsed_value = type_func(value)
-                    
-                    section_obj = getattr(self, section)
-                    setattr(section_obj, key, parsed_value)
-                    logger.debug(f"Set {section}.{key} = {parsed_value} from environment")
-                    
-                except (ValueError, TypeError) as e:
-                    logger.error(f"Invalid environment variable {env_var}={value}: {e}")
-    
-    def _apply_config_data(self, config_data: Dict[str, Any]):
-        """Apply configuration data to config objects"""
-        for section_name, section_data in config_data.items():
-            if hasattr(self, section_name) and isinstance(section_data, dict):
-                section_obj = getattr(self, section_name)
-                for key, value in section_data.items():
-                    if hasattr(section_obj, key):
-                        setattr(section_obj, key, value)
-                        logger.debug(f"Set {section_name}.{key} = {value}")
-    
-    def _validate_config(self):
-        """Validate configuration values"""
-        errors = []
-        
-        # Validate security settings
-        if self.security.max_requests_per_minute < 1:
-            errors.append("max_requests_per_minute must be > 0")
-        
-        if self.security.session_timeout_minutes < 1:
-            errors.append("session_timeout_minutes must be > 0")
-            
-        if self.security.password_min_length < 8:
-            errors.append("password_min_length should be at least 8")
-        
-        # Validate database settings
-        if self.database.port < 1 or self.database.port > 65535:
-            errors.append("database port must be between 1-65535")
-        
-        # Validate API settings  
-        if self.api.port < 1 or self.api.port > 65535:
-            errors.append("API port must be between 1-65535")
-        
-        if self.api.ssl_enabled and not (self.api.ssl_cert_path and self.api.ssl_key_path):
-            errors.append("SSL cert and key paths required when SSL enabled")
-        
-        # Validate neural network settings
-        if self.neural_network.learning_rate <= 0 or self.neural_network.learning_rate > 1:
-            errors.append("learning_rate must be between 0 and 1")
-        
-        if self.neural_network.batch_size < 1:
-            errors.append("batch_size must be > 0")
-            
-        if self.neural_network.epochs < 1:
-            errors.append("epochs must be > 0")
-        
-        if errors:
-            error_msg = "Configuration validation failed:\n" + "\n".join(f"- {error}" for error in errors)
-            raise ValueError(error_msg)
-        
+                    parsed = self._coerce_env_value(val, f.type)
+                    setattr(section_obj, f.name, parsed)
+                    self._provenance[(section_name, f.name)] = f"env:{env_name}"
+                    logger.debug(f"Loaded env {env_name} -> {section_name}.{f.name}={parsed}")
+                except Exception as e:
+                    logger.error(f"Failed parsing env {env_name}={val}: {e}")
+
+    def load_overrides(self, overrides: Dict[str, Any]) -> None:
+        """
+        Apply programmatic overrides (highest precedence).
+        Accepts nested dict with keys matching section names.
+        """
+        self._apply_dict(overrides, provenance="override")
+        deep_merge(self._overrides, overrides)
+
+    # ------------------------------ Internal Helpers ---------------------------------
+
+    def _apply_dict(self, data: Dict[str, Any], provenance: str) -> None:
+        for section_name, section_data in data.items():
+            if section_name not in self._section_names:
+                continue
+            if not isinstance(section_data, dict):
+                logger.warning(f"Ignoring non-dict section data: {section_name}")
+                continue
+            section_obj = getattr(self, section_name)
+            for key, value in section_data.items():
+                if hasattr(section_obj, key):
+                    setattr(section_obj, key, value)
+                    self._provenance[(section_name, key)] = provenance
+                    logger.debug(f"Set {section_name}.{key}={value} ({provenance})")
+
+    def _coerce_env_value(self, raw: str, target_type: Any) -> Any:
+        raw_stripped = raw.strip()
+        # Try JSON for complex types
+        if raw_stripped.startswith("[") or raw_stripped.startswith("{"):
+            try:
+                return json.loads(raw_stripped)
+            except Exception:
+                pass
+        # Basic bool heuristics
+        if target_type == bool:
+            return raw_stripped.lower() in ("1", "true", "yes", "on", "y")
+        # Int / Float
+        if target_type == int:
+            return int(raw_stripped)
+        if target_type == float:
+            return float(raw_stripped)
+        # Fallback
+        return raw
+
+    # ------------------------------ Validation ---------------------------------
+
+    def validate(self) -> None:
+        sections = {name: getattr(self, name) for name in self._section_names}
+        # Try optional Pydantic first
+        pydantic_err = try_pydantic_validate(sections)
+        if pydantic_err:
+            raise ValidationErrorReport([f"Pydantic validation failed: {pydantic_err}"])
+        # Built-in validation
+        validate_builtin(sections)
         logger.info("Configuration validation passed")
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Export configuration as dictionary"""
-        return {
-            'security': self.security.__dict__,
-            'database': self.database.__dict__,
-            'neural_network': self.neural_network.__dict__,
-            'api': self.api.__dict__,
-        }
-    
-    def save_to_file(self, path: Union[str, Path], format: str = 'yaml'):
-        """Save configuration to file"""
-        path = Path(path)
-        config_dict = self.to_dict()
-        
+
+    # ------------------------------ Access & Introspection ---------------------------------
+
+    def get(self, path: str, default: Any = None) -> Any:
+        """
+        Retrieve value using dot notation: e.g., "security.max_requests_per_minute".
+        """
+        parts = path.split(".")
+        if len(parts) != 2:
+            raise ValueError("Path must be in 'section.key' format")
+        section, key = parts
+        if section not in self._section_names:
+            raise KeyError(f"Unknown section: {section}")
+        section_obj = getattr(self, section)
+        return getattr(section_obj, key, default)
+
+    def set(self, path: str, value: Any, provenance: str = "set") -> None:
+        parts = path.split(".")
+        if len(parts) != 2:
+            raise ValueError("Path must be in 'section.key' format")
+        section, key = parts
+        if section not in self._section_names:
+            raise KeyError(f"Unknown section: {section}")
+        section_obj = getattr(self, section)
+        if not hasattr(section_obj, key):
+            raise AttributeError(f"No such key {key} in section {section}")
+        setattr(section_obj, key, value)
+        self._provenance[(section, key)] = provenance
+
+    def explain(self) -> List[Dict[str, str]]:
+        """
+        Returns provenance info for each field.
+        """
+        report = []
+        for section_name in self._section_names:
+            section_obj = getattr(self, section_name)
+            for f in fields(section_obj):
+                prov = self._provenance.get((section_name, f.name), "default")
+                report.append({
+                    "path": f"{section_name}.{f.name}",
+                    "value": repr(getattr(section_obj, f.name)),
+                    "provenance": prov
+                })
+        return report
+
+    # ------------------------------ Export ---------------------------------
+
+    def to_dict(self, mask_sensitive: bool = False) -> Dict[str, Any]:
+        out: Dict[str, Any] = {}
+        for section_name in self._section_names:
+            section_obj = getattr(self, section_name)
+            section_dict = {}
+            for f in fields(section_obj):
+                val = getattr(section_obj, f.name)
+                if mask_sensitive:
+                    section_dict[f.name] = mask_value(f.name, val)
+                else:
+                    section_dict[f.name] = val
+            out[section_name] = section_dict
+        return out
+
+    def to_safe_dict(self) -> Dict[str, Any]:
+        return self.to_dict(mask_sensitive=True)
+
+    def to_yaml(self, mask_sensitive: bool = False) -> str:
+        return yaml.safe_dump(self.to_dict(mask_sensitive=mask_sensitive), sort_keys=False)
+
+    def to_json(self, mask_sensitive: bool = False) -> str:
+        return json.dumps(self.to_dict(mask_sensitive=mask_sensitive), indent=2)
+
+    def config_fingerprint(self) -> str:
+        digest = hashlib.sha256(self.to_json(mask_sensitive=False).encode("utf-8")).hexdigest()
+        return digest
+
+    def save_to_file(self, path: Union[str, Path], format: str = "yaml", mask_sensitive: bool = False):
+        path = Path(path).expanduser()
+        data = self.to_dict(mask_sensitive=mask_sensitive)
         try:
-            with open(path, 'w') as f:
-                if format.lower() in ['yaml', 'yml']:
-                    yaml.dump(config_dict, f, default_flow_style=False, indent=2)
-                elif format.lower() == 'json':
-                    json.dump(config_dict, f, indent=2)
+            with open(path, "w", encoding="utf-8") as f:
+                if format.lower() in ("yaml", "yml"):
+                    yaml.safe_dump(data, f, sort_keys=False)
+                elif format.lower() == "json":
+                    json.dump(data, f, indent=2)
                 else:
                     raise ValueError(f"Unsupported format: {format}")
-            
-            logger.info(f"Configuration saved to {path}")
-            
+            logger.info(f"Configuration saved to: {path}")
         except Exception as e:
             logger.error(f"Error saving configuration to {path}: {e}")
             raise
-            
+
+    # ------------------------------ Secrets ---------------------------------
+
     def get_secret(self, key: str) -> Optional[str]:
-        """Get secret value from environment or secure storage"""
-        # First try environment variable
-        env_value = os.getenv(key)
-        if env_value:
-            return env_value
-        
-        # Try HashiCorp Vault if configured
-        vault_secret = self._get_vault_secret(key)
-        if vault_secret:
-            return vault_secret
-        
-        # Try AWS Secrets Manager if configured
-        aws_secret = self._get_aws_secret(key)
-        if aws_secret:
-            return aws_secret
-        
-        logger.warning(f"Secret {key} not found in any configured source")
-        return None
-    
-    def _get_vault_secret(self, key: str) -> Optional[str]:
-        """Get secret from HashiCorp Vault"""
+        val = self._secret_manager.get(key)
+        if val is None:
+            logger.warning(f"Secret not found: {key}")
+        return val
+
+    # ------------------------------ Dynamic Reload (Optional) ---------------------------------
+
+    def enable_auto_reload(
+        self,
+        files: Union[str, Path, List[Union[str, Path]]],
+        interval: float = 1.5,
+        debounce: float = 0.5,
+        on_reload: Optional[Callable[["DuetMindConfig"], None]] = None,
+    ):
+        """
+        Simple polling-based reloader (avoids mandatory watchdog dependency).
+        If watchdog is installed, you could extend this to a FS event-based approach.
+        """
+        if isinstance(files, (str, Path)):
+            watch_files = [Path(files).resolve()]
+        else:
+            watch_files = [Path(f).resolve() for f in files]
+
+        mtimes: Dict[Path, float] = {}
+        for p in watch_files:
+            if p.exists():
+                mtimes[p] = p.stat().st_mtime
+
+        def watcher():
+            last_reload = 0.0
+            while not self._watch_stop_event.is_set():
+                for p in watch_files:
+                    if not p.exists():
+                        continue
+                    try:
+                        current_mtime = p.stat().st_mtime
+                        if p not in mtimes:
+                            mtimes[p] = current_mtime
+                        elif current_mtime > mtimes[p]:
+                            mtimes[p] = current_mtime
+                            now = time.time()
+                            if now - last_reload > debounce:
+                                logger.info(f"Detected config file change: {p}")
+                                self._reload_files(watch_files)
+                                last_reload = now
+                                if on_reload:
+                                    try:
+                                        on_reload(self)
+                                    except Exception as e:
+                                        logger.error(f"on_reload callback error: {e}")
+                    except Exception as e:
+                        logger.debug(f"Watcher error on {p}: {e}")
+                time.sleep(interval)
+
+        t = threading.Thread(target=watcher, daemon=True, name="ConfigReloader")
+        t.start()
+        self._watch_threads.append(t)
+        logger.info("Auto-reload enabled for config files")
+
+    def _reload_files(self, files: List[Path]) -> None:
+        # Reload logic: apply files again then env then overrides, then validate
+        for f in files:
+            try:
+                if f.exists():
+                    data = load_file_any(f)
+                    self._apply_dict(data, provenance=f"reload:{f.name}")
+            except Exception as e:
+                logger.error(f"Error reloading {f}: {e}")
+        # Re-apply environment & overrides to maintain precedence
+        self.load_environment()
+        if self._overrides:
+            self.load_overrides(self._overrides)
         try:
-            import hvac
-            
-            vault_url = os.getenv('VAULT_URL')
-            vault_token = os.getenv('VAULT_TOKEN')
-            vault_path = os.getenv('VAULT_SECRET_PATH', 'duetmind')
-            
-            if not vault_url or not vault_token:
-                return None
-            
-            client = hvac.Client(url=vault_url, token=vault_token)
-            if not client.is_authenticated():
-                logger.warning("Vault authentication failed")
-                return None
-            
-            response = client.secrets.kv.v2.read_secret_version(path=vault_path)
-            secrets = response['data']['data']
-            return secrets.get(key)
-            
-        except ImportError:
-            logger.debug("hvac library not installed, skipping Vault")
-            return None
+            self.validate()
         except Exception as e:
-            logger.warning(f"Failed to retrieve secret from Vault: {e}")
-            return None
-    
-    def _get_aws_secret(self, key: str) -> Optional[str]:
-        """Get secret from AWS Secrets Manager"""
-        try:
-            import boto3
-            from botocore.exceptions import ClientError
-            
-            secret_name = os.getenv('AWS_SECRET_NAME', 'duetmind/secrets')
-            region_name = os.getenv('AWS_REGION', 'us-east-1')
-            
-            session = boto3.session.Session()
-            client = session.client(
-                service_name='secretsmanager',
-                region_name=region_name
-            )
-            
-            get_secret_value_response = client.get_secret_value(SecretId=secret_name)
-            secrets = json.loads(get_secret_value_response['SecretString'])
-            return secrets.get(key)
-            
-        except ImportError:
-            logger.debug("boto3 library not installed, skipping AWS Secrets Manager")
-            return None
-        except ClientError as e:
-            logger.warning(f"Failed to retrieve secret from AWS Secrets Manager: {e}")
-            return None
-        except Exception as e:
-            logger.warning(f"Error accessing AWS Secrets Manager: {e}")
-            return None
+            logger.error(f"Validation failed after reload: {e}")
+
+    def stop_auto_reload(self):
+        self._watch_stop_event.set()
+        for t in self._watch_threads:
+            if t.is_alive():
+                t.join(timeout=2)
+
+    # ------------------------------ Schema Generation ---------------------------------
+
+    def schema(self) -> Dict[str, Any]:
+        """
+        Generate a simple schema representation for documentation or UI forms.
+        """
+        schema_out: Dict[str, Any] = {}
+        for section_name in self._section_names:
+            section_obj = getattr(self, section_name)
+            section_schema = {}
+            hints = get_type_hints(type(section_obj))
+            for f in fields(section_obj):
+                f_type = hints.get(f.name, str)
+                section_schema[f.name] = {
+                    "type": getattr(f_type, "__name__", str(f_type)),
+                    "default": f.default if f.default is not MISSING else None,
+                    "current": getattr(section_obj, f.name),
+                    "sensitive": bool(SENSITIVE_KEY_PATTERN.search(f.name)),
+                    "provenance": self._provenance.get((section_name, f.name), "default"),
+                }
+            schema_out[section_name] = section_schema
+        return schema_out
+
+    # ------------------------------ Representation ---------------------------------
+
+    def __repr__(self):
+        return f"<DuetMindConfig fingerprint={self.config_fingerprint()[:12]}>"
+
+# End of module
