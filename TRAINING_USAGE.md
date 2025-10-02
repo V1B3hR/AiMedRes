@@ -203,6 +203,37 @@ P002,65,M,16,28,Normal
 P003,78,F,8,18,Dementia
 ```
 
+## GitHub Actions Workflow Integration
+
+### Automated Training with GitHub Actions
+
+You can now run training pipelines automatically using GitHub Actions! The repository includes a workflow that allows you to trigger training runs with custom parameters directly from the GitHub UI.
+
+#### Quick Start with GitHub Actions
+
+1. Go to the **Actions** tab in your GitHub repository
+2. Select **Training Orchestrator** from the workflow list
+3. Click **Run workflow**
+4. Configure parameters as needed (all optional)
+5. Click **Run workflow** to start training
+
+#### Example Workflow Configurations
+
+**Run all training jobs with 20 epochs:**
+- Set `epochs`: `20`
+- Leave other fields as default
+
+**Run specific jobs in parallel:**
+- Set `only`: `als alzheimers diabetes`
+- Set `parallel`: `true`
+- Set `epochs`: `15`
+
+**Dry run to preview commands:**
+- Set `dry_run`: `true`
+- Set `verbose`: `true`
+
+For complete workflow documentation, see [.github/workflows/README.md](.github/workflows/README.md)
+
 ## Integration with Problem Statement
 
 This implementation directly addresses the problem statement requirements:
@@ -211,5 +242,6 @@ This implementation directly addresses the problem statement requirements:
 2. **Dataset Compatibility**: Works with mentioned Kaggle datasets ✅
 3. **High Accuracy**: Achieves 94%+ accuracy with optimized models ✅
 4. **Comprehensive Pipeline**: Full ML workflow from data to models ✅
+5. **GitHub Actions Integration**: Automated training workflows ✅
 
 The training pipeline provides a robust, production-ready solution for Alzheimer's disease classification that meets and exceeds the performance benchmarks mentioned in the problem statement datasets.

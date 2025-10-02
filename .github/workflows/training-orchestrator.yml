@@ -1,0 +1,214 @@
+name: Training Orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      epochs:
+        description: 'Global default epochs (if supported by training scripts)'
+        required: false
+        type: number
+      folds:
+        description: 'Global default folds for cross-validation (if supported)'
+        required: false
+        type: number
+      only:
+        description: 'Run only these job IDs (space-separated, e.g., "als alzheimers")'
+        required: false
+        type: string
+      exclude:
+        description: 'Exclude these job IDs (space-separated, e.g., "parkinsons diabetes")'
+        required: false
+        type: string
+      parallel:
+        description: 'Enable parallel execution of training jobs'
+        required: false
+        type: boolean
+        default: false
+      max_workers:
+        description: 'Number of workers for parallel mode (default: 4)'
+        required: false
+        type: number
+        default: 4
+      retries:
+        description: 'Number of retry attempts per job (default: 0)'
+        required: false
+        type: number
+        default: 0
+      extra_args:
+        description: 'Extra arguments to append to all jobs (e.g., "--batch-size=32 --learning-rate=3e-4")'
+        required: false
+        type: string
+      config:
+        description: 'Path to YAML config file with job definitions'
+        required: false
+        type: string
+      dry_run:
+        description: 'Show commands without executing (dry run mode)'
+        required: false
+        type: boolean
+        default: false
+      list_only:
+        description: 'List selected jobs and exit (no training execution)'
+        required: false
+        type: boolean
+        default: false
+      no_auto_discover:
+        description: 'Disable auto-discovery of training scripts'
+        required: false
+        type: boolean
+        default: false
+      discover_roots:
+        description: 'Root directories to search for training scripts (space-separated)'
+        required: false
+        type: string
+      allow_partial_success:
+        description: 'Exit successfully even if some non-optional jobs fail'
+        required: false
+        type: boolean
+        default: false
+      verbose:
+        description: 'Enable verbose console logging'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  run-training:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements-ml.txt ]; then
+          pip install -r requirements-ml.txt
+        fi
+        if [ -f requirements.txt ]; then
+          pip install -r requirements.txt
+        fi
+        if [ -f requirements-dev.txt ]; then
+          pip install -r requirements-dev.txt
+        fi
+
+    - name: Set up Kaggle credentials
+      if: env.KAGGLE_USERNAME != '' && env.KAGGLE_KEY != ''
+      env:
+        KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+        KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+      run: |
+        mkdir -p ~/.kaggle
+        echo "{\"username\":\"$KAGGLE_USERNAME\",\"key\":\"$KAGGLE_KEY\"}" > ~/.kaggle/kaggle.json
+        chmod 600 ~/.kaggle/kaggle.json
+
+    - name: Build command arguments
+      id: build_args
+      run: |
+        CMD_ARGS=""
+
+        # Add epochs if specified
+        if [ -n "${{ inputs.epochs }}" ]; then
+          CMD_ARGS="$CMD_ARGS --epochs ${{ inputs.epochs }}"
+        fi
+
+        # Add folds if specified
+        if [ -n "${{ inputs.folds }}" ]; then
+          CMD_ARGS="$CMD_ARGS --folds ${{ inputs.folds }}"
+        fi
+
+        # Add only filter if specified
+        if [ -n "${{ inputs.only }}" ]; then
+          CMD_ARGS="$CMD_ARGS --only ${{ inputs.only }}"
+        fi
+
+        # Add exclude filter if specified
+        if [ -n "${{ inputs.exclude }}" ]; then
+          CMD_ARGS="$CMD_ARGS --exclude ${{ inputs.exclude }}"
+        fi
+
+        # Add parallel mode if enabled
+        if [ "${{ inputs.parallel }}" = "true" ]; then
+          CMD_ARGS="$CMD_ARGS --parallel --max-workers ${{ inputs.max_workers }}"
+        fi
+
+        # Add retries if specified and > 0
+        if [ -n "${{ inputs.retries }}" ] && [ "${{ inputs.retries }}" -gt "0" ]; then
+          CMD_ARGS="$CMD_ARGS --retries ${{ inputs.retries }}"
+        fi
+
+        # Add config file if specified
+        if [ -n "${{ inputs.config }}" ]; then
+          CMD_ARGS="$CMD_ARGS --config ${{ inputs.config }}"
+        fi
+
+        # Add dry-run if enabled
+        if [ "${{ inputs.dry_run }}" = "true" ]; then
+          CMD_ARGS="$CMD_ARGS --dry-run"
+        fi
+
+        # Add list-only if enabled
+        if [ "${{ inputs.list_only }}" = "true" ]; then
+          CMD_ARGS="$CMD_ARGS --list"
+        fi
+
+        # Add no-auto-discover if enabled
+        if [ "${{ inputs.no_auto_discover }}" = "true" ]; then
+          CMD_ARGS="$CMD_ARGS --no-auto-discover"
+        fi
+
+        # Add discover roots if specified
+        if [ -n "${{ inputs.discover_roots }}" ]; then
+          CMD_ARGS="$CMD_ARGS --discover-root ${{ inputs.discover_roots }}"
+        fi
+
+        # Add allow-partial-success if enabled
+        if [ "${{ inputs.allow_partial_success }}" = "true" ]; then
+          CMD_ARGS="$CMD_ARGS --allow-partial-success"
+        fi
+
+        # Add verbose if enabled
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          CMD_ARGS="$CMD_ARGS --verbose"
+        fi
+
+        # Parse and add extra arguments
+        if [ -n "${{ inputs.extra_args }}" ]; then
+          # Convert space-separated args to --extra-arg format
+          for arg in ${{ inputs.extra_args }}; do
+            CMD_ARGS="$CMD_ARGS --extra-arg $arg"
+          done
+        fi
+
+        echo "args=$CMD_ARGS" >> $GITHUB_OUTPUT
+        echo "Command arguments: $CMD_ARGS"
+
+    - name: Run Training Orchestrator
+      run: |
+        python run_all_training.py ${{ steps.build_args.outputs.args }}
+
+    - name: Upload training results
+      if: always() && !inputs.list_only
+      uses: actions/upload-artifact@v4
+      with:
+        name: training-results
+        path: |
+          results/
+          logs/
+          summaries/
+        retention-days: 30
+
+    - name: Upload training summary
+      if: always() && !inputs.list_only
+      uses: actions/upload-artifact@v4
+      with:
+        name: training-summary
+        path: summaries/
+        retention-days: 90
