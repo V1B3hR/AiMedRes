@@ -1,205 +1,286 @@
-Below is a consolidated, dependency‑aware, priority‑ordered To‑Do list containing every partially done or unfinished item from roadmap (all remaining work only). Highest impact / highest leverage items are first. Finished (✅ fully done) sub‑steps are omitted unless they frame context.
+# AiMedRes Priority & Dependency Roadmap
 
-Legend: P# = Priority rank (1 = do first) Phase = Original roadmap phase Status: % (if given) or tag (🟧 in progress / ⏳ pending / blank = not started) Effort: S (≤1 day), M (multi‑day <2 weeks), L (multi‑week), XL (multi‑month) — rough estimate Type: F=Foundational, C=Clinical, R=Regulatory/Compliance, S=Scale/Infra, RnD=Research/Innovation, Gov=Governance/Safety
+This document is a consolidated, dependency‑aware, priority‑ordered execution roadmap derived from the master roadmap and current partially done / unfinished work.  
+It excludes items already fully completed (✅).  
+Use this as the single source of truth for planning, sequencing, and status updates.
 
-TOP EXECUTION SEQUENCE (Quick View)
+---
 
-Close Phase 1 foundation gaps (imports, core engine, training pipeline, documentation)
-Lock down security & compliance early (HIPAA prep overlaps engineering)
-Complete EHR connectivity + Decision Support Dashboard core features (enables pilots)
-Formalize validation (model + clinical) & start regulatory pathway
-Stand up safety & scalability (cloud, monitoring) before multi-site rollout
-Execute pilots (clinical + multi-condition expansion) with feedback loops
-Advanced memory remaining insight + specialty & visualization modules
-Long-horizon R&D (multi-modal, predictive analytics, international, rare disease, quantum)
-DETAILED PRIORITIZED TO‑DO LIST
+## 0. Legend
 
-P1 Phase 1 (Import Path Migration – 95%) Status: Near-done Effort: S Type: F
-Remaining:
+**Priority (P#):** 1 = execute first (descending importance / dependency weight)  
+**Status:** % if known, 🟧 in progress, ⏳ pending, (blank) not started  
+**Effort:** S (≤1 day), M (≤2 weeks), L (multi‑week), XL (multi‑month)  
+**Type:** F=Foundation, C=Clinical, R=Regulatory, S=Scale/Infra, Gov=Governance/Safety, RnD=Research/Innovation  
+**Dependencies:** Direct prerequisites that should be substantially complete before starting
 
-Finish updating any remaining deprecated training.* to files.training.* (repo-wide scan)
-Run final automated migration script and verify zero deprecation warnings
-Update all docs/examples & run a linter/enforcer to prevent regressions
-P2 Phase 1 (Core Engine Stabilization – 85%) Status: In progress Effort: M Type: F
-Remaining:
+---
 
-Optimize latency to consistently <100ms (profile hotspots → apply batching/caching/vectorization)
-Improve memory handling for large datasets (streaming loaders + controlled batching)
-Refine NN architecture (hyperparameter sweep + pruning/quantization plan)
-Full integration test incl. monitoring hooks, alert rules, performance SLO verification
-P3 Phase 1 (Training Pipeline Enhancement – 60%) Status: In progress Effort: M-L Type: F
-Remaining:
+## 1. High-Level Execution Flow
 
-Optimize Alzheimer’s data preprocessing (I/O parallelism, normalization consistency)
-Finish model validation framework (unit + integration tests; define acceptance thresholds)
-Implement automated cross-validation & metric aggregation (CI integration)
-Document pipeline (data flows, versioning strategy, run examples)
-P4 Phase 1 (Documentation Overhaul) Status: Not started Effort: M Type: Gov
-Remaining:
+1. Close foundational gaps (P1–P4)  
+2. Begin compliance/security early (P5) in parallel with late foundation hardening  
+3. Build and secure clinical data ingress + decision support (P6–P7)  
+4. Broaden clinical & validation capabilities (P8) feeding regulatory pathway (P9)  
+5. Stand up scalable & safe infrastructure (P10–P11) before multi-site rollout (P12)  
+6. Expand specialty & analytics layers (P13–P15)  
+7. Long-horizon research & global expansion (P16–P20)
 
-Audit docs for stale paths & outdated workflows
-Update for new imports + pipeline changes
-Add deployment & usage scenario examples (clinical + dev)
-Conduct final editorial review & publish (establish doc versioning)
-P5 Phase 2 (HIPAA Compliance Implementation) Status: Not started Effort: L Type: R
-Remaining:
+---
 
-Implement encryption in transit + at rest (incl. key rotation policy)
-Role-based access controls + audit logging (tamper-evident)
-Privacy Impact Assessment (map data flows, risk register)
-Penetration test + remediation report; formal compliance documentation package
-P6 Phase 2 (EHR Connectivity – 🟧) Status: In progress Effort: M-L Type: C
-Remaining:
+## 2. Priority Task Matrix
 
-Real-time data ingestion protocol validation (throughput, idempotency)
-API security hardening (OAuth2/SMART on FHIR scopes, threat modeling)
-Launch pilot hospital ingestion (synthetic → staged real data), capture feedback
-P7 Phase 2 (Clinical Decision Support Dashboard – 🟧) Status: In progress Effort: M-L Type: C
-Remaining:
+| P# | Work Item | Phase | Status | Effort | Type | Core Remaining Outcome | Dependencies |
+|----|-----------|-------|--------|--------|------|------------------------|--------------|
+| P1 | Import Path Migration (finalization) | 1 | ~95% | S | F | Zero deprecated `training.*` imports & clean docs | — |
+| P2 | Core Engine Stabilization | 1 | 85% | M | F | <100ms p95 latency; stable memory; integrated monitoring | P1 |
+| P3 | Training Pipeline Enhancement | 1 | 60% | M–L | F | Automated CV + validation framework + documented pipeline | P1,P2 (partial parallel OK) |
+| P4 | Documentation Overhaul | 1 | ⏳ | M | Gov | Current, versioned, deployment & usage docs | P1–P3 (content inputs) |
+| P5 | HIPAA Compliance Implementation | 2 | ⏳ | L | R | Encryption, RBAC, audit, PIA, pen test pass | P2 (stable core), start ≤with P3 |
+| P6 | EHR Connectivity | 2 | 🟧 | M–L | C | Real-time ingestion + security-hardened APIs + pilot ingest | P2,P5 (security aspects) |
+| P7 | Clinical Decision Support Dashboard | 2 | 🟧 | M–L | C | Real-time monitor, risk visuals, workflow pilot | P2,P3 (metrics), P6 (data feeds) |
+| P8A | Multi-Condition Support Expansion | 2 | ⏳ | L | C | Additional condition models + interaction validation | P3 |
+| P8B | Clinical Pilot Programs | 2 | ⏳ | L–XL | C | 1000+ case validation + UX refinement | P6,P7,P8A |
+| P9 | FDA Regulatory Pathway Planning | 2 | ⏳ | L | R | Classification, pre-sub package, QMS skeleton | P3,P5,P6,P7 (evidence & compliance) |
+| P10 | Scalable Cloud Architecture | 3 | ⏳ | L | S | Multi-region IaC, autoscale, DR, 99.9% uptime SLO | P2,P3 |
+| P11 | Advanced AI Safety Monitoring | 3 | ⏳ | L | Gov/Safety | Bias, adversarial defenses, confidence scoring, oversight | P2,P3; align before P12 |
+| P12 | Multi-Hospital Network Launch | 3 | ⏳ | XL | C/S | 25+ institutions, 10k+ capacity, outcome tracking | P5,P6,P7,P10,P11 |
+| P13 | Specialty Clinical Modules | 3 | ⏳ | L | C | Pediatric, geriatric, ED, telemedicine integration | P8B,P12 (data breadth) |
+| P14 | Advanced Memory Consolidation (population insights) | 3 | 🟧 | M | F/C | Cohort-level analytics extraction | P3 (data consistency) |
+| P15 | 3D Brain Visualization Platform | 3 | ⏳ | L | RnD/UI | Spatial mapping, progression & treatment simulation | P14, P3 |
+| P16 | Multi-Modal AI Integration | 4 | ⏳ | XL | RnD | Imaging, genomics, biomarkers, voice fusion | P3,P14 |
+| P17 | Predictive Healthcare Analytics | 4 | ⏳ | XL | RnD | Trend forecasting, prevention, resource optimization | P3,P14 |
+| P18 | International Healthcare Systems | 4 | ⏳ | XL | C/R | Localization, regional adaptation, global collaboration | P12 |
+| P19 | Rare Disease Research Extension | 4 | ⏳ | L–XL | RnD | Orphan detection, federated collab, advocacy integration | P8A,P16 |
+| P20 | Quantum-Enhanced Computing | 4 | ⏳ | XL | RnD | Hybrid quantum ML prototypes & performance ROI | P16 (optional), strategic |
 
-Integrate real-time patient monitoring widgets (stream pipeline + UI updates)
-Add risk stratification visualizations (calibration, grouping, thresholds)
-Pilot workflow integration (shadow mode trials, clinician feedback loop)
-P8 Phase 2 (Model & Clinical Validation Enablers) Combined thread
-A. Multi-Condition Support Expansion (not started) Type: C Effort: L
+---
 
-Stroke detection/assessment algorithms (feature engineering + evaluation)
-Mental health / neuro spectrum modeling expansion
-Cross-condition interaction analysis validation
-Clinical review & sign-off panel formation
-B. Clinical Pilot Programs (not started) Type: C Effort: L-XL
-Secure institutional partnerships (MOUs / data governance agreements)
-Run 1000+ case validation (establish statistical power plan)
-UX/workflow optimization post-pilot feedback
-Finalize user experience for broader roll-out
-P9 Phase 2 (FDA Regulatory Pathway Planning) Status: Not started Effort: L Type: R
-Remaining:
+## 3. Detailed Remaining Work Items
 
-Determine device/software classification & regulatory strategy memo
-Prepare pre-submission (Q-sub) briefing package & schedule meeting
-Compile clinical evidence dossier structure (gap analysis)
-Develop Quality Management System (QMS) documentation skeleton (SOPs)
-P10 Phase 3 (Scalable Cloud Architecture) Status: Not started Effort: L Type: S
-Remaining:
+### P1. Import Path Migration
+- Repo-wide scan for deprecated `training.*` patterns  
+- Execute & verify automated migration script  
+- Update examples / notebooks / READMEs  
+- Add lint rule or CI guard to block legacy imports  
 
-Multi-region IaC scripts (infra modules + environment parity tests)
-Auto-scaling (load, latency, memory triggers) + capacity test harness
-Observability for 99.9% uptime (SLO/SLI definitions, error budget policy)
-Disaster recovery (RPO/RTO tests, backup/restore drills)
-P11 Phase 3 (Advanced AI Safety Monitoring) Status: Not started Effort: L Type: Gov/Safety
-Remaining:
+### P2. Core Engine Stabilization
+- Latency profiling (traces, flame graphs) → optimize hotspots  
+- Memory streaming & batching for large datasets  
+- Architecture refinements (hyperparameter sweep, pruning/quantization plan)  
+- Integration test: monitoring hooks, alert rules, performance SLOs  
 
-Real-time bias detection & correction pipeline
-Adversarial/robustness defense measures (input sanitization, anomaly detection)
-Decision confidence scoring integration (calibration curves)
-Human oversight protocols (escalation matrix, override audit trail)
-P12 Phase 3 (Multi-Hospital Network Launch) Status: Not started Effort: XL Type: C/S
-Remaining:
+### P3. Training Pipeline Enhancement
+- Alzheimer’s data preprocessing optimization (I/O parallelism, normalization reproducibility)  
+- Model validation framework (unit/integration tests, acceptance thresholds)  
+- Automated cross-validation orchestration in CI (artifact versioning)  
+- Documentation: data flow diagrams, reproducibility spec, usage samples  
 
-Finalize ≥25 institutional agreements
-Scale infra to 10k+ concurrent patient cases (load + failover tests)
-Integrate with regional health networks (interface compliance)
-Outcome tracking dashboards (KPIs, longitudinal metrics)
-P13 Phase 3 (Specialty Clinical Modules) Status: Not started Effort: L Type: C
-Remaining:
+### P4. Documentation Overhaul
+- Audit outdated sections (imports, pipeline steps)  
+- Update APIs, usage scenarios (dev + clinical)  
+- Add deployment playbooks & troubleshooting  
+- Editorial review + establish version tags (e.g., `docs-v1.x`)  
 
-Pediatric neurology adaptation (age-specific norms)
-Geriatric care specialization (polypharmacy, comorbid profiles)
-Emergency department workflow integration (triage latency)
-Telemedicine platform connectors (session context synchronization)
-P14 Phase 3 (Advanced Memory Consolidation – partial) Status: 🟧 Effort: M Type: F/C
-Remaining:
+### P5. HIPAA Compliance
+- Encryption in transit (TLS policy) / at rest (KMS + rotation)  
+- Role-based access control + fine-grained audit logs  
+- Privacy Impact Assessment (data inventory, risk matrix)  
+- Penetration test & remediation; compile compliance dossier  
 
-Extract population health insights module (aggregate cohort analytics)
-P15 Phase 3 (3D Brain Visualization Platform) Status: Not started Effort: L Type: RnD/UI
-Remaining:
+### P6. EHR Connectivity
+- Real-time ingestion protocol stress tests (throughput, ordering, idempotency)  
+- API security: OAuth2 / SMART on FHIR scopes, threat model review  
+- Pilot hospital ingestion (synthetic → de-identified real) feedback loop  
 
-Neurological mapping tools (data model + spatial rendering)
-Disease progression visualization timelines
-Treatment impact simulation layer (scenario modeling)
-Educational/training interaction modules
-P16 Phase 4 (Multi-Modal AI Integration) Status: Not started Effort: XL Type: RnD
-Remaining:
+### P7. Clinical Decision Support Dashboard
+- Real-time monitoring components (websocket/stream updates)  
+- Risk stratification visualizations (calibration + uncertainty)  
+- Workflow integration pilot (shadow mode + clinician feedback capture)  
 
-Imaging analysis integration (DICOM pipeline, model fusion)
-Genetic data correlation (variant normalization, feature embedding)
-Biomarker pattern recognition modules
-Voice/speech cognitive assessment ingestion & inference
-P17 Phase 4 (Predictive Healthcare Analytics) Status: Not started Effort: XL Type: RnD
-Remaining:
+### P8A. Multi-Condition Support
+- Stroke detection models (feature extraction, evaluation)  
+- Mental health / neuro spectrum modeling enhancement  
+- Cross-condition interaction modeling (co-morbidity graph, validation)  
+- Clinical review & sign-off process (panel charter)  
 
-Population-level disease trend forecasting models
-Personalized prevention strategy algorithms (risk scoring)
-Treatment response analytics (temporal modeling)
-Resource allocation optimization engine
-P18 Phase 4 (International Healthcare Systems) Status: Not started Effort: XL Type: C/R
-Remaining:
+### P8B. Clinical Pilot Programs
+- Institutional partnership agreements & governance  
+- 1000+ case validation study design (power analysis, metrics)  
+- UX and workflow optimization from pilot data  
+- Finalize production-ready clinical UI adaptations  
 
-Multi-language clinical UI + terminology localization
-Regional clinical practice adaptation (guideline mapping)
-Deployment programs for developing regions (offline/low-bandwidth modes)
-Global health data collaboration network framework (governance agreements)
-P19 Phase 4 (Rare Disease Research Extension) Status: Not started Effort: L-XL Type: RnD
-Remaining:
+### P9. FDA Pathway Planning
+- Device/software classification memo (risk categorization)  
+- Pre-submission (Q-sub) briefing documentation & meeting scheduling  
+- Clinical evidence dossier structure & gap analysis  
+- QMS doc skeleton (SOPs: data mgmt, model change control, post-market surveillance)  
 
-Orphan disease detection algorithms (few-shot/transfer methods)
-Cross-institution collaboration features (secure federated learning)
-Patient advocacy partnership program
-Precision medicine analytics integration (variant + phenotype linking)
-P20 Phase 4 (Quantum-Enhanced Computing) Status: Not started Effort: XL (Exploratory) Type: RnD
-Remaining:
+### P10. Scalable Cloud Architecture
+- Multi-region Infrastructure as Code (modules, parity tests)  
+- Autoscaling thresholds (CPU, latency, queue depth) + load tests  
+- Observability SLO/SLI definitions (error budget policy)  
+- Disaster recovery drills (RPO/RTO measurement)  
 
-Quantum ML prototype integration (hybrid workflow)
-Molecular structure simulation pipeline
-Advanced optimization algorithms (QAOA / variational circuits)
-Performance benchmarking & ROI assessment
-DEPENDENCY / SEQUENCING NOTES
+### P11. Advanced AI Safety Monitoring
+- Bias detection & correction pipeline (drift metrics, fairness dashboards)  
+- Adversarial robustness (input sanitization, anomaly detectors)  
+- Confidence / calibration scoring instrumentation  
+- Human oversight & override audit workflow  
 
-Foundational First: P1–P4 remove tech debt and stabilize baseline before scaling performance & compliance steps rely on consistent architecture.
-Security & Compliance Early: P5 + partial P6 security tasks prevent costly retrofits later.
-Clinical Readiness: P6–P8 feed evidence required for P9 FDA pathway.
-Reg + Safety Pre-Scale: P9 and P11 precede large-scale multi-hospital (P12).
-Scale Before Breadth: P10 (infra) must precede multi-hospital & specialty expansions (P12–P13).
-Insight Layer: Memory population insights (P14) can run in parallel with P10 once data pipelines stable.
-Visualization & Modules: P15 after stable inference + memory layers for richer data sources.
-Long-Horizon R&D: P16–P20 positioned to not block operational go-live.
+### P12. Multi-Hospital Network Launch
+- Partnership expansion (≥25 institutions)  
+- Scale processing (10k+ concurrent cases: load/failover tests)  
+- Regional network integration interfaces  
+- Outcome tracking & reporting dashboards (clinical KPIs)  
 
-SUGGESTED NEXT 4-WEEK EXECUTION SLICE (if you want a sprint plan)
+### P13. Specialty Clinical Modules
+- Pediatric adaptation (age normative baselines)  
+- Geriatric care (polypharmacy risk modeling)  
+- Emergency department triage integration (low-latency heuristics)  
+- Telemedicine connector APIs (session context sync)  
 
-Week 1:
+### P14. Advanced Memory Consolidation (Remaining)
+- Population health insights extraction (cohort aggregation, strat analytics)  
 
-Finish P1 (imports) & accelerate P2 latency profiling
-Kick off P3 validation framework skeleton
-Begin HIPAA encryption + key management (P5)
-Week 2:
+### P15. 3D Brain Visualization
+- Neurological mapping tools (3D anatomical overlays)  
+- Disease progression visualization (temporal layers)  
+- Treatment impact simulation (scenario modeling)  
+- Educational/training interactive modules  
 
-Complete P2 performance + memory improvements
-Advance P3 cross-validation automation
-EHR ingestion protocol tests (P6)
-Draft doc audit checklist (P4)
-Week 3:
+### P16. Multi-Modal AI Integration
+- Imaging ingestion & fusion (DICOM pipeline)  
+- Genetic/variant correlation embedding pipeline  
+- Biomarker pattern recognition modules  
+- Voice/speech cognitive assessment integration  
 
-Wrap P3 remaining tasks
-Implement API security hardening (P6)
-Start risk stratification charts (P7)
-Begin HIPAA audit logging (P5)
-Week 4:
+### P17. Predictive Healthcare Analytics
+- Population disease trend forecasting  
+- Personalized prevention strategy engine  
+- Treatment response temporal analytics  
+- Resource allocation optimization algorithms  
 
-Complete Documentation Overhaul (P4)
-Pilot hospital ingestion test (P6)
-Dashboard workflow integration tests (P7)
-Draft regulatory classification memo (P9 start)
-RISK HOTSPOTS TO WATCH
+### P18. International Healthcare Systems
+- Multilingual interface & terminology mapping  
+- Regional clinical guideline adaptation engine  
+- Low-bandwidth / constrained deployment modes  
+- Global data collaboration governance framework  
 
-Latency & memory (P2) slipping delays clinical pilot timing.
-Delayed HIPAA (P5) blocks real production data ingestion.
-Validation framework (P3) needed before credible FDA evidence (P9).
-Security & bias monitoring (P11) must exist before multi-institution scale (P12).
-METRIC CHECKPOINTS (Define Now)
+### P19. Rare Disease Research Extension
+- Orphan disease detection (few-shot/transfer methods)  
+- Federated learning collaboration features  
+- Patient advocacy partnership program  
+- Precision medicine analytics integration (variant+phenotype)  
 
-Core engine: p95 latency <100ms; memory peak <X GB per N records.
-Training pipeline: Automated CV run time; reproducibility hash; model acceptance threshold (e.g., AUC ≥ X).
-EHR ingestion: Throughput msgs/sec; error rate <0.1%; end-to-end latency <Y sec.
-Compliance: Encryption coverage 100%; audit log completeness 100%; penetration test critical findings = 0.
-Dashboard: User task completion time; clinician satisfaction score; interpretability clarity rating.
-Safety: Bias drift delta thresholds; adversarial detection true positive rate; override frequency.
+### P20. Quantum-Enhanced Computing
+- Hybrid quantum ML prototype(s)  
+- Molecular structure simulation workflow  
+- Advanced quantum optimization (QAOA/variational circuits)  
+- Benchmark + ROI evaluation & decision gate  
+
+---
+
+## 4. Dependencies Graph (Narrative)
+
+- Foundational (P1–P3) → Documentation (P4) & Compliance (P5)  
+- Compliance (P5) & Engine stability (P2) underpin EHR (P6) & Dashboard (P7)  
+- Clinical breadth (P8A) + Pilots (P8B) supply evidence for FDA planning (P9)  
+- Scale & Safety (P10,P11) must be in place before wide rollout (P12)  
+- Specialty modules (P13) and Memory insights (P14) enrich platform for advanced visualization (P15) and multi-modal (P16)  
+- Predictive analytics (P17) benefits from multi-modal (P16) and memory insights (P14)  
+- International expansion (P18) follows multi-hospital maturity (P12)  
+- Rare disease (P19) leverages multi-modal (P16) + condition expansion (P8A)  
+- Quantum exploration (P20) depends on stabilized multi-modal data foundations (P16)  
+
+---
+
+## 5. Next 4-Week Suggested Slice
+
+| Week | Focus | Key Deliverables |
+|------|-------|------------------|
+| 1 | P1 close, P2 profiling start, P3 framework scaffold, P5 encryption init | Migration script done; latency hotspots mapped; validation skeleton; encryption baseline |
+| 2 | P2 optimization, P3 CV automation, P6 ingestion tests, P4 audit start | p95 latency improved; CV job CI green; ingestion throughput test; doc gap list |
+| 3 | Finish P2 memory tuning, advance P3 & P6 security, start P7 visuals, P5 audit logging | Memory stable; API security hardened; risk charts prototype; audit logs flowing |
+| 4 | Wrap P3, publish Docs (P4), pilot ingestion (P6), workflow pilot (P7), start P9 classification memo | Pipeline docs live; pilot data round 1; regulatory classification draft |
+
+---
+
+## 6. Metrics (Define & Track)
+
+| Domain | Metric | Target / Definition |
+|--------|--------|---------------------|
+| Engine | p95 latency | <100 ms per clinical query |
+| Engine | Peak memory use | Within budget for N-record batch (define numeric) |
+| Training | Reproducibility hash | Deterministic across ≥3 runs |
+| Training | CV automation | Pass rate 100% / run time threshold |
+| EHR | Ingestion throughput | ≥ X msgs/sec with <0.1% error |
+| EHR | End-to-end latency | < Y seconds ingestion→dashboard |
+| Compliance | Encryption coverage | 100% sensitive data & transport |
+| Compliance | Audit log completeness | 100% privileged actions recorded |
+| Dashboard | Clinician satisfaction | ≥ Baseline score (survey-defined) |
+| Safety | Bias drift | Δ fairness metrics within thresholds |
+| Safety | Adversarial detection TPR | ≥ Defined % (e.g., 90%) |
+| Safety | Override frequency | <Z% of total decisions |
+| Pilots | Validation cases processed | ≥1,000 with statistical power |
+| Scale | Uptime | 99.9% monthly SLO |
+| Scale | DR RPO / RTO | RPO ≤ X min / RTO ≤ Y min |
+
+(Replace X/Y/Z with concrete numeric commitments during planning.)
+
+---
+
+## 7. Risk Hotspots & Mitigations
+
+| Risk | Impact | Early Signal | Mitigation |
+|------|--------|--------------|------------|
+| Latency/memory tuning delay (P2) | Slips clinical pilots | Slow improvement trend | Weekly perf review & allocate specialist |
+| Incomplete validation (P3) | Blocks FDA & credibility | Missing test coverage | Gate releases via CI quality metrics |
+| HIPAA delays (P5) | Blocks real patient data | Encryption tasks slip | Parallelize security tasks & compliance owner |
+| Security gaps before scale (P10,P11) | Regulatory & reputational risk | Open high severity issues | Pre-scale security audit checkpoint |
+| Insufficient pilot evidence (P8B) | Weak regulatory dossier | Low case accrual rate | Expand pilot sites; automate ingestion |
+| Documentation lag (P4) | Onboarding friction | Repeated internal Qs | Living doc tracking + doc PR SLA |
+
+---
+
+## 8. Governance & Update Cadence
+
+- Weekly: Progress sync (P1–P7 focus until complete)  
+- Bi-weekly: Risk review & metric deltas  
+- Monthly: Re-prioritize backlog (adjust P# if dependencies shift)  
+- Quarterly: Strategic review (consider advancing P16+ RnD items)  
+
+---
+
+## 9. Status Update Template (Reusable)
+
+```
+[Date]
+Summary: (1–2 sentence)
+Completed: (bullets referencing P#)
+In Progress: (P# + brief)
+Blocked/Risks: (P# + reason + mitigation)
+Metrics Snapshot: (selected KPIs)
+Next Period Goals: (top 3–5)
+```
+
+---
+
+## 10. Change Control
+
+- Any reordering of P# requires justification referencing dependency, risk, or opportunity gain.  
+- Approved changes logged in CHANGELOG (roadmap section) with date + rationale.  
+
+---
+
+## 11. Quick Reference (Top Current Focus)
+
+1. P1 – Finish import migration  
+2. P2 – Latency & memory stabilization  
+3. P3 – Validation & cross-validation automation  
+4. P5 – Start HIPAA security pillars  
+5. P6/P7 – Production-ready clinical data & dashboard pathways  
+
+---
+
+*End of prioritized roadmap. Keep this file updated as a living artifact. For modifications, open a PR referencing the affected P# items and include updated metrics where possible.*
