@@ -1,4 +1,4 @@
-Below is a consolidated, dependency‑aware, priority‑ordered To‑Do list containing every partially done or unfinished item from your roadmap (all remaining work only). Highest impact / highest leverage items are first. Finished (✅ fully done) sub‑steps are omitted unless they frame context.
+Below is a consolidated, dependency‑aware, priority‑ordered To‑Do list containing every partially done or unfinished item from roadmap (all remaining work only). Highest impact / highest leverage items are first. Finished (✅ fully done) sub‑steps are omitted unless they frame context.
 
 Legend: P# = Priority rank (1 = do first) Phase = Original roadmap phase Status: % (if given) or tag (🟧 in progress / ⏳ pending / blank = not started) Effort: S (≤1 day), M (multi‑day <2 weeks), L (multi‑week), XL (multi‑month) — rough estimate Type: F=Foundational, C=Clinical, R=Regulatory/Compliance, S=Scale/Infra, RnD=Research/Innovation, Gov=Governance/Safety
 
