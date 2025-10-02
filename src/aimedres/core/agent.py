@@ -80,10 +80,10 @@ class DuetMindAgent:
         # Neural network brain
         neural_config = neural_config or {}
         self.brain = AdaptiveNeuralNetwork(
-            input_size=neural_config.get('input_size', 32),
-            hidden_layers=neural_config.get('hidden_layers', [64, 32, 16]),
-            output_size=neural_config.get('output_size', 2),
-            learning_rate=neural_config.get('learning_rate', 0.001),
+            input_size=neural_config.get('input_size', 64),
+            hidden_layers=neural_config.get('hidden_layers', [4096, 2048, 1024, 512, 256, 128, 512, 128]),
+            output_size=neural_config.get('output_size', 4),
+            learning_rate=neural_config.get('learning_rate', 0.0007),
             enable_safety_monitoring=enable_safety_monitoring
         )
         
@@ -98,14 +98,17 @@ class DuetMindAgent:
         self.message_queue: List[Dict[str, Any]] = []
         self.communication_style = {
             "directness": 0.7,
-            "formality": 0.3,
+            "formality": 0.4,
             "expressiveness": 0.6
+            "assertiveness": 0.7
         }
         
         # Memory and learning
         self.memory: List[Dict[str, Any]] = []
         self.working_memory: List[Dict[str, Any]] = []
-        self.long_term_memory: Dict[str, Any] = {}
+        self.long_term_memory = {"topics": {},  # maps topic → list of (memory, timestamp, confidence)
+}
+
         
         # Performance tracking
         self.total_interactions = 0
