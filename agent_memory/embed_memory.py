@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agent Memory Store for DuetMind Adaptive (production-ready).
+Agent Memory Store  (production-ready). Previous duetmind adaptive.
 
 Key features:
 - True semantic search using pgvector cosine distance
