@@ -1,111 +1,114 @@
-#!/usr/bin/env python3
 """
-Agent Memory Store  (production-ready). Previous duetmind adaptive.
+Centralized Agent Memory Store with Advanced Filtering and TensorFlow GPU Embedding
 
-Key features:
-- True semantic search using pgvector cosine distance
-- SQLAlchemy ORM with typed models and transactional sessions
-- Robust config (env + YAML), safe logging, and error handling
-- Memory associations with enum-constrained types
-- Expiration handling, access metrics, and importance thresholding
+Features:
+- Centralized filtering: All memory retrieval and association logic flows through a single, highly-configurable filter.
+- Filtering fields: importance, certainty, memory type, safety, security, ethics.
+- TensorFlow-based embedding with GPU support (for production, use a real TF model; here, a placeholder is provided).
+- Extensible for integration with safety, security, and ethics modules.
+- SQLAlchemy ORM, pgvector support, robust config, logging.
 
 Requirements:
 - PostgreSQL with pgvector extension
-- See migrations/001_init.sql to set up schema and indexes
+- TensorFlow (with GPU support enabled)
 """
 
-from __future__ import annotations
-
-import json
-import logging
 import os
 import uuid
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-import yaml
-from sentence_transformers import SentenceTransformer
+import numpy as np
+import tensorflow as tf
 from sqlalchemy import (
-    JSON,
-    TIMESTAMP,
-    CheckConstraint,
-    Enum as PgEnum,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-    create_engine,
-    func,
-    text,
+    create_engine, text, func,
+    String, Integer, Float, Text, JSON, TIMESTAMP, ForeignKey,
+    Enum as PgEnum, CheckConstraint, UniqueConstraint
 )
-from sqlalchemy.dialects.postgresql import PGVECTOR
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.engine import Engine
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 try:
-    # Optional but recommended: leverage SQLAlchemy pgvector integration
-    # pip install pgvector
     from pgvector.sqlalchemy import Vector as PGVector
     PGVECTOR_AVAILABLE = True
 except Exception:
     PGVECTOR_AVAILABLE = False
-
 
 # ------------------------------------------------------------------------------
 # Logging
 # ------------------------------------------------------------------------------
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-logger = logging.getLogger("AgentMemoryStore")
-
+logger = logging.getLogger("CentralizedAgentMemoryStore")
 
 # ------------------------------------------------------------------------------
 # Config
 # ------------------------------------------------------------------------------
-DEFAULT_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
-DEFAULT_DB_URL = os.getenv("DATABASE_URL", "postgresql://duetmind:duetmind_secret@localhost:5432/duetmind")
-
-# If you're using all-MiniLM-L6-v2, dim is 384. Change if you switch models.
-# For production, keep a consistent model/dimension unless you version tables.
-EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "384"))
-
-
-def load_params(params_file: str = "params.yaml") -> dict:
-    if os.path.exists(params_file):
-        with open(params_file, "r") as f:
-            return yaml.safe_load(f) or {}
-    return {}
-
+DEFAULT_MODEL_DIM = int(os.getenv("EMBEDDING_DIM", "384"))
+DEFAULT_DB_URL = os.getenv("DATABASE_URL", "postgresql://user:secret@localhost:5432/agentmem")
 
 # ------------------------------------------------------------------------------
-# ORM Models
+# Enums and Data Classes
 # ------------------------------------------------------------------------------
-class Base(DeclarativeBase):
-    pass
-
 
 class MemoryType(str, Enum):
     reasoning = "reasoning"
     experience = "experience"
     knowledge = "knowledge"
-
+    observation = "observation"
+    fact = "fact"
+    goal = "goal"
+    plan = "plan"
+    belief = "belief"
+    instruction = "instruction"
+    emotion = "emotion"
+    hallucination = "hallucination"
 
 class AssociationType(str, Enum):
     similar = "similar"
     causal = "causal"
     temporal = "temporal"
-    related = "related"  # keep for compatibility with demo
+    related = "related"
+    contradicts = "contradicts"
+    explains = "explains"
+    supports = "supports"
+    depends_on = "depends_on"
+    precedes = "precedes"
+    follows = "follows"
+    derived_from = "derived_from"
+    generalizes = "generalizes"
+    specializes = "specializes"
+    summary_of = "summary_of"
+    alternative = "alternative"
+    correction = "correction"
 
+@dataclass
+class RetrievedMemory:
+    id: int
+    content: str
+    memory_type: MemoryType
+    importance_score: float
+    certainty: float
+    safety: float
+    security: float
+    ethics: float
+    metadata: Dict[str, Any]
+    created_at: datetime
+    access_count: int
+    last_accessed: Optional[datetime]
+    similarity: Optional[float]
+
+# ------------------------------------------------------------------------------
+# SQLAlchemy Models
+# ------------------------------------------------------------------------------
+class Base(DeclarativeBase):
+    pass
 
 class AgentSession(Base):
     __tablename__ = "agent_sessions"
-
     id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True)
     agent_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     agent_version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
@@ -114,37 +117,36 @@ class AgentSession(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     ended_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
-
 class AgentMemory(Base):
     __tablename__ = "agent_memory"
-
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     session_id: Mapped[str] = mapped_column(UUID(as_uuid=False), ForeignKey("agent_sessions.id", ondelete="CASCADE"), index=True, nullable=False)
     memory_type: Mapped[MemoryType] = mapped_column(PgEnum(MemoryType, name="memory_type", create_type=False), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     importance_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.5)
+    certainty: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    safety: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    security: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    ethics: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
     metadata_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     expires_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     access_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_accessed: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
-
-    # Embedding column (pgvector). If pgvector/sqlalchemy isn't installed, we fallback to a Text column,
-    # but note: semantic search won't work without pgvector.
     if PGVECTOR_AVAILABLE:
-        embedding: Mapped[Any] = mapped_column(PGVector(EMBEDDING_DIM), nullable=False)
+        embedding: Mapped[Any] = mapped_column(PGVector(DEFAULT_MODEL_DIM), nullable=False)
     else:
-        # Fallback storage only (no semantic search). Strongly recommend installing pgvector.
         embedding: Mapped[str] = mapped_column(Text, nullable=False)
-
     __table_args__ = (
         CheckConstraint("importance_score >= 0.0 AND importance_score <= 1.0", name="importance_between_0_and_1"),
+        CheckConstraint("certainty >= 0.0 AND certainty <= 1.0", name="certainty_between_0_and_1"),
+        CheckConstraint("safety >= 0.0 AND safety <= 1.0", name="safety_between_0_and_1"),
+        CheckConstraint("security >= 0.0 AND security <= 1.0", name="security_between_0_and_1"),
+        CheckConstraint("ethics >= 0.0 AND ethics <= 1.0", name="ethics_between_0_and_1"),
     )
-
 
 class MemoryAssociation(Base):
     __tablename__ = "memory_associations"
-
     source_memory_id: Mapped[int] = mapped_column(ForeignKey("agent_memory.id", ondelete="CASCADE"), primary_key=True)
     target_memory_id: Mapped[int] = mapped_column(ForeignKey("agent_memory.id", ondelete="CASCADE"), primary_key=True)
     association_type: Mapped[AssociationType] = mapped_column(
@@ -152,51 +154,68 @@ class MemoryAssociation(Base):
     )
     strength: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-
     __table_args__ = (
         CheckConstraint("strength >= 0.0 AND strength <= 1.0", name="association_strength_between_0_and_1"),
         UniqueConstraint("source_memory_id", "target_memory_id", "association_type", name="uq_memory_association"),
     )
 
+# ------------------------------------------------------------------------------
+# TensorFlow Embedding Utility (replace with production model as needed)
+# ------------------------------------------------------------------------------
+class TensorFlowEmbedder:
+    def __init__(self, dim=DEFAULT_MODEL_DIM):
+        self.dim = dim
+        # For demo: randomly init a "model" kernel
+        self.kernel = tf.Variable(tf.random.normal([dim, 256]), trainable=False)
+        logger.info("Initialized TensorFlowEmbedder (placeholder).")
+
+    def encode(self, text: str) -> np.ndarray:
+        """Simulated embedding (replace with real TF model in production)."""
+        x = tf.constant([float(ord(c)) for c in text[:256]])
+        x = tf.pad(x, [[0, max(0, 256 - tf.shape(x)[0])]])
+        emb = tf.linalg.matvec(self.kernel, tf.math.tanh(x))
+        norm = tf.norm(emb)
+        emb = emb / (norm + 1e-8)
+        return emb.numpy()
 
 # ------------------------------------------------------------------------------
-# DTOs
+# Centralized Filter Function
 # ------------------------------------------------------------------------------
-@dataclass
-class RetrievedMemory:
-    id: int
-    content: str
-    memory_type: MemoryType
-    importance_score: float
-    metadata: Dict[str, Any]
-    created_at: datetime
-    access_count: int
-    last_accessed: Optional[datetime]
-    similarity: Optional[float]  # 0..1 (None if pgvector unavailable)
+def centralized_memory_filter(
+    memories: List[Dict[str, Any]],
+    min_importance=0.5,
+    min_certainty=0.8,
+    allowed_types=None,
+    min_safety=0.7,
+    min_security=0.7,
+    min_ethics=0.7
+) -> List[Dict[str, Any]]:
+    """Apply all filtering rules centrally."""
+    return [
+        m for m in memories
+        if m['importance_score'] >= min_importance
+        and m['certainty'] >= min_certainty
+        and (allowed_types is None or m['memory_type'] in allowed_types)
+        and m['safety'] >= min_safety
+        and m['security'] >= min_security
+        and m['ethics'] >= min_ethics
+    ]
 
-
 # ------------------------------------------------------------------------------
-# AgentMemoryStore
+# Centralized Memory Store Class
 # ------------------------------------------------------------------------------
-class AgentMemoryStore:
+class CentralizedAgentMemoryStore:
     def __init__(
         self,
         db_connection_string: Optional[str] = None,
-        embedding_model: str = DEFAULT_MODEL,
+        embedding_dim: int = DEFAULT_MODEL_DIM,
         echo_sql: bool = False,
         pool_size: int = 5,
         max_overflow: int = 10,
+        tf_embedder: Optional[TensorFlowEmbedder] = None
     ):
-        """
-        Args:
-            db_connection_string: Postgres URL. Defaults to DATABASE_URL env or YAML.
-            embedding_model: Sentence Transformer model name.
-            echo_sql: Log SQL statements.
-            pool_size: SQLAlchemy pool size.
-            max_overflow: SQLAlchemy overflow size.
-        """
-        self.db_url = db_connection_string or self._load_db_url_from_yaml() or DEFAULT_DB_URL
-        self.engine: Engine = create_engine(
+        self.db_url = db_connection_string or DEFAULT_DB_URL
+        self.engine = create_engine(
             self.db_url,
             echo=echo_sql,
             pool_size=pool_size,
@@ -204,103 +223,48 @@ class AgentMemoryStore:
             future=True,
         )
         self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False, autoflush=False, future=True)
+        self.embedding_dim = embedding_dim
+        self.embedder = tf_embedder or TensorFlowEmbedder(dim=embedding_dim)
+        logger.info("CentralizedAgentMemoryStore initialized.")
 
-        # Load model
-        logger.info(f"Loading embedding model: {embedding_model}")
-        self.model = SentenceTransformer(embedding_model)
-        actual_dim = self.model.get_sentence_embedding_dimension()
-        if actual_dim != EMBEDDING_DIM and PGVECTOR_AVAILABLE:
-            logger.warning(
-                f"Model dimension {actual_dim} != configured EMBEDDING_DIM {EMBEDDING_DIM}. "
-                "Ensure your table/migration matches the model's dimension."
-            )
-        logger.info(f"Initialized AgentMemoryStore with {embedding_model} (dim={actual_dim})")
-
-    def _load_db_url_from_yaml(self) -> Optional[str]:
-        params = load_params()
-        db = params.get("database") or {}
-        user = db.get("user")
-        pwd = db.get("password")
-        host = db.get("host")
-        port = db.get("port")
-        name = db.get("name") or db.get("db") or db.get("database")
-        if all([user, pwd, host, port, name]):
-            return f"postgresql://{user}:{pwd}@{host}:{port}/{name}"
-        return None
-
-    # ----------------------------- Sessions -----------------------------------
-    def create_session(self, agent_name: str, agent_version: str = "1.0", metadata: Optional[Dict[str, Any]] = None) -> str:
-        """
-        Create a new agent session. Returns session ID (UUID string).
-        """
-        session_id = str(uuid.uuid4())
-        try:
-            with self.SessionLocal.begin() as db:
-                db.add(
-                    AgentSession(
-                        id=session_id,
-                        agent_name=agent_name,
-                        agent_version=agent_version,
-                        session_metadata=metadata or {},
-                        status="active",
-                    )
-                )
-            logger.info(f"Created session {session_id} for agent {agent_name}")
-            return session_id
-        except SQLAlchemyError as e:
-            logger.exception("Failed to create session")
-            raise
-
-    def end_session(self, session_id: str) -> None:
-        """
-        Mark a session as completed.
-        """
-        try:
-            with self.SessionLocal.begin() as db:
-                db.execute(
-                    text(
-                        """
-                        UPDATE agent_sessions
-                        SET status = 'completed', ended_at = NOW()
-                        WHERE id = :session_id
-                        """
-                    ),
-                    {"session_id": session_id},
-                )
-            logger.info(f"Ended session {session_id}")
-        except SQLAlchemyError:
-            logger.exception("Failed to end session")
-            raise
-
-    # ----------------------------- Memories -----------------------------------
     def store_memory(
         self,
         session_id: str,
         content: str,
-        memory_type: MemoryType | str = MemoryType.reasoning,
-        importance: float = 0.5,
+        memory_type: MemoryType,
+        importance: float,
+        certainty: float,
+        safety: float,
+        security: float,
+        ethics: float,
         metadata: Optional[Dict[str, Any]] = None,
-        expires_hours: Optional[int] = None,
+        expires_hours: Optional[int] = None
     ) -> int:
-        """
-        Store a memory with its embedding. Returns memory ID.
-        """
-        if isinstance(memory_type, str):
-            memory_type = MemoryType(memory_type)
-
+        """Store a memory, enforcing all safety/importance/certainty/ethics constraints."""
+        # Enforce constraints
         if not (0.0 <= importance <= 1.0):
-            raise ValueError("importance must be between 0.0 and 1.0")
-
+            raise ValueError("importance must be 0..1")
+        if not (0.0 <= certainty <= 1.0):
+            raise ValueError("certainty must be 0..1")
+        if not (0.0 <= safety <= 1.0):
+            raise ValueError("safety must be 0..1")
+        if not (0.0 <= security <= 1.0):
+            raise ValueError("security must be 0..1")
+        if not (0.0 <= ethics <= 1.0):
+            raise ValueError("ethics must be 0..1")
         if not content or not content.strip():
             raise ValueError("content cannot be empty")
 
-        # Embed
-        embedding = self.model.encode(content, normalize_embeddings=PGVECTOR_AVAILABLE).astype("float32").tolist()
+        # Safety: block storage if any core fields are below threshold
+        if importance < 0.5 or certainty < 0.8 or safety < 0.7 or security < 0.7 or ethics < 0.7:
+            raise ValueError("Memory does not meet minimum safety/importance/ethics thresholds for storage.")
 
+        # Embedding
+        embedding = self.embedder.encode(content)
         expires_at = None
         if expires_hours:
             expires_at = datetime.now(tz=timezone.utc) + timedelta(hours=expires_hours)
-
+        mem_meta = metadata or {}
         try:
             with self.SessionLocal.begin() as db:
                 mem = AgentMemory(
@@ -308,16 +272,20 @@ class AgentMemoryStore:
                     memory_type=memory_type,
                     content=content,
                     importance_score=importance,
-                    metadata_json=metadata or {},
+                    certainty=certainty,
+                    safety=safety,
+                    security=security,
+                    ethics=ethics,
+                    metadata_json=mem_meta,
                     expires_at=expires_at,
-                    embedding=embedding if PGVECTOR_AVAILABLE else json.dumps(embedding),
+                    embedding=embedding.tolist() if PGVECTOR_AVAILABLE else str(embedding.tolist())
                 )
                 db.add(mem)
-                db.flush()  # populate mem.id
+                db.flush()
                 memory_id = int(mem.id)
-            logger.info(f"Stored memory {memory_id} in session {session_id}")
+            logger.info(f"Stored memory id={memory_id} [{memory_type.value}] with certainty={certainty:.2f}, safety={safety:.2f}")
             return memory_id
-        except SQLAlchemyError:
+        except Exception as e:
             logger.exception("Failed to store memory")
             raise
 
@@ -326,298 +294,176 @@ class AgentMemoryStore:
         session_id: str,
         query: str,
         limit: int = 5,
-        memory_type: Optional[MemoryType | str] = None,
-        min_importance: float = 0.0,
+        min_importance: float = 0.5,
+        min_certainty: float = 0.8,
+        allowed_types: Optional[List[str]] = None,
+        min_safety: float = 0.7,
+        min_security: float = 0.7,
+        min_ethics: float = 0.7
     ) -> List[RetrievedMemory]:
-        """
-        Retrieve similar memories using semantic search (pgvector cosine distance).
-        If pgvector is unavailable, falls back to importance/date ordering without semantic ranking.
-        """
-        if memory_type and isinstance(memory_type, str):
-            memory_type = MemoryType(memory_type)
-
-        if PGVECTOR_AVAILABLE:
-            query_embedding = self.model.encode(query, normalize_embeddings=True).astype("float32").tolist()
-        else:
-            # No vector search available
-            query_embedding = None
-
-        where_clauses = ["session_id = :session_id", "importance_score >= :min_importance", "(expires_at IS NULL OR expires_at > NOW())"]
-        params: Dict[str, Any] = {"session_id": session_id, "min_importance": min_importance, "limit": limit}
-
-        if memory_type:
-            where_clauses.append("memory_type = :memory_type")
-            params["memory_type"] = memory_type.value
-
+        """Centralized retrieval and filtering (semantic + rule-based)."""
+        query_emb = self.embedder.encode(query)
+        where = ["session_id = :session_id"]
+        params = {"session_id": session_id}
         try:
             with self.SessionLocal.begin() as db:
                 if PGVECTOR_AVAILABLE:
-                    # Use cosine distance; similarity = 1 - distance with cosine ops
                     sql = f"""
-                        SELECT id,
-                               content,
-                               memory_type,
-                               importance_score,
-                               metadata_json,
-                               created_at,
-                               access_count,
-                               last_accessed,
+                        SELECT id, content, memory_type, importance_score, certainty,
+                               safety, security, ethics, metadata_json, created_at,
+                               access_count, last_accessed,
                                (embedding <=> :query_embedding) AS distance
                         FROM agent_memory
-                        WHERE {' AND '.join(where_clauses)}
+                        WHERE {' AND '.join(where)}
                         ORDER BY embedding <=> :query_embedding, importance_score DESC, created_at DESC
                         LIMIT :limit
                     """
-                    params["query_embedding"] = query_embedding
+                    params["query_embedding"] = query_emb.tolist()
+                    params["limit"] = limit * 5  # retrieve more, filter down
                     rows = db.execute(text(sql), params).fetchall()
-                    ids = [r.id for r in rows]
-                    if ids:
-                        db.execute(
-                            text(
-                                """
-                                UPDATE agent_memory
-                                SET access_count = access_count + 1,
-                                    last_accessed = NOW()
-                                WHERE id = ANY(:ids)
-                                """
-                            ),
-                            {"ids": ids},
-                        )
-                    results: List[RetrievedMemory] = []
-                    for r in rows:
-                        distance = float(r.distance)
-                        similarity = max(0.0, 1.0 - distance)
-                        results.append(
-                            RetrievedMemory(
-                                id=int(r.id),
-                                content=r.content,
-                                memory_type=MemoryType(r.memory_type),
-                                importance_score=float(r.importance_score),
-                                metadata=r.metadata_json or {},
-                                created_at=r.created_at,
-                                access_count=int(r.access_count) + (1 if r.id in ids else 0),
-                                last_accessed=r.last_accessed,
-                                similarity=similarity,
-                            )
-                        )
-                    logger.info(f"Retrieved {len(results)} memories for query in session {session_id}")
-                    return results
                 else:
-                    # Fallback: no semantic ordering available
                     sql = f"""
-                        SELECT id,
-                               content,
-                               memory_type,
-                               importance_score,
-                               metadata_json,
-                               created_at,
-                               access_count,
-                               last_accessed
+                        SELECT id, content, memory_type, importance_score, certainty,
+                               safety, security, ethics, metadata_json, created_at,
+                               access_count, last_accessed
                         FROM agent_memory
-                        WHERE {' AND '.join(where_clauses)}
+                        WHERE {' AND '.join(where)}
                         ORDER BY importance_score DESC, created_at DESC
                         LIMIT :limit
                     """
+                    params["limit"] = limit * 5
                     rows = db.execute(text(sql), params).fetchall()
-                    ids = [r.id for r in rows]
-                    if ids:
-                        db.execute(
-                            text(
-                                """
-                                UPDATE agent_memory
-                                SET access_count = access_count + 1,
-                                    last_accessed = NOW()
-                                WHERE id = ANY(:ids)
-                                """
-                            ),
-                            {"ids": ids},
-                        )
-                    results = [
-                        RetrievedMemory(
-                            id=int(r.id),
-                            content=r.content,
-                            memory_type=MemoryType(r.memory_type),
-                            importance_score=float(r.importance_score),
-                            metadata=r.metadata_json or {},
-                            created_at=r.created_at,
-                            access_count=int(r.access_count) + (1 if r.id in ids else 0),
-                            last_accessed=r.last_accessed,
-                            similarity=None,
-                        )
-                        for r in rows
-                    ]
-                    logger.warning("pgvector not available; returned fallback ranking without semantic distance")
-                    return results
-        except SQLAlchemyError:
+                # Format for centralized filter
+                memories = []
+                for r in rows:
+                    mem = {
+                        "id": int(r.id),
+                        "content": r.content,
+                        "memory_type": str(r.memory_type),
+                        "importance_score": float(r.importance_score),
+                        "certainty": float(r.certainty),
+                        "safety": float(r.safety),
+                        "security": float(r.security),
+                        "ethics": float(r.ethics),
+                        "metadata": r.metadata_json or {},
+                        "created_at": r.created_at,
+                        "access_count": int(r.access_count),
+                        "last_accessed": r.last_accessed,
+                        "similarity": 1.0 - float(getattr(r, "distance", 0.0)) if hasattr(r, "distance") else None,
+                    }
+                    memories.append(mem)
+                # Centralized filter
+                filtered = centralized_memory_filter(
+                    memories,
+                    min_importance=min_importance,
+                    min_certainty=min_certainty,
+                    allowed_types=allowed_types,
+                    min_safety=min_safety,
+                    min_security=min_security,
+                    min_ethics=min_ethics
+                )
+                # Sort by similarity and importance
+                filtered.sort(key=lambda m: (m.get('similarity', 0), m['importance_score']), reverse=True)
+                top = filtered[:limit]
+                return [
+                    RetrievedMemory(
+                        id=m["id"], content=m["content"], memory_type=MemoryType(m["memory_type"]),
+                        importance_score=m["importance_score"], certainty=m["certainty"], safety=m["safety"],
+                        security=m["security"], ethics=m["ethics"], metadata=m["metadata"], created_at=m["created_at"],
+                        access_count=m["access_count"], last_accessed=m["last_accessed"], similarity=m["similarity"]
+                    )
+                    for m in top
+                ]
+        except Exception as e:
             logger.exception("Failed to retrieve memories")
             raise
 
-    # --------------------------- Associations ----------------------------------
     def create_memory_association(
         self,
         source_memory_id: int,
         target_memory_id: int,
-        association_type: AssociationType | str = AssociationType.similar,
-        strength: float = 1.0,
+        association_type: AssociationType,
+        strength: float = 1.0
     ) -> None:
-        if isinstance(association_type, str):
-            association_type = AssociationType(association_type)
-        if not (0.0 <= strength <= 1.0):
-            raise ValueError("strength must be between 0.0 and 1.0")
-
-        try:
-            with self.SessionLocal.begin() as db:
-                # Upsert
-                db.execute(
-                    text(
-                        """
-                        INSERT INTO memory_associations (source_memory_id, target_memory_id, association_type, strength)
-                        VALUES (:source, :target, :type, :strength)
-                        ON CONFLICT (source_memory_id, target_memory_id, association_type)
-                        DO UPDATE SET strength = EXCLUDED.strength
-                        """
-                    ),
-                    {"source": source_memory_id, "target": target_memory_id, "type": association_type.value, "strength": strength},
-                )
-            logger.info(
-                f"Created {association_type.value} association between memories {source_memory_id} and {target_memory_id}"
+        """Associations are only allowed if both memories meet all safety/ethics/importance constraints."""
+        with self.SessionLocal.begin() as db:
+            s = db.execute(text("SELECT certainty, safety, security, ethics FROM agent_memory WHERE id=:id"),
+                           {"id": source_memory_id}).fetchone()
+            t = db.execute(text("SELECT certainty, safety, security, ethics FROM agent_memory WHERE id=:id"),
+                           {"id": target_memory_id}).fetchone()
+            if not s or not t:
+                raise ValueError("Source or target memory not found")
+            for field, minv in zip(
+                ["certainty", "safety", "security", "ethics"],
+                [0.8, 0.7, 0.7, 0.7]
+            ):
+                if float(s[field]) < minv or float(t[field]) < minv:
+                    raise ValueError(f"Association blocked: {field} below safe threshold")
+            # Proceed
+            db.execute(
+                text(
+                    """
+                    INSERT INTO memory_associations (source_memory_id, target_memory_id, association_type, strength)
+                    VALUES (:source, :target, :type, :strength)
+                    ON CONFLICT (source_memory_id, target_memory_id, association_type)
+                    DO UPDATE SET strength = EXCLUDED.strength
+                    """
+                ),
+                {"source": source_memory_id, "target": target_memory_id, "type": association_type.value, "strength": strength},
             )
-        except SQLAlchemyError:
-            logger.exception("Failed to create memory association")
-            raise
-
-    # ------------------------------ Utilities ----------------------------------
-    def get_session_memories(self, session_id: str) -> List[Dict[str, Any]]:
-        try:
-            with self.SessionLocal.begin() as db:
-                rows = db.execute(
-                    text(
-                        """
-                        SELECT id, content, memory_type, importance_score, created_at, access_count
-                        FROM agent_memory
-                        WHERE session_id = :session_id
-                          AND (expires_at IS NULL OR expires_at > NOW())
-                        ORDER BY created_at DESC
-                        """
-                    ),
-                    {"session_id": session_id},
-                ).fetchall()
-            return [
-                {
-                    "id": int(r.id),
-                    "content": r.content,
-                    "memory_type": MemoryType(r.memory_type).value,
-                    "importance_score": float(r.importance_score),
-                    "created_at": r.created_at,
-                    "access_count": int(r.access_count),
-                }
-                for r in rows
-            ]
-        except SQLAlchemyError:
-            logger.exception("Failed to get session memories")
-            raise
-
-    def ensure_connection(self) -> None:
-        """
-        Verify DB connectivity and pgvector availability.
-        """
-        try:
-            with self.engine.connect() as conn:
-                conn.execute(text("SELECT 1"))
-            if PGVECTOR_AVAILABLE:
-                logger.info("Database connection OK and pgvector SQLAlchemy type available.")
-            else:
-                logger.warning("Database connection OK but pgvector SQLAlchemy type not installed. Install 'pgvector'.")
-        except SQLAlchemyError:
-            logger.exception("Database connectivity check failed")
-            raise
-
+            logger.info(f"Created association {association_type.value} between {source_memory_id} and {target_memory_id}")
 
 # ------------------------------------------------------------------------------
-# Demo
+# Example Usage
 # ------------------------------------------------------------------------------
-def demo_agent_memory() -> None:
-    logger.info("Starting agent memory demonstration...")
-
-    params = load_params()
-    db_url = os.getenv("DATABASE_URL") or DEFAULT_DB_URL
-
-    try:
-        # Initialize memory store
-        memory_store = AgentMemoryStore(db_connection_string=db_url)
-        memory_store.ensure_connection()
-
-        # Create agent session
-        session_id = memory_store.create_session(
-            agent_name="DuetMind_Alzheimer_Agent",
-            agent_version="1.0",
-            metadata={"model": "alzheimer_classifier", "domain": "healthcare"},
-        )
-
-        # Store some memories
-        memories = [
-            {
-                "content": "Patient shows high MMSE score (28) but has APOE4 genotype, indicating complex risk profile",
-                "type": "reasoning",
-                "importance": 0.8,
-            },
-            {
-                "content": "Age-related cognitive decline patterns suggest early intervention may be beneficial",
-                "type": "reasoning",
-                "importance": 0.7,
-            },
-            {
-                "content": "Family history is a strong predictor but should be combined with biomarker data",
-                "type": "knowledge",
-                "importance": 0.9,
-            },
-            {
-                "content": "Model confidence drops when education level is below 8 years",
-                "type": "experience",
-                "importance": 0.6,
-            },
-        ]
-
-        memory_ids: List[int] = []
-        for mem in memories:
-            memory_id = memory_store.store_memory(
-                session_id=session_id,
-                content=mem["content"],
-                memory_type=mem["type"],
-                importance=mem["importance"],
-            )
-            memory_ids.append(memory_id)
-
-        # Create associations
-        memory_store.create_memory_association(memory_ids[0], memory_ids[2], "related", 0.8)
-
-        # Retrieval
-        query = "APOE4 genetic risk factors"
-        retrieved = memory_store.retrieve_memories(session_id, query, limit=3)
-
-        logger.info(f"Query: '{query}'")
-        logger.info("Retrieved memories:")
-        for i, mem in enumerate(retrieved, 1):
-            sim_txt = f", Similarity: {mem.similarity:.3f}" if mem.similarity is not None else ""
-            logger.info(
-                f"  {i}. [{mem.memory_type.value}] {mem.content[:80]}... "
-                f"(Importance: {mem.importance_score:.2f}, Accessed: {mem.access_count}{sim_txt})"
-            )
-
-        # Get all session memories
-        all_memories = memory_store.get_session_memories(session_id)
-        logger.info(f"Total memories in session: {len(all_memories)}")
-
-        # End session
-        memory_store.end_session(session_id)
-
-        logger.info("Agent memory demonstration completed successfully!")
-
-    except Exception as e:
-        logger.exception("Error in agent memory demo")
-        logger.info("Make sure PostgreSQL is running with pgvector and the schema is migrated.")
-        logger.info("You can start it with: docker compose up -d && apply migrations in migrations/001_init.sql")
-
-
 if __name__ == "__main__":
-    demo_agent_memory()
+    logger.info("Starting centralized agent memory demo...")
+    store = CentralizedAgentMemoryStore()
+    # Create a session
+    session_id = str(uuid.uuid4())
+    with store.SessionLocal.begin() as db:
+        db.add(AgentSession(id=session_id, agent_name="CentralAgent", agent_version="1.0", session_metadata={}, status="active"))
+    # Store safe memory
+    mem_id = store.store_memory(
+        session_id=session_id,
+        content="Patient diagnosed with hypertension and prescribed ACE inhibitors.",
+        memory_type=MemoryType.knowledge,
+        importance=0.9,
+        certainty=0.95,
+        safety=0.9,
+        security=0.9,
+        ethics=0.95,
+        metadata={"source": "EHR"}
+    )
+    # Attempt unsafe memory (should fail)
+    try:
+        store.store_memory(
+            session_id=session_id,
+            content="This is a hallucinated and unsafe memory.",
+            memory_type=MemoryType.hallucination,
+            importance=0.2,
+            certainty=0.2,
+            safety=0.2,
+            security=0.2,
+            ethics=0.2,
+            metadata={"source": "generated"}
+        )
+    except ValueError as e:
+        logger.warning(f"Blocked unsafe memory: {e}")
+
+    # Retrieve with full centralized filtering
+    results = store.retrieve_memories(
+        session_id=session_id,
+        query="hypertension",
+        limit=3,
+        min_importance=0.5,
+        min_certainty=0.8,
+        allowed_types=["knowledge", "reasoning", "observation"],
+        min_safety=0.7,
+        min_security=0.7,
+        min_ethics=0.7
+    )
+    for m in results:
+        logger.info(f"Retrieved: {m.memory_type.value} | Certainty: {m.certainty:.2f} | Safety: {m.safety:.2f} | {m.content}")
+
+    logger.info("Centralized agent memory demo completed.")
