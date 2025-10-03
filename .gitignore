@@ -87,3 +87,17 @@ dist/
 
 # Training outputs
 summaries/
+
+# Demo outputs and intermediate results
+demo_outputs/
+*_demo_results.json
+*_results/
+*_training_results/
+*_output/
+phase*_results.json
+test_*_output/
+
+# Debug phase outputs (keep only final)
+debug/phase[1-9]_*.py
+debug/phase[1-9]_*.json
+debug/PHASE[1-9]_*.md
