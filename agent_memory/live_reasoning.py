@@ -3,34 +3,50 @@
 Ultra-Lite Multilingual Medical/Scientific Reasoning Agent (Pure Python, No NumPy)
 =================================================================================
 
-Enhancements over previous lite version:
-1. PHI Sanitization:
-   - Regex-based redaction of likely personally identifiable health information (names, dates, IDs, phones, emails, addresses).
-   - Applied on memory ingestion and (optionally) on query.
-2. Extended phrase dictionaries:
-   - Localized reasoning-type descriptions and recommendations per language (EN, ES, FR, DE, PT, IT, ZH, JA).
-3. Pure Python Vector Ops:
-   - Deterministic hashed bag-of-token embeddings implemented as Python lists.
-   - Cosine similarity implemented manually (no NumPy).
+New Enhancements (this revision):
+1. Granular PHI Categories & Toggles:
+   - Independently enable/disable masking of: email, date, phone, id, address, name
+   - Pass configuration at MemoryStore construction (phi_categories). Example: keep dates but mask names/emails.
+
+2. Domain-Specific Lexicon Whitelisting:
+   - Reduces over-masking by excluding clinical/scientific terms from naive name redaction.
+   - Configurable via domain_whitelist (set[str]).
+
+3. Configurable Embedding Dimension & Weighting Schemes:
+   - EmbeddingConfig(dim=..., weighting=...) with weighting in {'raw','tf','log_norm','tfidf'}.
+   - Global document frequency tracking for TF-IDF (pure Python; approximate, updated on ingestion).
+   - Deterministic hashed bag-of-token model remains; normalization optional (always L2 here).
+
+4. Persistent Session & Memory Storage (JSON):
+   - MemoryStore.save_state(path) and MemoryStore.load_state(path).
+   - Includes vectors (optional) and DF statistics for consistent TF-IDF continuation.
+   - Safe to rehydrate into a running agent. (Dimension mismatch prevented.)
+
+5. Adversarial / Rare Token Filtering:
+   - Detects suspicious rare tokens (lengthy alphanumeric mixes, very long tokens, or doc freq==1)
+   - Replaces them with [RARE] marker prior to embedding.
+   - Configurable thresholds (min_doc_freq, length triggers, pattern heuristics).
+   - Helps mitigate prompt injection with anomalous artifacts.
 
 DISCLAIMER:
- - This is a heuristic educational artifact; not medical advice.
- - PHI sanitizer is simplistic and may over/under redact.
- - Always validate and reinforce with robust PHI handling & compliance frameworks.
+ - Heuristic educational artifact; NOT medical advice.
+ - PHI and adversarial filters are simplistic, may over/under redact.
+ - For production: integrate robust compliance, security, and privacy controls.
 
-Run:
-    python live_reasoning_lite_pure.py
+Run (demo):
+    python live_reasoning.py
 """
 
 from __future__ import annotations
 import re
 import math
 import time
+import json
 import hashlib
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Set, Iterable
 from collections import Counter
 
 # --------------------------------------------------------------------------------------
@@ -40,79 +56,190 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("PureLiteReasoningAgent")
 
 # --------------------------------------------------------------------------------------
-# Configuration
+# Default Configuration
 # --------------------------------------------------------------------------------------
-EMBED_DIM = 384
+DEFAULT_EMBED_DIM = 384
 SIMILARITY_THRESHOLD = 0.55
 MAX_MEMORY = 5000
 SUPPORTED_LANGS = {"en","es","fr","de","pt","it","zh","ja"}
 DEFAULT_LANG = "en"
 
 # --------------------------------------------------------------------------------------
-# PHI Sanitization
+# PHI Sanitization (Granular)
 # --------------------------------------------------------------------------------------
-PHI_PATTERNS: List[Tuple[re.Pattern, str]] = [
-    # Email addresses
-    (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'), '[EMAIL]'),
-    # ISO dates (YYYY-MM-DD)
-    (re.compile(r'\b\d{4}-\d{2}-\d{2}\b'), '[DATE]'),
-    # Common date formats (MM/DD/YYYY or DD/MM/YYYY or with 2-digit year)
-    (re.compile(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'), '[DATE]'),
-    # Phone numbers (very naive)
-    (re.compile(r'\b(?:\+?\d{1,3}[\s\-]?)?(?:\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{4}\b'), '[PHONE]'),
-    # Medical Record / IDs
-    (re.compile(r'\b(MRN|PatientID|PatID|ID)[:#]?\s*\d{3,}\b', re.IGNORECASE), '[ID]'),
-    # Addresses (simple pattern number + street word)
-    (re.compile(r'\b\d{1,5}\s+[A-Z][a-zA-Z]+\s+(Street|St|Avenue|Ave|Road|Rd|Lane|Ln|Blvd|Boulevard)\b'), '[ADDRESS]'),
-    # Names (capitalized multi-word sequences). Naive; may over-redact.
-    (re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\b'), '[NAME]'),
-]
+# Each category -> (pattern, replacement)
+PHI_CATEGORY_PATTERNS: Dict[str, Tuple[re.Pattern, str]] = {
+    "email":   (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'), '[EMAIL]'),
+    "date_iso":(re.compile(r'\b\d{4}-\d{2}-\d{2}\b'), '[DATE]'),
+    "date_alt":(re.compile(r'\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b'), '[DATE]'),
+    "phone":   (re.compile(r'\b(?:\+?\d{1,3}[\s\-]?)?(?:\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{4}\b'), '[PHONE]'),
+    "id":      (re.compile(r'\b(MRN|PatientID|PatID|ID)[:#]?\s*\d{3,}\b', re.IGNORECASE), '[ID]'),
+    "address": (re.compile(r'\b\d{1,5}\s+[A-Z][a-zA-Z]+\s+(Street|St|Avenue|Ave|Road|Rd|Lane|Ln|Blvd|Boulevard)\b'), '[ADDRESS]'),
+    # Name pattern handled separately for whitelist logic.
+}
 
-def sanitize_phi(text: str) -> str:
-    # Apply patterns sequentially; to reduce over-masking you could exclude dictionary terms or reasoning types.
-    redacted = text
-    for pattern, repl in PHI_PATTERNS:
-        redacted = pattern.sub(repl, redacted)
-    return redacted
+# Default set of categories to mask (names treated specially)
+DEFAULT_PHI_CATEGORIES = {"email","date_iso","date_alt","phone","id","address","name"}
+
+# Domain-specific lexicon to reduce false positive name masking
+DEFAULT_DOMAIN_WHITELIST: Set[str] = {
+    # clinical & biomedical terms (capitalized in text often)
+    "Cognitive","Memory","Score","Patient","Lifestyle","APOE4","APOE","Amyloid","Tau","CSF",
+    "Longitudinal","Assessment","Symptoms","Differential","Decline","Trajectory","Biomarker",
+    "Imaging","Diagnostic","Risk","Stratification","Guideline","Therapeutic","Temporal","Prognostic",
+    "Uncertainty","Causal","Counterfactual","Genetic","Counseling","History","Family"
+}
+
+NAME_PATTERN = re.compile(r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3})\b')
+
+def sanitize_phi(text: str,
+                 categories: Optional[Set[str]] = None,
+                 whitelist: Optional[Set[str]] = None) -> str:
+    """
+    Granular PHI sanitization. If categories is None, uses DEFAULT_PHI_CATEGORIES.
+    'name' category uses whitelist to avoid over-masking.
+    """
+    if not text:
+        return text
+    cats = categories or DEFAULT_PHI_CATEGORIES
+    wl = whitelist or set()
+
+    # Apply category patterns except name
+    for cat, (pat, repl) in PHI_CATEGORY_PATTERNS.items():
+        if cat in cats:
+            text = pat.sub(repl, text)
+
+    if "name" in cats:
+        # Custom name redaction with whitelist filter
+        def name_repl(match: re.Match) -> str:
+            phrase = match.group(0)
+            tokens = phrase.split()
+            # If any token in whitelist, skip masking
+            for t in tokens:
+                if t in wl:
+                    return phrase
+            # Additional heuristics: if all tokens length > 2 and capitalized -> redact
+            if all(t[0].isupper() and t[1:].islower() for t in tokens):
+                return "[NAME]"
+            return phrase
+        text = NAME_PATTERN.sub(name_repl, text)
+    return text
 
 # --------------------------------------------------------------------------------------
-# Deterministic Hash Embeddings (Pure Python)
+# Tokenization & Embeddings (Configurable)
 # --------------------------------------------------------------------------------------
 TOKEN_RE = re.compile(r"[A-Za-z0-9µαβγΩμ%\-]+")
 
 def stable_hash(token: str) -> int:
-    h = hashlib.md5(token.encode("utf-8")).hexdigest()
-    return int(h, 16)
+    return int(hashlib.md5(token.encode("utf-8")).hexdigest(), 16)
 
-def text_to_vector(text: str, dim: int = EMBED_DIM) -> List[float]:
-    tokens = TOKEN_RE.findall(text.lower())
-    if not tokens:
-        return [0.0] * dim
-    vec = [0.0] * dim
-    for tok in tokens:
-        idx = stable_hash(tok) % dim
-        vec[idx] += 1.0
-    # Normalize (L2)
-    norm_sq = 0.0
-    for v in vec:
-        norm_sq += v * v
-    norm = math.sqrt(norm_sq)
-    if norm > 0:
-        inv = 1.0 / norm
-        for i in range(dim):
-            vec[i] *= inv
-    return vec
+@dataclass
+class EmbeddingConfig:
+    dim: int = DEFAULT_EMBED_DIM
+    weighting: str = "tfidf"  # 'raw','tf','log_norm','tfidf'
+    normalize: bool = True
 
-def cosine_similarity(a: List[float], b: List[float]) -> float:
-    # Both are assumed normalized
-    dot = 0.0
-    length = min(len(a), len(b))
-    for i in range(length):
-        dot += a[i] * b[i]
-    return dot
+class EmbeddingManager:
+    """
+    Tracks document frequencies for tokens to enable TF-IDF weighting.
+    """
+    def __init__(self, config: EmbeddingConfig):
+        self.config = config
+        self.doc_count: int = 0
+        self.df: Counter = Counter()
+
+    def update_document_frequencies(self, tokens: Iterable[str]):
+        unique = set(tokens)
+        for t in unique:
+            self.df[t] += 1
+        self.doc_count += 1
+
+    def text_to_vector(self, text: str) -> List[float]:
+        dim = self.config.dim
+        tokens = TOKEN_RE.findall(text.lower())
+        if not tokens:
+            return [0.0] * dim
+        tf_counter = Counter(tokens)
+        max_tf = max(tf_counter.values())
+        vec = [0.0] * dim
+
+        for tok, tf in tf_counter.items():
+            idx = stable_hash(tok) % dim
+            weight = self._token_weight(tok, tf, max_tf)
+            vec[idx] += weight
+
+        if self.config.normalize:
+            norm_sq = sum(v*v for v in vec)
+            if norm_sq > 0:
+                inv = 1.0 / math.sqrt(norm_sq)
+                vec = [v*inv for v in vec]
+        return vec
+
+    def _token_weight(self, token: str, tf: int, max_tf: int) -> float:
+        w = self.config.weighting
+        if w == "raw":
+            return float(tf)
+        if w == "tf":
+            return tf / max_tf
+        if w == "log_norm":
+            return 1.0 + math.log(tf)
+        if w == "tfidf":
+            # Smooth TF
+            tf_part = 0.5 + 0.5 * tf / max_tf
+            df = self.df.get(token, 0)
+            # Smooth IDF
+            idf = math.log((1 + self.doc_count) / (1 + df)) + 1.0
+            return tf_part * idf
+        # default fallback
+        return float(tf)
 
 # --------------------------------------------------------------------------------------
-# Memory Store
+# Adversarial / Rare Token Filtering
+# --------------------------------------------------------------------------------------
+ADVERSARIAL_TOKEN_PATTERN = re.compile(r'(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}')
+
+@dataclass
+class AdversarialFilterConfig:
+    enable: bool = True
+    min_doc_freq: int = 2       # tokens with df < this considered rare
+    long_token_length: int = 24
+    replace_with: str = "[RARE]"
+    max_replacements: int = 50  # safety cap
+
+def filter_adversarial_terms(text: str,
+                             embed_mgr: EmbeddingManager,
+                             cfg: AdversarialFilterConfig) -> str:
+    if not cfg.enable or not text:
+        return text
+    tokens = TOKEN_RE.findall(text)
+    replacements = 0
+    # Build map of suspicious tokens
+    suspicious: Set[str] = set()
+    for tok in tokens:
+        if replacements >= cfg.max_replacements:
+            break
+        df = embed_mgr.df.get(tok.lower(), 0)
+        if (df < cfg.min_doc_freq and (
+             len(tok) >= cfg.long_token_length or
+             ADVERSARIAL_TOKEN_PATTERN.match(tok) or
+             sum(c.isdigit() for c in tok) >= 3 and sum(c.isalpha() for c in tok) >= 3
+        )):
+            suspicious.add(tok)
+    if not suspicious:
+        return text
+    # Replace using regex with boundaries
+    for s in suspicious:
+        if replacements >= cfg.max_replacements:
+            break
+        pattern = re.compile(rf'\b{re.escape(s)}\b')
+        new_text, count = pattern.subn(cfg.replace_with, text)
+        if count:
+            text = new_text
+            replacements += count
+    return text
+
+# --------------------------------------------------------------------------------------
+# Memory Records
 # --------------------------------------------------------------------------------------
 @dataclass
 class MemoryRecord:
@@ -125,25 +252,69 @@ class MemoryRecord:
     access_count: int = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "content": self.content,
+            "vector": self.vector,
+            "memory_type": self.memory_type,
+            "importance": self.importance,
+            "created_at": self.created_at.isoformat(),
+            "access_count": self.access_count,
+            "metadata": self.metadata
+        }
+
+    @staticmethod
+    def from_json(data: Dict[str, Any]) -> "MemoryRecord":
+        return MemoryRecord(
+            id=data["id"],
+            content=data["content"],
+            vector=data["vector"],
+            memory_type=data["memory_type"],
+            importance=data["importance"],
+            created_at=datetime.fromisoformat(data["created_at"]),
+            access_count=data.get("access_count",0),
+            metadata=data.get("metadata",{})
+        )
+
+# --------------------------------------------------------------------------------------
+# Memory Store with Persistence
+# --------------------------------------------------------------------------------------
 class MemoryStore:
-    def __init__(self, sanitize: bool = True):
+    def __init__(self,
+                 sanitize: bool = True,
+                 phi_categories: Optional[Set[str]] = None,
+                 domain_whitelist: Optional[Set[str]] = None,
+                 embedding_config: Optional[EmbeddingConfig] = None,
+                 adversarial_config: Optional[AdversarialFilterConfig] = None,
+                 auto_flush_path: Optional[str] = None,
+                 persist_vectors: bool = True):
         self.sessions: Dict[str, Dict[str, Any]] = {}
         self.memory_by_session: Dict[str, List[MemoryRecord]] = {}
         self.sanitize = sanitize
+        self.phi_categories = phi_categories or DEFAULT_PHI_CATEGORIES
+        self.domain_whitelist = domain_whitelist or DEFAULT_DOMAIN_WHITELIST
+        self.embedding_manager = EmbeddingManager(embedding_config or EmbeddingConfig())
+        self.adversarial_config = adversarial_config or AdversarialFilterConfig()
+        self.auto_flush_path = auto_flush_path
+        self.persist_vectors = persist_vectors
 
+    # ---- Session Management ----
     def create_session(self, agent_name: str) -> str:
         sid = f"session_{agent_name}_{int(time.time()*1000)}"
         self.sessions[sid] = {
             "agent": agent_name,
-            "created_at": datetime.now(timezone.utc)
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
         self.memory_by_session[sid] = []
         return sid
 
     def end_session(self, session_id: str):
         if session_id in self.sessions:
-            self.sessions[session_id]["ended_at"] = datetime.now(timezone.utc)
+            self.sessions[session_id]["ended_at"] = datetime.now(timezone.utc).isoformat()
+            self._auto_flush()
 
+    # ---- Memory Operations ----
     def store_memory(self,
                      session_id: str,
                      content: str,
@@ -152,13 +323,23 @@ class MemoryStore:
                      metadata: Optional[Dict[str, Any]] = None) -> str:
         if session_id not in self.memory_by_session:
             raise ValueError("Invalid session_id")
+
+        original_content = content
         if self.sanitize:
-            content = sanitize_phi(content)
-        arr = self.memory_by_session[session_id]
-        if len(arr) >= MAX_MEMORY:
-            arr.pop(0)
+            content = sanitize_phi(content, categories=self.phi_categories, whitelist=self.domain_whitelist)
+
+        # Adversarial filtering BEFORE embedding but AFTER PHI
+        content = filter_adversarial_terms(content, self.embedding_manager, self.adversarial_config)
+
+        # Update DF from original tokens (pre-embedding) to reflect semantic source
+        tokens_for_df = TOKEN_RE.findall(original_content.lower())
+        self.embedding_manager.update_document_frequencies(tokens_for_df)
+
+        if len(self.memory_by_session[session_id]) >= MAX_MEMORY:
+            self.memory_by_session[session_id].pop(0)
+
         mem_id = f"mem_{int(time.time()*1000)}_{len(content)%97}"
-        vec = text_to_vector(content)
+        vec = self.embedding_manager.text_to_vector(content)
         rec = MemoryRecord(
             id=mem_id,
             content=content,
@@ -168,7 +349,8 @@ class MemoryStore:
             created_at=datetime.now(timezone.utc),
             metadata=metadata or {}
         )
-        arr.append(rec)
+        self.memory_by_session[session_id].append(rec)
+        self._auto_flush()
         return mem_id
 
     def retrieve(self,
@@ -178,24 +360,86 @@ class MemoryStore:
                  min_importance: float = 0.25,
                  sanitize_query: bool = False) -> List[MemoryRecord]:
         if sanitize_query and self.sanitize:
-            query = sanitize_phi(query)
+            query = sanitize_phi(query, categories=self.phi_categories, whitelist=self.domain_whitelist)
         pool = self.memory_by_session.get(session_id, [])
         if not pool:
             return []
-        qvec = text_to_vector(query)
+        qvec = self.embedding_manager.text_to_vector(query)
         scored: List[Tuple[float, MemoryRecord]] = []
         for rec in pool:
             if rec.importance < min_importance:
                 continue
-            sim = cosine_similarity(qvec, rec.vector)
+            sim = cosine_similarity(qvec, rec.vector)  # normalized already
             scored.append((sim, rec))
         scored.sort(key=lambda x: x[0], reverse=True)
         return [r for _, r in scored[:limit]]
 
+    # ---- Persistence ----
+    def save_state(self, path: str):
+        data = {
+            "sessions": self.sessions,
+            "memories": {
+                sid: [m.to_json() if self.persist_vectors else {**m.to_json(), "vector": []}
+                      for m in arr]
+                for sid, arr in self.memory_by_session.items()
+            },
+            "embedding": {
+                "config": asdict(self.embedding_manager.config),
+                "doc_count": self.embedding_manager.doc_count,
+                "df": dict(self.embedding_manager.df)
+            },
+            "phi_categories": list(self.phi_categories),
+            "domain_whitelist": list(self.domain_whitelist),
+            "adversarial_config": asdict(self.adversarial_config),
+            "persist_vectors": self.persist_vectors,
+            "version": "1.1"
+        }
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    @classmethod
+    def load_state(cls, path: str) -> "MemoryStore":
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        emb_cfg = EmbeddingConfig(**data["embedding"]["config"])
+        store = cls(
+            sanitize=True,
+            phi_categories=set(data.get("phi_categories", DEFAULT_PHI_CATEGORIES)),
+            domain_whitelist=set(data.get("domain_whitelist", DEFAULT_DOMAIN_WHITELIST)),
+            embedding_config=emb_cfg,
+            adversarial_config=AdversarialFilterConfig(**data.get("adversarial_config", {})),
+            persist_vectors=data.get("persist_vectors", True)
+        )
+        store.sessions = data["sessions"]
+        for sid, arr in data["memories"].items():
+            store.memory_by_session[sid] = []
+            for rec_json in arr:
+                rec = MemoryRecord.from_json(rec_json)
+                # If vectors absent -> recompute
+                if not rec.vector:
+                    rec.vector = store.embedding_manager.text_to_vector(rec.content)
+                store.memory_by_session[sid].append(rec)
+        # restore DF
+        store.embedding_manager.doc_count = data["embedding"]["doc_count"]
+        store.embedding_manager.df = Counter(data["embedding"]["df"])
+        return store
+
+    def _auto_flush(self):
+        if self.auto_flush_path:
+            try:
+                self.save_state(self.auto_flush_path)
+            except Exception as e:
+                logger.warning(f"Auto-flush failed: {e}")
+
 # --------------------------------------------------------------------------------------
-# Localization: Reasoning Type Descriptions & Recommendations
+# Cosine Similarity (assumes normalized vectors)
 # --------------------------------------------------------------------------------------
-# Descriptions per language
+def cosine_similarity(a: List[float], b: List[float]) -> float:
+    return sum(x*y for x,y in zip(a,b))
+
+# --------------------------------------------------------------------------------------
+# Localization Data (unchanged sections condensed for brevity)
+# --------------------------------------------------------------------------------------
 RT_DESCRIPTIONS: Dict[str, Dict[str, str]] = {
     "en": {
         "medical_consultation": "Clinical context synthesis",
@@ -216,6 +460,15 @@ RT_DESCRIPTIONS: Dict[str, Dict[str, str]] = {
         "ethics_reflection": "Ethical and bias reflection",
         "general": "General analytic synthesis"
     },
+    # (Other language mappings same as previous version) ...
+}
+# For brevity in this enhanced script snippet we keep full earlier language dicts assumption:
+# In production keep full dictionaries (omitted duplication here due to space). If needed copy full mapping.
+
+# (Reusing the full earlier dictionaries exactly as before – they should be included in a real file.)
+# For this answer we re-insert them fully to maintain standalone functionality:
+
+RT_DESCRIPTIONS.update({
     "es": {
         "medical_consultation": "Síntesis clínica contextual",
         "diagnosis": "Estructuración diagnóstica",
@@ -349,10 +602,10 @@ RT_DESCRIPTIONS: Dict[str, Dict[str, str]] = {
         "ethics_reflection": "倫理・バイアス考察",
         "general": "一般的分析統合"
     },
-}
+})
 
-# Reasoning-type specific recommendation phrases per language (limited examples)
 RECOMMENDATIONS: Dict[str, Dict[str, List[str]]] = {
+    # identical to previous version (kept for completeness) ...
     "en": {
         "risk_stratification": ["Aggregate genetic & cognitive indicators", "Document explicit tier rationale"],
         "prognostic": ["Schedule periodic reassessment", "Track functional & cognitive slope"],
@@ -449,7 +702,7 @@ def local_rt_desc(rt: str, lang: str) -> str:
     return RT_DESCRIPTIONS.get(lang, RT_DESCRIPTIONS["en"]).get(rt, RT_DESCRIPTIONS["en"]["general"])
 
 # --------------------------------------------------------------------------------------
-# CoT Summarizer (Heuristic)
+# CoT Summarizer (unchanged logic)
 # --------------------------------------------------------------------------------------
 class HeuristicCoTSummarizer:
     def __init__(self, max_sentences: int = 6, max_chars: int = 1400):
@@ -532,7 +785,7 @@ class HeuristicCoTSummarizer:
         }
 
 # --------------------------------------------------------------------------------------
-# Data Classes
+# Reasoning Data Classes
 # --------------------------------------------------------------------------------------
 @dataclass
 class ReasoningContext:
@@ -559,7 +812,7 @@ class ReasoningResult:
     timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 # --------------------------------------------------------------------------------------
-# Generator (Template / Localized)
+# Template Generator
 # --------------------------------------------------------------------------------------
 class TemplateGenerator:
     def generate(self,
@@ -581,9 +834,8 @@ class TemplateGenerator:
         scores = ", ".join([f"{s['kind']}={s['value']}" for s in features.get("scores", [])]) or "none"
         temporal = f"{features.get('temporal_reference_density',0):.2f}"
 
-        # Uncertainty narrative
         if confidence >= 0.75:
-            unc_text = {
+            unc_map = {
                 "en":"Residual uncertainty low-moderate.",
                 "es":"Incertidumbre residual baja-moderada.",
                 "fr":"Incertitude résiduelle faible-moyenne.",
@@ -592,9 +844,9 @@ class TemplateGenerator:
                 "it":"Incertezza residua bassa-moderata.",
                 "zh":"剩余不确定性为低至中等。",
                 "ja":"残余の不確実性は低～中程度。"
-            }[lang]
+            }
         elif confidence >= 0.55:
-            unc_text = {
+            unc_map = {
                 "en":"Moderate uncertainty; further data advised.",
                 "es":"Incertidumbre moderada; se aconsejan más datos.",
                 "fr":"Incertitude modérée ; davantage de données conseillé.",
@@ -603,9 +855,9 @@ class TemplateGenerator:
                 "it":"Incertezza moderata; si consigliano ulteriori dati.",
                 "zh":"中等不确定性；建议补充数据。",
                 "ja":"不確実性は中程度。追加データが望ましい。"
-            }[lang]
+            }
         else:
-            unc_text = {
+            unc_map = {
                 "en":"High uncertainty; interpret cautiously.",
                 "es":"Alta incertidumbre; interpretar con cautela.",
                 "fr":"Forte incertitude ; interpréter avec prudence.",
@@ -614,7 +866,8 @@ class TemplateGenerator:
                 "it":"Elevata incertezza; interpretare con cautela.",
                 "zh":"高度不确定性；需谨慎解读。",
                 "ja":"高い不確実性。慎重に解釈してください。"
-            }[lang]
+            }
+        unc_text = unc_map[lang]
 
         recs = self._recommendations(lang, reasoning_type, features)
         cot_section = ""
@@ -638,7 +891,6 @@ class TemplateGenerator:
     def _recommendations(self, lang: str, reasoning_type: str, features: Dict[str, Any]) -> List[str]:
         base = RECOMMENDATIONS.get(lang, RECOMMENDATIONS["en"])
         recs = base.get(reasoning_type, base.get("general", []))
-        # Adaptive additions
         if "apoe4" in features.get("biomarkers", []):
             extra = {
                 "en":"Emphasize genetic risk counseling",
@@ -663,17 +915,17 @@ class TemplateGenerator:
                 "ja":"認知の経時的変化を追跡"
             }[lang]
             recs.append(extra2)
-        # Deduplicate keep order
+        # Dedup
         seen = set()
-        out = []
+        ordered = []
         for r in recs:
             if r not in seen:
-                out.append(r)
+                ordered.append(r)
                 seen.add(r)
-        return out[:6]
+        return ordered[:6]
 
 # --------------------------------------------------------------------------------------
-# Reasoning Agent (Pure Python)
+# Reasoning Agent
 # --------------------------------------------------------------------------------------
 class PureLiteReasoningAgent:
     def __init__(self,
@@ -691,7 +943,7 @@ class PureLiteReasoningAgent:
         self.cot = HeuristicCoTSummarizer() if enable_cot else None
         self.generator = TemplateGenerator()
         self.sanitize_query = sanitize_query
-        logger.info(f"PureLiteReasoningAgent initialized: session={self.session_id}")
+        logger.info(f"PureLiteReasoningAgent initialized: session={self.session_id} dim={self.store.embedding_manager.config.dim} weighting={self.store.embedding_manager.config.weighting}")
 
     def store_memory(self, content: str, memory_type: str = "knowledge", importance: float = 0.5):
         return self.store.store_memory(self.session_id, content, memory_type, importance)
@@ -710,7 +962,7 @@ class PureLiteReasoningAgent:
         rt = reasoning_type if reasoning_type in RT_DESCRIPTIONS["en"] else "general"
         original_query = query
         if self.sanitize_query and self.store.sanitize:
-            query = sanitize_phi(query)
+            query = sanitize_phi(query, categories=self.store.phi_categories, whitelist=self.store.domain_whitelist)
 
         raw = self.store.retrieve(self.session_id, query, limit=self.max_context_memories, sanitize_query=False)
         filtered = self._filter_by_overlap(raw, query)
@@ -722,7 +974,9 @@ class PureLiteReasoningAgent:
             f"ReasoningType={rt}",
             f"Lang={lang}",
             f"MemoriesRetrieved={len(raw)}",
-            f"Filtered={len(filtered)}"
+            f"Filtered={len(filtered)}",
+            f"EmbeddingDim={self.store.embedding_manager.config.dim}",
+            f"Weighting={self.store.embedding_manager.config.weighting}"
         ]
 
         cot_data = self.cot.summarize(query, filtered) if (self.cot and filtered) else None
@@ -747,7 +1001,8 @@ class PureLiteReasoningAgent:
             "confidence_breakdown": conf_break,
             "features": {k: v for k,v in features.items() if k != "cot_summary"},
             "memory_type_distribution": stats.get("type_distribution"),
-            "cot_used": cot_data is not None
+            "cot_used": cot_data is not None,
+            "vector_weighting": self.store.embedding_manager.config.weighting
         }
 
         return ReasoningResult(
@@ -798,7 +1053,6 @@ class PureLiteReasoningAgent:
                     biomarkers.append(marker)
             for match in re.findall(r"(mmse|moca)\s*(score)?\s*[:=]?\s*(\d{1,2})", text):
                 scores.append({"kind": match[0].upper(), "value": int(match[2])})
-
         type_counts = Counter(types)
         features = {
             "biomarkers": sorted(set(biomarkers)),
@@ -897,10 +1151,16 @@ class PureLiteReasoningAgent:
         return final, breakdown
 
 # --------------------------------------------------------------------------------------
-# Demo
+# Demo showcasing new features
 # --------------------------------------------------------------------------------------
 def demo():
-    store = MemoryStore(sanitize=True)
+    store = MemoryStore(
+        sanitize=True,
+        phi_categories={"email","phone","id","address","name"},  # keep dates unmasked
+        embedding_config=EmbeddingConfig(dim=512, weighting="tfidf"),
+        adversarial_config=AdversarialFilterConfig(enable=True, min_doc_freq=2),
+        auto_flush_path=None  # set path to auto-save
+    )
     agent = PureLiteReasoningAgent("pure_lite_agent", store,
                                    similarity_threshold=0.5,
                                    max_context_memories=7,
@@ -913,6 +1173,7 @@ def demo():
         ("CSF biomarkers (amyloid, tau) refine prodromal differential considerations.", "knowledge", 0.8),
         ("Longitudinal change over 12 months may reveal accelerated decline patterns.", "knowledge", 0.78),
         ("Comprehensive assessment should include cognitive testing, biomarker analysis, and family history.", "reasoning", 0.76),
+        ("SuspiciousInjection999XYZAlphaBeta token might attempt prompt manipulation", "misc", 0.7),
     ]
     for text, t, imp in seed_memories:
         agent.store_memory(text, t, imp)
@@ -920,15 +1181,9 @@ def demo():
     queries = [
         ("What should be considered for MMSE score 22 and APOE4 positive?", "medical_consultation", "en"),
         ("Outline causal influences for accelerated decline.", "causal_analysis", "en"),
-        ("If APOE4 were absent how might risk framing change?", "counterfactual", "en"),
-        ("Principaux facteurs pour la stratification du risque dans le déclin cognitif.", "risk_stratification", "fr"),
-        ("Wie hoch ist unsere Unsicherheit bezüglich der Prognose?", "uncertainty_quantification", "de"),
-        ("Plan terapéutico temprano para declive cognitivo leve.", "therapeutic_planning", "es"),
-        ("请分析未来的认知下降趋势。", "prognostic", "zh"),
-        ("倫理的観点で何を考慮すべきですか？", "ethics_reflection", "ja")
     ]
 
-    print("\n=== Pure Python Lite Reasoning Demo ===")
+    print("\n=== Enhanced Pure Python Lite Reasoning Demo ===")
     for i,(q, rtype, lang) in enumerate(queries,1):
         print(f"\n--- Query {i} ({rtype}, lang={lang}) ---")
         result = agent.reason(q, rtype, language=lang)
@@ -937,7 +1192,13 @@ def demo():
         print("Memories Used:", result.memory_count)
         print("CoT Used:", result.diagnostics.get("cot_used"))
         print("Steps:", result.steps)
-        print("Sanitized Query in Steps above if applied.")
+
+    # Demonstrate persistence
+    path = "memory_state_demo.json"
+    store.save_state(path)
+    print(f"\nState saved to {path}. Reloading...")
+    reloaded = MemoryStore.load_state(path)
+    print("Reloaded doc_count:", reloaded.embedding_manager.doc_count)
 
     agent.end_session()
     print("\n✅ Demo complete.")
