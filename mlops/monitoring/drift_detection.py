@@ -368,7 +368,138 @@ class ImagingDriftDetector:
                 result["drift_detected"] = True
                 result["alerts"].append("Distribution shift detected in quantiles")
 
+        # Test 4: Coefficient of Variation (CV) drift detection
+        if baseline_std > 0 and baseline_stats["mean"] != 0:
+            baseline_cv = baseline_std / abs(baseline_stats["mean"])
+            current_cv = current_stats["std"] / abs(current_stats["mean"]) if current_stats["mean"] != 0 else 0
+
+            result["tests"]["baseline_cv"] = float(baseline_cv)
+            result["tests"]["current_cv"] = float(current_cv)
+
+            cv_change = abs(current_cv - baseline_cv) / baseline_cv if baseline_cv > 0 else 0
+
+            if cv_change > 0.5:  # 50% change in coefficient of variation
+                result["drift_detected"] = True
+                result["alerts"].append(f"Coefficient of variation changed by {cv_change:.1%}")
+
+        # Test 5: Percentile-based drift detection (P90)
+        baseline_p90 = baseline_stats.get("q75", 0) + 1.5 * (
+            baseline_stats.get("q75", 0) - baseline_stats.get("q25", 0)
+        )
+        current_p90 = float(new_data_clean.quantile(0.90))
+
+        if baseline_std > 0:
+            p90_shift = abs(current_p90 - baseline_p90) / baseline_std
+            result["tests"]["p90_shift_zscore"] = float(p90_shift)
+
+            if p90_shift > 2.0:
+                result["drift_detected"] = True
+                result["alerts"].append(f"P90 percentile shift detected (z-score: {p90_shift:.2f})")
+
         return result
+
+    def detect_drift_with_multiple_methods(
+        self, new_data: pd.DataFrame, methods: Optional[List[str]] = None
+    ) -> Dict[str, Any]:
+        """
+        Detect drift using multiple statistical methods and combine results.
+
+        Args:
+            new_data: New data to check for drift
+            methods: List of methods to use ('ks', 'chi2', 'psi', 'wasserstein')
+                    If None, uses all available methods
+
+        Returns:
+            Combined drift detection results from multiple methods
+        """
+        available_methods = ["standard", "population_stability"]
+        if methods is None:
+            methods = available_methods
+
+        # Run standard drift detection
+        standard_results = self.detect_drift(new_data)
+
+        # Add population stability index if requested
+        if "population_stability" in methods:
+            psi_results = self._calculate_population_stability_index(new_data)
+            standard_results["psi_analysis"] = psi_results
+
+        return standard_results
+
+    def _calculate_population_stability_index(self, new_data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Calculate Population Stability Index (PSI) for each feature.
+
+        PSI measures the shift in distributions between baseline and new data.
+
+        Returns:
+            Dictionary containing PSI scores for each feature
+        """
+        available_features = [f for f in self.drift_features if f in new_data.columns]
+        psi_results = {}
+
+        for feature in available_features:
+            if feature not in self.baseline_stats:
+                continue
+
+            new_feature_data = new_data[feature].dropna()
+            if len(new_feature_data) == 0:
+                continue
+
+            # Use deciles for PSI calculation
+            baseline_stats = self.baseline_stats[feature]
+
+            # Create bins based on baseline quantiles
+            try:
+                bins = [
+                    baseline_stats["min"],
+                    baseline_stats["q25"],
+                    baseline_stats["median"],
+                    baseline_stats["q75"],
+                    baseline_stats["max"],
+                ]
+
+                # Handle case where min == max
+                if len(set(bins)) == 1:
+                    psi_results[feature] = {"psi": 0.0, "drift_detected": False, "note": "Constant feature"}
+                    continue
+
+                # Calculate PSI
+                psi_score = 0.0
+                num_bins = len(bins) - 1
+
+                for i in range(num_bins):
+                    # Expected proportion (uniform distribution as approximation)
+                    expected_pct = 1.0 / num_bins
+
+                    # Actual proportion in new data
+                    actual_count = ((new_feature_data >= bins[i]) & (new_feature_data < bins[i + 1])).sum()
+                    actual_pct = actual_count / len(new_feature_data) if len(new_feature_data) > 0 else 0
+
+                    # Avoid log(0)
+                    if actual_pct > 0 and expected_pct > 0:
+                        psi_score += (actual_pct - expected_pct) * np.log(actual_pct / expected_pct)
+
+                # Classify drift based on PSI score
+                drift_status = "none"
+                if psi_score > 0.25:
+                    drift_status = "significant"
+                elif psi_score > 0.1:
+                    drift_status = "moderate"
+                elif psi_score > 0.0:
+                    drift_status = "minor"
+
+                psi_results[feature] = {
+                    "psi": float(psi_score),
+                    "drift_detected": psi_score > 0.1,
+                    "drift_status": drift_status,
+                }
+
+            except Exception as e:
+                self.logger.warning(f"Failed to calculate PSI for {feature}: {e}")
+                psi_results[feature] = {"error": str(e)}
+
+        return psi_results
 
     def _calculate_drift_severity(self, results: Dict[str, Any]) -> str:
         """Calculate overall drift severity level."""

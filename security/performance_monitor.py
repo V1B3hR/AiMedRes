@@ -253,30 +253,46 @@ class ClinicalPerformanceMonitor:
                 time.sleep(1)  # Wait longer on error
 
     def _process_queued_metrics(self):
-        """Process metrics from the queue."""
+        """Process metrics from the queue with batch processing."""
         processed_count = 0
-        while not self._metrics_queue.empty() and processed_count < 100:
+        batch_size = 100
+        metrics_batch = []
+
+        # Collect batch of metrics
+        while not self._metrics_queue.empty() and processed_count < batch_size:
             try:
                 metric = self._metrics_queue.get_nowait()
-                self._store_metric(metric)
+                metrics_batch.append(metric)
                 processed_count += 1
             except queue.Empty:
                 break
 
+        # Process batch with single lock acquisition
+        if metrics_batch:
+            with self._lock:
+                for metric in metrics_batch:
+                    self._store_metric_unsafe(metric)
+
+    def _store_metric_unsafe(self, metric: PerformanceMetrics):
+        """Store performance metric without lock (caller must hold lock)."""
+        # Add to history
+        self.metrics_history.append(metric)
+
+        # Add to real-time tracking
+        now = datetime.now(timezone.utc)
+        minute_key = now.strftime("%Y-%m-%d_%H-%M")
+        self.real_time_metrics[minute_key].append(metric)
+
+        # Add to priority-specific tracking
+        if metric.clinical_priority in self.response_times:
+            self.response_times[metric.clinical_priority].append(metric.response_time_ms)
+
+        # Check for immediate violations (moved outside lock in caller)
+
     def _store_metric(self, metric: PerformanceMetrics):
-        """Store performance metric and trigger analysis."""
+        """Store performance metric and trigger analysis (thread-safe)."""
         with self._lock:
-            # Add to history
-            self.metrics_history.append(metric)
-
-            # Add to real-time tracking
-            now = datetime.now(timezone.utc)
-            minute_key = now.strftime("%Y-%m-%d_%H-%M")
-            self.real_time_metrics[minute_key].append(metric)
-
-            # Add to priority-specific tracking
-            if metric.clinical_priority in self.response_times:
-                self.response_times[metric.clinical_priority].append(metric.response_time_ms)
+            self._store_metric_unsafe(metric)
 
             # Check for immediate violations
             self._check_immediate_violation(metric)
