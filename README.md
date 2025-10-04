@@ -180,18 +180,36 @@ Determinism options:
 
 ---
 
-## 📁 Project Structure (Condensed)
+## 📁 Project Structure (Consolidated)
 
 ```
-aimedres/
-  training/                  # Core pipelines
-  agents/                    # Medical reasoning & dialogue
-  neural_networks/           # Adaptive + biological models
-  agent_memory/              # Consolidation & storage
-  integration/               # EHR / FHIR / dashboard
-  dashboards/ (planned)      # UI components
-  scripts/                   # CLI utilities
-  tests/                     # Unit / integration tests
+src/aimedres/
+  training/                  # Disease-specific training pipelines & core training infrastructure
+    train_alzheimers.py      # Alzheimer's disease classification
+    train_als.py             # ALS classification
+    train_parkinsons.py      # Parkinson's disease classification
+    train_brain_mri.py       # Brain MRI image classification
+    train_cardiovascular.py  # Cardiovascular risk prediction
+    train_diabetes.py        # Diabetes classification
+    automation_system.py     # Training automation
+    custom_pipeline.py       # Dynamic pipeline builder
+    orchestration.py         # Workflow orchestration
+  agents/                    # Medical reasoning & specialized agents
+    specialized_medical_agents.py  # Multi-agent medical simulation
+  agent_memory/              # Memory consolidation & storage
+    memory_consolidation.py  # Dual-store consolidation system
+    embed_memory.py          # Vector memory store
+    agent_extensions.py      # Plugin system
+  core/                      # Core components
+    neural_network.py        # Adaptive neural networks
+    agent.py                 # DuetMind agent framework
+    config.py                # Configuration management
+  security/                  # Security & validation
+  api/                       # REST API
+  utils/                     # Utilities
+scripts/                     # CLI utilities
+tests/                       # Unit / integration tests
+examples/                    # Usage examples
 ```
 
 ---
