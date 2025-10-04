@@ -146,7 +146,68 @@ class ClinicalPerformanceMonitor:
         self.auto_optimization_enabled = False
         self.auto_optimization_threshold = 0.1  # 10% performance degradation
 
+        # Monitoring configuration
+        self.monitoring_interval_seconds = 0.1  # Default 100ms
+        self.metrics_retention_hours = 24  # Default 24 hours
+
+        # Validate configuration
+        self._validate_configuration()
+
         logger.info("Clinical Performance Monitor initialized")
+
+    def _validate_configuration(self) -> None:
+        """Validate monitor configuration parameters."""
+        if self.thresholds.emergency_max_ms <= 0:
+            raise ValueError("Emergency threshold must be positive")
+
+        if self.thresholds.violation_count_warning >= self.thresholds.violation_count_critical:
+            logger.warning("Warning violation count should be less than critical count")
+
+        if self.thresholds.cpu_warning_threshold > 100 or self.thresholds.cpu_warning_threshold < 0:
+            raise ValueError("CPU threshold must be between 0 and 100")
+
+        if self.thresholds.memory_warning_threshold > 100 or self.thresholds.memory_warning_threshold < 0:
+            raise ValueError("Memory threshold must be between 0 and 100")
+
+    def set_monitoring_interval(self, interval_seconds: float) -> None:
+        """
+        Set monitoring loop interval.
+
+        Args:
+            interval_seconds: Interval in seconds (minimum 0.01, maximum 60)
+        """
+        if interval_seconds < 0.01 or interval_seconds > 60:
+            raise ValueError("Monitoring interval must be between 0.01 and 60 seconds")
+
+        self.monitoring_interval_seconds = interval_seconds
+        logger.info(f"Monitoring interval set to {interval_seconds}s")
+
+    def get_configuration(self) -> Dict[str, Any]:
+        """
+        Get current monitor configuration.
+
+        Returns:
+            Dictionary containing current configuration
+        """
+        return {
+            "thresholds": {
+                "emergency_max_ms": self.thresholds.emergency_max_ms,
+                "critical_max_ms": self.thresholds.critical_max_ms,
+                "urgent_max_ms": self.thresholds.urgent_max_ms,
+                "routine_max_ms": self.thresholds.routine_max_ms,
+                "admin_max_ms": self.thresholds.admin_max_ms,
+                "violation_count_warning": self.thresholds.violation_count_warning,
+                "violation_count_critical": self.thresholds.violation_count_critical,
+                "cpu_warning_threshold": self.thresholds.cpu_warning_threshold,
+                "memory_warning_threshold": self.thresholds.memory_warning_threshold,
+            },
+            "auto_optimization_enabled": self.auto_optimization_enabled,
+            "auto_optimization_threshold": self.auto_optimization_threshold,
+            "monitoring_interval_seconds": self.monitoring_interval_seconds,
+            "metrics_retention_hours": self.metrics_retention_hours,
+            "enable_audit_integration": self.enable_audit_integration,
+            "metric_history_size": self.metrics_history.maxlen,
+        }
 
     def start_monitoring(self):
         """Start background performance monitoring."""
@@ -185,10 +246,11 @@ class ClinicalPerformanceMonitor:
                 # Cleanup old metrics
                 self._cleanup_old_metrics()
 
-                time.sleep(0.1)  # 100ms monitoring interval
+                time.sleep(self.monitoring_interval_seconds)
 
             except Exception as e:
-                logger.error(f"Error in performance monitoring loop: {e}")
+                logger.error(f"Error in performance monitoring loop: {e}", exc_info=True)
+                time.sleep(1)  # Wait longer on error
 
     def _process_queued_metrics(self):
         """Process metrics from the queue."""
@@ -468,14 +530,39 @@ class ClinicalPerformanceMonitor:
             additional_context: Additional context data
         """
         try:
-            # Get system metrics
-            system_load = {
-                "cpu_percent": psutil.cpu_percent(interval=None),
-                "memory_percent": psutil.virtual_memory().percent,
-            }
+            # Input validation
+            if not operation or not isinstance(operation, str):
+                logger.warning("Invalid operation name provided, skipping metric recording")
+                return
 
-            memory_info = psutil.virtual_memory()
-            memory_usage = {"available_mb": memory_info.available / (1024 * 1024), "used_percent": memory_info.percent}
+            if response_time_ms < 0:
+                logger.warning(f"Negative response time ({response_time_ms}ms) provided, using absolute value")
+                response_time_ms = abs(response_time_ms)
+
+            if response_time_ms > 300000:  # 5 minutes
+                logger.warning(
+                    f"Unusually high response time ({response_time_ms}ms) recorded for operation: {operation}"
+                )
+
+            # Get system metrics with error handling
+            try:
+                system_load = {
+                    "cpu_percent": psutil.cpu_percent(interval=None),
+                    "memory_percent": psutil.virtual_memory().percent,
+                }
+            except Exception as e:
+                logger.warning(f"Failed to get system metrics: {e}")
+                system_load = {"cpu_percent": 0.0, "memory_percent": 0.0}
+
+            try:
+                memory_info = psutil.virtual_memory()
+                memory_usage = {
+                    "available_mb": memory_info.available / (1024 * 1024),
+                    "used_percent": memory_info.percent,
+                }
+            except Exception as e:
+                logger.warning(f"Failed to get memory info: {e}")
+                memory_usage = {"available_mb": 0.0, "used_percent": 0.0}
 
             metric = PerformanceMetrics(
                 timestamp=datetime.now(timezone.utc),
@@ -491,11 +578,16 @@ class ClinicalPerformanceMonitor:
                 additional_context=additional_context or {},
             )
 
-            # Queue for processing
-            self._metrics_queue.put(metric)
+            # Queue for processing with size check
+            if self._metrics_queue.qsize() > 1000:
+                logger.warning("Metrics queue size exceeds 1000, possible processing bottleneck")
 
+            self._metrics_queue.put(metric, block=False)
+
+        except queue.Full:
+            logger.error("Metrics queue is full, dropping metric")
         except Exception as e:
-            logger.error(f"Failed to record performance metric: {e}")
+            logger.error(f"Failed to record performance metric: {e}", exc_info=True)
 
     def add_alert_callback(self, callback: Callable[[Dict[str, Any]], None]):
         """Add callback for performance alerts."""

@@ -67,7 +67,20 @@ class ImagingDriftDetector:
 
         Args:
             baseline_data: Reference dataset to establish baseline statistics
+
+        Raises:
+            ValueError: If baseline data is invalid or contains no drift features
         """
+        # Input validation
+        if baseline_data.empty:
+            raise ValueError("Baseline data cannot be empty")
+
+        if len(baseline_data) < 30:
+            self.logger.warning(
+                f"Baseline data has only {len(baseline_data)} samples. "
+                "At least 30 samples recommended for reliable drift detection."
+            )
+
         self.logger.info(f"Fitting drift detector on baseline data: {baseline_data.shape}")
 
         # Auto-select drift features if not provided
@@ -82,34 +95,69 @@ class ImagingDriftDetector:
         self.drift_features = available_features
         self.logger.info(f"Monitoring {len(self.drift_features)} features for drift")
 
-        # Extract drift monitoring data
-        drift_data = baseline_data[self.drift_features].fillna(baseline_data[self.drift_features].median())
+        # Extract drift monitoring data with validation
+        drift_data = baseline_data[self.drift_features].copy()
 
-        # Fit scaler
-        self.scaler.fit(drift_data)
-        scaled_data = self.scaler.transform(drift_data)
+        # Check for missing values
+        missing_pct = drift_data.isnull().sum() / len(drift_data)
+        high_missing_features = missing_pct[missing_pct > 0.5].index.tolist()
 
-        # Fit outlier detector
-        self.outlier_detector = IsolationForest(contamination=self.contamination, random_state=42, n_estimators=100)
-        self.outlier_detector.fit(scaled_data)
+        if high_missing_features:
+            self.logger.warning(
+                f"Features with >50% missing values will be filled with median: {high_missing_features}"
+            )
+
+        drift_data = drift_data.fillna(drift_data.median())
+
+        # Check for constant features
+        constant_features = [col for col in drift_data.columns if drift_data[col].nunique() <= 1]
+        if constant_features:
+            self.logger.warning(f"Constant features detected (may affect drift detection): {constant_features}")
+
+        try:
+            # Fit scaler
+            self.scaler.fit(drift_data)
+            scaled_data = self.scaler.transform(drift_data)
+        except Exception as e:
+            raise ValueError(f"Failed to scale baseline data: {e}")
+
+        try:
+            # Fit outlier detector
+            self.outlier_detector = IsolationForest(contamination=self.contamination, random_state=42, n_estimators=100)
+            self.outlier_detector.fit(scaled_data)
+        except Exception as e:
+            raise ValueError(f"Failed to fit outlier detector: {e}")
 
         # Calculate baseline statistics
         self.baseline_stats = self._calculate_baseline_stats(drift_data)
 
         self.logger.info("Baseline established for drift detection")
 
-    def detect_drift(self, new_data: pd.DataFrame) -> Dict[str, Any]:
+    def detect_drift(self, new_data: pd.DataFrame, strict_mode: bool = False) -> Dict[str, Any]:
         """
         Detect drift in new data compared to baseline.
 
         Args:
             new_data: New data to check for drift
+            strict_mode: If True, use stricter thresholds for drift detection
 
         Returns:
             Dictionary containing drift detection results
+
+        Raises:
+            ValueError: If detector is not fitted or input data is invalid
         """
         if self.outlier_detector is None:
             raise ValueError("Drift detector not fitted. Call fit_baseline() first.")
+
+        # Input validation
+        if new_data.empty:
+            raise ValueError("New data cannot be empty")
+
+        if len(new_data) < 10:
+            self.logger.warning(
+                f"New data has only {len(new_data)} samples. " "At least 10 samples recommended for drift detection."
+            )
 
         self.logger.info(f"Detecting drift in new data: {new_data.shape}")
 
@@ -119,13 +167,28 @@ class ImagingDriftDetector:
             self.logger.warning("No drift features found in new data")
             return {"drift_detected": False, "error": "No drift features available"}
 
-        drift_data = new_data[available_features].fillna(new_data[available_features].median())
+        drift_data = new_data[available_features].copy()
+
+        # Check data quality
+        missing_pct = drift_data.isnull().sum() / len(drift_data)
+        if missing_pct.max() > 0.8:
+            self.logger.warning(f"High missing value rate detected: {missing_pct[missing_pct > 0.8].to_dict()}")
+
+        drift_data = drift_data.fillna(drift_data.median())
+
+        # Apply strict mode adjustments
+        active_thresholds = self.drift_thresholds.copy()
+        if strict_mode:
+            active_thresholds["ks_test_pvalue"] = self.drift_thresholds["ks_test_pvalue"] * 0.5
+            active_thresholds["feature_shift_zscore"] = self.drift_thresholds["feature_shift_zscore"] * 0.75
+            self.logger.info("Using strict mode for drift detection")
 
         # Initialize results
         results = {
             "timestamp": datetime.now().isoformat(),
             "n_samples": len(drift_data),
             "features_monitored": available_features,
+            "strict_mode": strict_mode,
             "drift_detected": False,
             "alerts": [],
             "feature_analysis": {},
