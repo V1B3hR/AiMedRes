@@ -22,7 +22,7 @@ def demo_specialized_medical_agents():
     print("🏥 SPECIALIZED MEDICAL AGENTS DEMONSTRATION")
     print("="*70)
     
-    from specialized_medical_agents import create_specialized_medical_team, ConsensusManager, create_test_case
+    from aimedres.agents.specialized_medical_agents import create_specialized_medical_team, ConsensusManager, create_test_case
     from labyrinth_adaptive import AliveLoopNode, ResourceRoom
     
     # Create test environment

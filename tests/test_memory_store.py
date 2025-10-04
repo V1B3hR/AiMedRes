@@ -2,7 +2,7 @@ import os
 import uuid
 import pytest
 
-from agent_memory.embed_memory import AgentMemoryStore, MemoryType
+from aimedres.agent_memory.embed_memory import AgentMemoryStore, MemoryType
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://duetmind:duetmind_secret@localhost:5432/duetmind")
 

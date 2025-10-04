@@ -21,7 +21,7 @@ warnings.filterwarnings('ignore')
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from training.train_als import ALSTrainingPipeline
+from aimedres.training.train_als import ALSTrainingPipeline
 
 def main():
     print("=" * 60)

@@ -29,7 +29,7 @@ from regulatory_compliance import (
     ComplianceDashboard, HIPAAComplianceManager, FDAValidationManager,
     AuditEvent, AuditEventType
 )
-from specialized_medical_agents import MedicalKnowledgeAgent
+from aimedres.agents.specialized_medical_agents import MedicalKnowledgeAgent
 
 # Flask components for web interface
 from flask import Flask, request, jsonify, render_template_string

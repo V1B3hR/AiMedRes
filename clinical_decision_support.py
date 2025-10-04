@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 
 # Import existing components
-from specialized_medical_agents import MedicalKnowledgeAgent
+from aimedres.agents.specialized_medical_agents import MedicalKnowledgeAgent
 from secure_medical_processor import SecureMedicalDataProcessor
 
 logger = logging.getLogger("ClinicalDecisionSupport")

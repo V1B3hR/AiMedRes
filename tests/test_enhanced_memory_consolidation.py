@@ -17,11 +17,11 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 # Import our memory consolidation system
-from agent_memory.memory_consolidation import (
+from aimedres.agent_memory.memory_consolidation import (
     MemoryConsolidator, MemoryStore, MemoryMetadata, 
     SemanticConflict, ConsolidationEvent
 )
-from agent_memory.embed_memory import AgentMemoryStore
+from aimedres.agent_memory.embed_memory import AgentMemoryStore
 
 
 class MockMemoryStore:
