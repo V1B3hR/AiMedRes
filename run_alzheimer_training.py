@@ -30,7 +30,7 @@ def main():
         # Add the repo root to Python path
         sys.path.insert(0, str(repo_root))
         
-        from files.training.train_alzheimers import AlzheimerTrainingPipeline
+        from aimedres.training.train_alzheimers import AlzheimerTrainingPipeline
         
         # Create and run pipeline with reasonable defaults
         pipeline = AlzheimerTrainingPipeline(output_dir="outputs")

@@ -1,5 +1,5 @@
 """
-Compatibility shim for files.training module.
+Compatibility shim for training module.
 
 This module has been moved to src/aimedres/training/.
 This shim provides backward compatibility for existing imports.
@@ -8,7 +8,7 @@ This shim provides backward compatibility for existing imports.
 import warnings
 
 warnings.warn(
-    "Importing from 'files.training' is deprecated. "
+    "Importing from 'training' is deprecated. "
     "Use 'from aimedres.training import ...' instead.",
     DeprecationWarning,
     stacklevel=2

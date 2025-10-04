@@ -19,8 +19,8 @@ from security.safety_checks import (
     SystemSafetyCheck, DataSafetyCheck, ModelSafetyCheck, 
     InteractionSafetyCheck, ClinicalSafetyCheck
 )
-from agent_memory.memory_consolidation import MemoryConsolidator, MemoryMetadata
-from agent_memory.embed_memory import AgentMemoryStore
+from aimedres.agent_memory.memory_consolidation import MemoryConsolidator, MemoryMetadata
+from aimedres.agent_memory.embed_memory import AgentMemoryStore
 from api.visualization_api import VisualizationAPI
 
 

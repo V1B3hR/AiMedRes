@@ -199,7 +199,7 @@ def test_live_reasoning():
         sys.path.insert(0, '/home/runner/work/duetmind_adaptive/duetmind_adaptive')
         
         # Import with absolute paths to avoid relative import issues
-        from agent_memory.live_reasoning import LiveReasoningAgent, ReasoningContext
+        from aimedres.agent_memory.live_reasoning import LiveReasoningAgent, ReasoningContext
         
         # Test the core functionality that doesn't require database
         print("✓ Live reasoning components imported successfully")

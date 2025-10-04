@@ -9,7 +9,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from specialized_medical_agents import (
+from aimedres.agents.specialized_medical_agents import (
     ConsensusManager, SafetyValidator, ExplainabilityEngine, 
     AgentCommunicationProtocol, create_specialized_medical_team,
     create_test_case

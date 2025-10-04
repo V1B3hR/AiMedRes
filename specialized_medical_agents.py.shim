@@ -1,0 +1,18 @@
+"""
+Compatibility shim for specialized_medical_agents module.
+
+This module has been moved to src/aimedres/agents/specialized_medical_agents.py.
+This shim provides backward compatibility for existing imports.
+"""
+
+import warnings
+
+warnings.warn(
+    "Importing from 'specialized_medical_agents' is deprecated. "
+    "Use 'from aimedres.agents.specialized_medical_agents import ...' instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export everything from the new location
+from aimedres.agents.specialized_medical_agents import *  # noqa: F401, F403

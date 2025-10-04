@@ -37,7 +37,7 @@ import uvicorn
 # Import existing components
 try:
     from clinical_decision_support import ClinicalDecisionSupportSystem
-    from specialized_medical_agents import MedicalKnowledgeAgent
+    from aimedres.agents.specialized_medical_agents import MedicalKnowledgeAgent
     from labyrinth_adaptive import UnifiedAdaptiveAgent
     from secure_medical_processor import SecureMedicalDataProcessor
 except ImportError as e:

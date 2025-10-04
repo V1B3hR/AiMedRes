@@ -14,7 +14,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from specialized_medical_agents import (
+from aimedres.agents.specialized_medical_agents import (
     RadiologistAgent, NeurologistAgent, PsychiatristAgent, 
     ConsensusManager, create_specialized_medical_team,
     run_multi_step_diagnostic_simulation, create_test_case

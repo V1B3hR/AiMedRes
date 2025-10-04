@@ -10,7 +10,7 @@ import json
 from datetime import datetime
 from unittest.mock import Mock, patch
 
-from agent_memory.agent_extensions import (
+from aimedres.agent_memory.agent_extensions import (
     CapabilityRegistry, AgentPlugin, PluginManifest, CapabilityScope,
     PluginStatus, AgentMessage, AgentContext, AgentResult,
     MemoryAccessor, PolicyEngine, SandboxExecutor,

@@ -29,9 +29,9 @@ try:
     from security.safety_monitor import SafetyMonitor, SafetyDomain
     from security.monitoring import SecurityMonitor
     from mlops.monitoring.production_monitor import ProductionMonitor
-    from agent_memory.memory_consolidation import MemoryConsolidator
-    from agent_memory.embed_memory import AgentMemoryStore
-    from agent_memory.agent_extensions import CapabilityRegistry
+    from aimedres.agent_memory.memory_consolidation import MemoryConsolidator
+    from aimedres.agent_memory.embed_memory import AgentMemoryStore
+    from aimedres.agent_memory.agent_extensions import CapabilityRegistry
 except ImportError as e:
     SafetyMonitor = None
     SafetyDomain = None
