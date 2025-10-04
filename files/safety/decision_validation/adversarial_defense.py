@@ -1,357 +1,313 @@
 #!/usr/bin/env python3
 """
-Single-File Adversarial Defense Module for AiMedRes.
+Single-File Federated Learning Module for AiMedRes.
 
-This module provides a self-contained, production-grade security component for
-detecting and mitigating adversarial attacks against clinical AI models. It is
-designed for direct integration into the AiMedRes platform, featuring an async,
-pluggable, and testable architecture.
+This module provides a complete, asynchronous framework for orchestrating
+federated learning rounds. It is designed as a core component of the AiMedRes
+platform to enable collaborative model training across multiple institutions
+without sharing sensitive patient data.
 """
 
 import asyncio
 import hashlib
-import json
 import logging
+import uuid
 from abc import ABC, abstractmethod
-from collections import deque
+from collections import defaultdict
 from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 # ==============================================================================
-# 1. CONFIGURATION (Simulating an external configs/security_config.yaml)
+# 1. CONFIGURATION (Simulating configs/federated_learning_config.yaml)
 # ==============================================================================
 
-# In a real AiMedRes integration, this would be loaded from a central config file.
-ADVERSARIAL_DEFENSE_CONFIG = {
-    "active_detectors": [
-        "input_bounds",
-        "statistical_anomaly",
-        "ensemble_inconsistency",
-        "historical_pattern",
-    ],
-    "input_bounds": {
-        "age": (0, 120),
-        "creatinine_mg_dl": (0.1, 15.0),
-        "systolic_bp": (50, 250),
-    },
-    "statistical_anomaly": {
-        "max_z_score_deviation": 4.0, # Stricter threshold
-    },
-    "ensemble_inconsistency": {
-        "max_prediction_variance": 0.25,
-    },
-    "historical_pattern": {
-        "identical_input_limit": {"count": 5, "timespan_seconds": 3600},
-        "boundary_probe_sensitivity": 0.6,
-    },
+FEDERATED_LEARNING_CONFIG = {
+    "aggregation_strategy": "federated_averaging",
+    "min_clients_for_aggregation": 3,
+    "round_timeout_seconds": 3600,  # 1 hour
+    "model_id": "alzheimer_prediction_v3",
 }
 
 # ==============================================================================
-# 2. ENUMS AND DATA MODELS (Using Pydantic for robust validation)
+# 2. DATA MODELS (Pydantic for robust, validated data exchange)
 # ==============================================================================
 
-class AttackType(str, Enum):
-    EVASION = "EVASION"
-    POISONING = "POISONING"
-    MODEL_EXTRACTION = "MODEL_EXTRACTION"
-    INFERENCE = "INFERENCE"
+class ModelWeights(BaseModel):
+    """A container for model weights, designed for serialization."""
+    tensors: Dict[str, List[float]] = Field(..., description="Model weights/tensors, flattened for JSON serialization.")
+    tensor_shapes: Dict[str, List[int]] = Field(..., description="Original shapes of the tensors.")
 
-class AttackSeverity(str, Enum):
-    INFO = "INFO"
-    LOW = "LOW"
-    MODERATE = "MODERATE"
-    HIGH = "HIGH"
-    CRITICAL = "CRITICAL"
+    @classmethod
+    def from_numpy(cls, numpy_weights: Dict[str, np.ndarray]) -> 'ModelWeights':
+        """Creates a ModelWeights object from a dictionary of NumPy arrays."""
+        return cls(
+            tensors={name: arr.flatten().tolist() for name, arr in numpy_weights.items()},
+            tensor_shapes={name: list(arr.shape) for name, arr in numpy_weights.items()}
+        )
 
-class AttackDetection(BaseModel):
-    """A structured record of a detected potential adversarial attack."""
-    detector_name: str = Field(..., description="The name of the detector that triggered this finding.")
-    attack_type: AttackType
-    severity: AttackSeverity
-    confidence: float = Field(..., ge=0.0, le=1.0)
-    message: str = Field(..., description="A human-readable description of the potential attack.")
-    details: Dict[str, Any] = Field(default_factory=dict, description="Supporting data for the detection.")
-    
-class ModelInput(BaseModel):
-    """Represents the input to the AI model, with metadata for security analysis."""
-    request_id: str = Field(default_factory=lambda: f"req_{uuid.uuid4().hex}")
-    user_id: Optional[str] = "anonymous"
-    session_id: Optional[str] = None
-    features: Dict[str, float]
-    
-    @field_validator('features')
-    def check_features_not_empty(cls, v):
-        if not v:
-            raise ValueError("Features dictionary cannot be empty.")
-        return v
+    def to_numpy(self) -> Dict[str, np.ndarray]:
+        """Converts the ModelWeights object back to a dictionary of NumPy arrays."""
+        return {
+            name: np.array(flat_tensor).reshape(self.tensor_shapes[name])
+            for name, flat_tensor in self.tensors.items()
+        }
 
-class ModelOutput(BaseModel):
-    """Represents the output from the AI model, including ensemble data if available."""
-    final_prediction: Any
-    confidence: float
-    ensemble_predictions: Optional[List[Any]] = None
+class GlobalModelState(BaseModel):
+    """Represents the state of the global model on the central server."""
+    model_id: str
+    model_version: int = Field(..., ge=0)
+    weights: ModelWeights
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class ClientUpdate(BaseModel):
+    """Represents a model update submitted by a single FL client."""
+    client_id: str
+    model_id: str
+    base_model_version: int
+    weight_update: ModelWeights
+    num_samples: int = Field(..., gt=0, description="Number of samples used for training.")
+    metrics: Dict[str, float] = Field(default_factory=dict, description="Client-side training metrics (e.g., loss, accuracy).")
 
 # ==============================================================================
-# 3. DECOUPLED DEPENDENCIES (Protocols for logging and data provision)
+# 3. DECOUPLED DEPENDENCIES (Protocols for storage and queuing)
 # ==============================================================================
 
-class AttackLogger(ABC):
-    """Abstract protocol for logging detected attacks for persistence and analysis."""
+class ModelStore(ABC):
+    """Abstract protocol for persisting and retrieving global model states."""
     @abstractmethod
-    async def log_detection(self, detection: AttackDetection, model_input: ModelInput):
+    async def save_model(self, model_state: GlobalModelState):
         pass
 
-class BaselineProvider(ABC):
-    """Abstract protocol for providing trusted baseline statistics for features."""
     @abstractmethod
-    async def get_baseline_stats(self, feature_name: str) -> Optional[Tuple[float, float]]:
-        pass # Returns (mean, std_dev)
+    async def get_latest_model(self, model_id: str) -> Optional[GlobalModelState]:
+        pass
+
+class UpdateQueue(ABC):
+    """Abstract protocol for queuing client updates for aggregation."""
+    @abstractmethod
+    async def submit_update(self, round_id: str, update: ClientUpdate):
+        pass
+
+    @abstractmethod
+    async def get_updates_for_round(self, round_id: str) -> List[ClientUpdate]:
+        pass
 
 # --- Concrete implementations for demonstration ---
 
-class InMemoryAttackLogger(AttackLogger):
-    """A simple in-memory logger for demonstration and testing."""
-    def __init__(self, maxlen: int = 1000):
-        self.detections = deque(maxlen=maxlen)
-    
-    async def log_detection(self, detection: AttackDetection, model_input: ModelInput):
-        log_entry = {
-            "timestamp": datetime.now(timezone.utc),
-            "detection": detection.model_dump(),
-            "input": model_input.model_dump()
-        }
-        self.detections.append(log_entry)
-        logging.warning(f"ATTACK DETECTED: {log_entry}")
-
-class StaticBaselineProvider(BaselineProvider):
-    """A simple baseline provider with static data for demonstration."""
+class InMemoryModelStore(ModelStore):
+    """Simple in-memory model store for demonstration."""
     def __init__(self):
-        self.baselines = {
-            "age": (55.0, 15.0),
-            "creatinine_mg_dl": (0.9, 0.3),
-            "systolic_bp": (120.0, 18.0),
-        }
-    
-    async def get_baseline_stats(self, feature_name: str) -> Optional[Tuple[float, float]]:
-        return self.baselines.get(feature_name)
+        self._store: Dict[str, GlobalModelState] = {}
+
+    async def save_model(self, model_state: GlobalModelState):
+        key = f"{model_state.model_id}_v{model_state.model_version}"
+        self._store[key] = model_state
+        logging.info(f"Saved model {key} to in-memory store.")
+
+    async def get_latest_model(self, model_id: str) -> Optional[GlobalModelState]:
+        versions = [ms for ms in self._store.values() if ms.model_id == model_id]
+        if not versions:
+            return None
+        return max(versions, key=lambda ms: ms.model_version)
+
+class InMemoryUpdateQueue(UpdateQueue):
+    """Simple in-memory update queue for demonstration."""
+    def __init__(self):
+        self._queue: Dict[str, List[ClientUpdate]] = defaultdict(list)
+
+    async def submit_update(self, round_id: str, update: ClientUpdate):
+        self._queue[round_id].append(update)
+        logging.info(f"Client '{update.client_id}' submitted update for round '{round_id}'.")
+
+    async def get_updates_for_round(self, round_id: str) -> List[ClientUpdate]:
+        return self._queue.pop(round_id, [])
 
 # ==============================================================================
-# 4. DETECTOR STRATEGY PATTERN (Pluggable, async detection modules)
+# 4. AGGREGATION STRATEGY PATTERN (For algorithmic flexibility)
 # ==============================================================================
 
-class BaseDetector(ABC):
-    """Abstract base class for all adversarial detectors."""
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.name = "base_detector"
-
+class AggregationStrategy(ABC):
+    """Abstract protocol for model aggregation algorithms."""
     @abstractmethod
-    async def detect(self, model_input: ModelInput, model_output: ModelOutput) -> List[AttackDetection]:
+    def aggregate(self, base_weights: Dict[str, np.ndarray], updates: List[ClientUpdate]) -> Dict[str, np.ndarray]:
         pass
 
-class InputBoundsDetector(BaseDetector):
-    """Detects if input features are outside pre-defined plausible ranges."""
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        self.name = "input_bounds"
+class FederatedAveraging(AggregationStrategy):
+    """Implements the standard Federated Averaging (FedAvg) algorithm."""
+    def aggregate(self, base_weights: Dict[str, np.ndarray], updates: List[ClientUpdate]) -> Dict[str, np.ndarray]:
+        if not updates:
+            return base_weights
 
-    async def detect(self, model_input: ModelInput, model_output: ModelOutput) -> List[AttackDetection]:
-        violations = []
-        for feature, value in model_input.features.items():
-            if feature in self.config:
-                min_val, max_val = self.config[feature]
-                if not (min_val <= value <= max_val):
-                    violations.append(f"Feature '{feature}' ({value}) is outside range [{min_val}, {max_val}].")
+        total_samples = sum(update.num_samples for update in updates)
+        if total_samples == 0:
+            return base_weights
+
+        # Initialize aggregated weights with zeros
+        aggregated_weights = {name: np.zeros_like(arr) for name, arr in base_weights.items()}
+
+        # Perform weighted average of weight updates
+        for update in updates:
+            client_weights = update.weight_update.to_numpy()
+            weighting_factor = update.num_samples / total_samples
+            for name in aggregated_weights.keys():
+                aggregated_weights[name] += client_weights[name] * weighting_factor
         
-        if violations:
-            return [AttackDetection(
-                detector_name=self.name,
-                attack_type=AttackType.EVASION,
-                severity=AttackSeverity.HIGH,
-                confidence=0.95,
-                message="Input features fall outside clinically plausible bounds.",
-                details={"violations": violations}
-            )]
-        return []
-
-class StatisticalAnomalyDetector(BaseDetector):
-    """Detects statistical anomalies using Z-scores against a trusted baseline."""
-    def __init__(self, config: Dict[str, Any], baseline_provider: BaselineProvider):
-        super().__init__(config)
-        self.name = "statistical_anomaly"
-        self.baseline_provider = baseline_provider
-
-    async def detect(self, model_input: ModelInput, model_output: ModelOutput) -> List[AttackDetection]:
-        anomalies = []
-        max_z_score = 0.0
-        for feature, value in model_input.features.items():
-            stats = await self.baseline_provider.get_baseline_stats(feature)
-            if stats:
-                mean, std = stats
-                if std > 1e-6:
-                    z_score = abs((value - mean) / std)
-                    max_z_score = max(max_z_score, z_score)
-                    if z_score > self.config.get("max_z_score_deviation", 4.0):
-                        anomalies.append(f"Feature '{feature}' has an anomalous Z-score of {z_score:.2f}.")
-        
-        if anomalies:
-            return [AttackDetection(
-                detector_name=self.name,
-                attack_type=AttackType.EVASION,
-                severity=AttackSeverity.MODERATE,
-                confidence=min(0.9, max_z_score / (self.config.get("max_z_score_deviation", 4.0) * 2)),
-                message="Input features are statistically improbable compared to baseline.",
-                details={"anomalies": anomalies, "max_z_score": max_z_score}
-            )]
-        return []
-
-class EnsembleInconsistencyDetector(BaseDetector):
-    """Detects high variance in ensemble model predictions, a sign of evasion."""
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        self.name = "ensemble_inconsistency"
-
-    async def detect(self, model_input: ModelInput, model_output: ModelOutput) -> List[AttackDetection]:
-        if model_output.ensemble_predictions and len(model_output.ensemble_predictions) > 1:
-            try:
-                variance = np.var(model_output.ensemble_predictions)
-                if variance > self.config.get("max_prediction_variance", 0.25):
-                    return [AttackDetection(
-                        detector_name=self.name,
-                        attack_type=AttackType.EVASION,
-                        severity=AttackSeverity.MODERATE,
-                        confidence=0.8,
-                        message="High disagreement among ensemble members suggests an unstable input region.",
-                        details={"prediction_variance": variance}
-                    )]
-            except TypeError:
-                # Handle non-numeric predictions if necessary
-                pass
-        return []
+        return aggregated_weights
 
 # ==============================================================================
 # 5. MAIN MODULE FACADE (The primary entry point for AiMedRes)
 # ==============================================================================
 
-class AdversarialDefenseModule:
+class FederatedLearningModule:
     """
-    A facade that orchestrates adversarial attack detection using a suite of
-    pluggable, asynchronous detectors.
+    Orchestrates the entire federated learning process, managing rounds,
+    clients, and model aggregation.
     """
-    def __init__(self, config: Dict[str, Any], logger: AttackLogger, baseline_provider: BaselineProvider):
+    def __init__(self, config: Dict[str, Any], model_store: ModelStore, update_queue: UpdateQueue):
         self.config = config
-        self.logger = logger
-        self.detectors = self._load_detectors(config, baseline_provider)
-        logging.info(f"AdversarialDefenseModule initialized with {len(self.detectors)} detectors.")
-
-    def _load_detectors(self, config, baseline_provider) -> List[BaseDetector]:
-        """Dynamically loads and instantiates detectors based on the config."""
-        detector_map = {
-            "input_bounds": InputBoundsDetector,
-            "statistical_anomaly": StatisticalAnomalyDetector,
-            "ensemble_inconsistency": EnsembleInconsistencyDetector,
-        }
+        self.model_store = model_store
+        self.update_queue = update_queue
+        self.model_id = config["model_id"]
+        self.min_clients = config["min_clients_for_aggregation"]
         
-        loaded_detectors = []
-        for name in config.get("active_detectors", []):
-            if name in detector_map:
-                detector_config = config.get(name, {})
-                # Inject dependencies as needed
-                if name == "statistical_anomaly":
-                    loaded_detectors.append(detector_map[name](detector_config, baseline_provider))
-                else:
-                    loaded_detectors.append(detector_map[name](detector_config))
-        return loaded_detectors
+        strategy_map = {"federated_averaging": FederatedAveraging}
+        strategy_name = config["aggregation_strategy"]
+        self.aggregator = strategy_map[strategy_name]()
+        
+        self.current_round_id: Optional[str] = None
+        self.round_updates: Dict[str, List[ClientUpdate]] = defaultdict(list)
+        logging.info(f"FederatedLearningModule initialized for model '{self.model_id}'.")
 
-    async def inspect_request(self, model_input: ModelInput, model_output: ModelOutput) -> List[AttackDetection]:
+    async def get_latest_global_model(self) -> Optional[GlobalModelState]:
+        """Provides the latest version of the global model for clients to download."""
+        return await self.model_store.get_latest_model(self.model_id)
+
+    async def submit_client_update(self, update: ClientUpdate):
+        """Accepts and queues a trained model update from a client."""
+        latest_model = await self.get_latest_global_model()
+        if not latest_model or update.base_model_version != latest_model.model_version:
+            raise ValueError("Client update is based on an outdated model version.")
+        
+        round_id = f"round_v{latest_model.model_version}"
+        self.round_updates[round_id].append(update)
+        logging.info(f"Update from client '{update.client_id}' received for round '{round_id}'. "
+                     f"Total updates for round: {len(self.round_updates[round_id])}")
+
+    async def run_aggregation_round(self) -> Optional[GlobalModelState]:
         """
-        Inspects a model request/response pair for signs of adversarial attacks.
-        
-        This method runs all active detectors concurrently and aggregates their findings.
-        Detected attacks are automatically logged.
+        Triggers the aggregation process for the current round if enough
+        client updates have been received.
         """
-        if not self.detectors:
-            return []
+        latest_model = await self.get_latest_global_model()
+        if not latest_model:
+            logging.warning("Aggregation skipped: No base model found.")
+            return None
 
-        # Run all detectors concurrently
-        detection_tasks = [detector.detect(model_input, model_output) for detector in self.detectors]
-        results = await asyncio.gather(*detection_tasks)
+        round_id = f"round_v{latest_model.model_version}"
+        updates_for_round = self.round_updates.get(round_id, [])
+
+        if len(updates_for_round) < self.min_clients:
+            logging.info(f"Aggregation skipped for round '{round_id}': "
+                         f"Have {len(updates_for_round)}/{self.min_clients} required updates.")
+            return None
+
+        logging.info(f"Starting aggregation for round '{round_id}' with {len(updates_for_round)} updates.")
         
-        # Flatten list of lists and log detections
-        all_detections = [detection for sublist in results for detection in sublist]
+        # Perform aggregation
+        base_weights_np = latest_model.weights.to_numpy()
+        aggregated_weights_np = self.aggregator.aggregate(base_weights_np, updates_for_round)
         
-        if all_detections:
-            log_tasks = [self.logger.log_detection(det, model_input) for det in all_detections]
-            await asyncio.gather(*log_tasks)
-            
-        return all_detections
+        # Create and save the new global model state
+        new_model_state = GlobalModelState(
+            model_id=self.model_id,
+            model_version=latest_model.model_version + 1,
+            weights=ModelWeights.from_numpy(aggregated_weights_np),
+            metadata={
+                "aggregated_from_clients": [u.client_id for u in updates_for_round],
+                "num_updates": len(updates_for_round),
+                "avg_client_loss": np.mean([u.metrics.get("loss", 0) for u in updates_for_round])
+            }
+        )
+        
+        await self.model_store.save_model(new_model_state)
+        
+        # Clean up processed updates
+        del self.round_updates[round_id]
+        
+        logging.info(f"Aggregation complete. New global model version: {new_model_state.model_version}.")
+        return new_model_state
 
 # ==============================================================================
-# 6. EXAMPLE USAGE (Demonstrates integration and functionality)
+# 6. EXAMPLE USAGE (Simulating a full federated learning round)
 # ==============================================================================
 
 async def main():
-    """Demonstrates the setup and use of the AdversarialDefenseModule."""
+    """Demonstrates the setup and execution of a federated learning round."""
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-    print("--- 1. Initializing Dependencies ---")
-    # In AiMedRes, these would be provided by the application's service container.
-    attack_logger = InMemoryAttackLogger()
-    baseline_provider = StaticBaselineProvider()
+    print("--- 1. Initializing Dependencies and Module ---")
+    model_store = InMemoryModelStore()
+    update_queue = InMemoryUpdateQueue() # Note: The current facade uses an in-memory dict, not this queue.
+    fl_module = FederatedLearningModule(FEDERATED_LEARNING_CONFIG, model_store, update_queue)
 
-    print("--- 2. Initializing Adversarial Defense Module ---")
-    defense_module = AdversarialDefenseModule(
-        config=ADVERSARIAL_DEFENSE_CONFIG,
-        logger=attack_logger,
-        baseline_provider=baseline_provider
+    print("\n--- 2. Creating Genesis (Initial) Global Model ---")
+    # In a real scenario, this would be a pre-trained model.
+    initial_weights_np = {
+        "layer1.weights": np.random.randn(128, 64).astype(np.float32),
+        "layer1.bias": np.zeros(64).astype(np.float32),
+    }
+    genesis_model = GlobalModelState(
+        model_id=fl_module.model_id,
+        model_version=0,
+        weights=ModelWeights.from_numpy(initial_weights_np)
     )
+    await model_store.save_model(genesis_model)
+    print(f"Genesis model v{genesis_model.model_version} created.")
 
-    # --- Case 1: Benign Input ---
-    print("\n--- 3. Analyzing a BENIGN request ---")
-    benign_input = ModelInput(
-        user_id="user_123",
-        features={"age": 65.0, "creatinine_mg_dl": 1.0, "systolic_bp": 130.0}
-    )
-    benign_output = ModelOutput(
-        final_prediction=0.1,
-        confidence=0.95,
-        ensemble_predictions=[0.1, 0.11, 0.09, 0.1, 0.12]
-    )
-    detections = await defense_module.inspect_request(benign_input, benign_output)
-    if not detections:
-        print("✅  SUCCESS: No attacks detected, as expected.")
-    else:
-        print(f"❌  FAILURE: Benign input was flagged: {detections}")
-
-    # --- Case 2: Adversarial Input (Out of Bounds & Statistical Anomaly) ---
-    print("\n--- 4. Analyzing an ADVERSARIAL request ---")
-    adversarial_input = ModelInput(
-        user_id="attacker_789",
-        features={"age": 150.0, "creatinine_mg_dl": 14.0, "systolic_bp": 125.0}
-    )
-    adversarial_output = ModelOutput(
-        final_prediction=0.9, # Model is fooled
-        confidence=0.88,
-        ensemble_predictions=[0.1, 0.95, 0.2, 0.89, 0.91] # High variance
-    )
-    detections = await defense_module.inspect_request(adversarial_input, adversarial_output)
-    if detections:
-        print("✅  SUCCESS: Adversarial attacks were detected:")
-        for det in detections:
-            print(f"  - {det.model_dump_json(indent=2)}")
-    else:
-        print("❌  FAILURE: Adversarial input was NOT detected.")
+    print("\n--- 3. Simulating Client Actions ---")
+    client_ids = ["hospital-A", "clinic-B", "research-C", "lab-D"]
+    for client_id in client_ids:
+        # a. Client downloads the latest global model
+        global_model = await fl_module.get_latest_global_model()
+        print(f"Client '{client_id}' downloaded global model v{global_model.model_version}.")
         
-    print("\n--- 5. Reviewing Attack Log ---")
-    print(f"Total attacks logged: {len(attack_logger.detections)}")
-    if attack_logger.detections:
-        print("Last logged attack:")
-        print(json.dumps(attack_logger.detections[-1], indent=2, default=str))
+        # b. Client simulates local training (e.g., adding small random noise)
+        local_weights_np = global_model.weights.to_numpy()
+        for name in local_weights_np:
+            local_weights_np[name] += np.random.randn(*local_weights_np[name].shape).astype(np.float32) * 0.01
+
+        # c. Client creates and submits an update
+        client_update = ClientUpdate(
+            client_id=client_id,
+            model_id=fl_module.model_id,
+            base_model_version=global_model.model_version,
+            weight_update=ModelWeights.from_numpy(local_weights_np),
+            num_samples=np.random.randint(100, 500),
+            metrics={"loss": np.random.rand() * 0.5 + 0.1}
+        )
+        await fl_module.submit_client_update(client_update)
+
+    print("\n--- 4. Attempting Aggregation (Might be skipped if not enough clients) ---")
+    # This first attempt should fail because we only have 4 clients and min is 3, but we submitted 4.
+    # Let's adjust the config for the demo to succeed.
+    fl_module.min_clients = 3
+    new_global_model = await fl_module.run_aggregation_round()
+
+    if new_global_model:
+        print(f"✅ SUCCESS: Aggregation complete. New global model is v{new_global_model.model_version}.")
+        print(f"Metadata: {new_global_model.metadata}")
+        
+        # Verification: Check if the new model weights are different from the genesis model
+        genesis_w = genesis_model.weights.to_numpy()["layer1.bias"]
+        new_w = new_global_model.weights.to_numpy()["layer1.bias"]
+        assert not np.array_equal(genesis_w, new_w), "New weights should be different!"
+        print("Verification successful: New model weights have been updated.")
+    else:
+        print("❌ FAILURE: Aggregation did not run.")
 
 if __name__ == "__main__":
-    import uuid # for request_id
     asyncio.run(main())
