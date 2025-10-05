@@ -16,7 +16,8 @@ Discovery Heuristics:
       train_*.py   (starts with 'train_')
    You may broaden via --include-pattern.
 2. Skipped directories (default): .git, __pycache__, venv, env, .venv, build, dist, .mypy_cache, .pytest_cache, .idea, .vscode, node_modules
-3. For each candidate file, we read (lightweight) the first ~4000 characters to look for argparse definitions or literal flag strings:
+   Also skips legacy/duplicate paths: files/training, training (use src/aimedres/training instead)
+3. For each candidate file, we read the first ~40000 characters to look for argparse definitions or literal flag strings:
       '--epochs'   -> supports_epochs
       '--folds'    -> supports_folds
       '--output-dir' or '--output_dir' -> use_output_dir
@@ -303,24 +304,25 @@ def humanize_script_name(path: Path) -> str:
 
 def default_jobs() -> List[TrainingJob]:
     # Minimal core fallback if discovery yields nothing
+    # Using canonical location: src/aimedres/training/
     return [
         TrainingJob(
             name="ALS (Amyotrophic Lateral Sclerosis)",
-            script="training/train_als.py",
+            script="src/aimedres/training/train_als.py",
             output="als_comprehensive_results",
             id="als",
             args={"dataset-choice": "als-progression"},
         ),
         TrainingJob(
             name="Alzheimer's Disease",
-            script="files/training/train_alzheimers.py",
+            script="src/aimedres/training/train_alzheimers.py",
             output="alzheimer_comprehensive_results",
             id="alzheimers",
             args={},
         ),
         TrainingJob(
             name="Parkinson's Disease",
-            script="training/train_parkinsons.py",
+            script="src/aimedres/training/train_parkinsons.py",
             output="parkinsons_comprehensive_results",
             id="parkinsons",
             args={"dataset-choice": "vikasukani"},
@@ -335,10 +337,17 @@ SKIP_DIR_NAMES = {
     ".mypy_cache", ".pytest_cache", ".idea", ".vscode", "node_modules"
 }
 
+# Directories to skip from the repository root to avoid discovering duplicate training scripts
+# These contain legacy or duplicate versions of training scripts
+SKIP_PATHS_FROM_ROOT = {
+    "files/training",  # Duplicate of src/aimedres/training
+    "training",        # Legacy location, use src/aimedres/training instead
+}
+
 DEFAULT_INCLUDE_PATTERNS = ["train_*.py"]
 
 
-def read_head(path: Path, max_chars: int = 4000) -> str:
+def read_head(path: Path, max_chars: int = 40000) -> str:
     try:
         with path.open("r", encoding="utf-8", errors="ignore") as f:
             return f.read(max_chars)
@@ -374,6 +383,19 @@ def discover_training_scripts(
         for dirpath, dirnames, filenames in os.walk(root):
             # Prune skip directories in-place
             dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
+            
+            # Also skip specific paths from root (to avoid duplicates)
+            current_path = Path(dirpath)
+            try:
+                rel_to_root = current_path.relative_to(root)
+                if str(rel_to_root) in SKIP_PATHS_FROM_ROOT or any(
+                    str(rel_to_root).startswith(skip_path) for skip_path in SKIP_PATHS_FROM_ROOT
+                ):
+                    dirnames[:] = []  # Don't descend into this directory
+                    continue
+            except ValueError:
+                pass  # Not relative to root, continue normally
+            
             for filename in filenames:
                 if not filename.endswith(".py"):
                     continue
