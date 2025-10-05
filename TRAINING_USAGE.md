@@ -1,14 +1,58 @@
-# Alzheimer's Disease Training Pipeline Usage Guide
+# Medical AI Training Pipeline Usage Guide
 
-This guide explains how to use the Alzheimer's training pipeline as specified in the problem statement.
+This guide explains how to use the comprehensive training pipeline for all disease prediction models.
 
 ## Quick Start
 
-### Run Training with Default Settings
+### Run All Training Models
 
 ```bash
 cd /home/runner/work/AiMedRes/AiMedRes
-python files/training/train_alzheimers.py
+python run_all_training.py
+```
+
+This will:
+- Auto-discover all training scripts in `src/aimedres/training/`
+- Train models for: Alzheimer's, ALS, Parkinson's, Brain MRI, Cardiovascular, Diabetes
+- Save all models and metrics to the `results/` directory
+
+### Run Specific Models
+
+```bash
+python run_all_training.py --only als alzheimers parkinsons
+```
+
+### Run with Custom Parameters
+
+```bash
+python run_all_training.py --epochs 20 --folds 5
+```
+
+### Parallel Execution (Faster)
+
+```bash
+python run_all_training.py --parallel --max-workers 4
+```
+
+## Training Script Locations
+
+**Canonical Location**: `src/aimedres/training/`
+
+All training scripts have been consolidated into the canonical location at `src/aimedres/training/`. The old directories (`training/`, `files/training/`) contain legacy versions and are automatically skipped by the training orchestrator.
+
+Available scripts:
+- `train_alzheimers.py` - Alzheimer's Disease classification
+- `train_als.py` - ALS (Amyotrophic Lateral Sclerosis) prediction  
+- `train_parkinsons.py` - Parkinson's Disease prediction
+- `train_brain_mri.py` - Brain MRI image classification
+- `train_cardiovascular.py` - Cardiovascular disease prediction
+- `train_diabetes.py` - Diabetes prediction
+
+## Run Single Training Script
+
+```bash
+cd /home/runner/work/AiMedRes/AiMedRes
+python src/aimedres/training/train_alzheimers.py
 ```
 
 This will:
@@ -19,8 +63,43 @@ This will:
 ### Run Quick Training (for testing)
 
 ```bash
-python files/training/train_alzheimers.py --epochs 10 --folds 3
+python src/aimedres/training/train_alzheimers.py --epochs 10 --folds 3
 ```
+
+## Available Models
+
+The training orchestrator can run training for all these disease prediction models:
+
+1. **Alzheimer's Disease** (`train_alzheimers.py`)
+   - Automatic Kaggle dataset download
+   - Multi-model ensemble (Logistic, RF, XGBoost, LightGBM, Neural Net)
+   - Cross-validation with multiple metrics
+
+2. **ALS** (`train_als.py`)
+   - Multiple dataset choices
+   - Hyperparameter search support
+   - Regression and classification tasks
+
+3. **Parkinson's Disease** (`train_parkinsons.py`)
+   - Multiple dataset choices
+   - SHAP feature importance analysis
+   - Comprehensive model evaluation
+
+4. **Brain MRI** (`train_brain_mri.py`)
+   - Image classification pipeline
+   - Deep learning models
+   - Data augmentation support
+
+5. **Cardiovascular Disease** (`train_cardiovascular.py`)
+   - Clinical risk prediction
+   - Feature engineering
+   - Multi-class classification
+
+6. **Diabetes** (`train_diabetes.py`)
+   - Risk assessment models
+   - Clinical data processing
+   - Ensemble methods
+
 
 ## Dataset Compatibility
 
@@ -39,11 +118,13 @@ The pipeline automatically:
 
 ## Command Line Options
 
+All training scripts support these common options:
+
 ```bash
-python files/training/train_alzheimers.py [OPTIONS]
+python src/aimedres/training/train_<disease>.py [OPTIONS]
 ```
 
-### Available Options
+### Common Options for All Scripts
 
 | Option | Description | Default |
 |--------|-------------|---------|
@@ -57,27 +138,85 @@ python files/training/train_alzheimers.py [OPTIONS]
 
 #### Use Custom Dataset
 ```bash
-python files/training/train_alzheimers.py --data-path /path/to/your/alzheimer_data.csv
+python src/aimedres/training/train_alzheimers.py --data-path /path/to/your/alzheimer_data.csv
 ```
 
 #### Specify Target Column
 ```bash
-python files/training/train_alzheimers.py --target-column Diagnosis
+python src/aimedres/training/train_alzheimers.py --target-column Diagnosis
 ```
 
 #### Custom Output Directory
 ```bash
-python files/training/train_alzheimers.py --output-dir my_results
+python src/aimedres/training/train_alzheimers.py --output-dir my_results
 ```
 
 #### Full Customization
 ```bash
-python files/training/train_alzheimers.py \
+python src/aimedres/training/train_alzheimers.py \
     --data-path /path/to/data.csv \
     --target-column diagnosis \
     --output-dir results \
     --epochs 50 \
     --folds 5
+```
+
+## Training Orchestrator
+
+The `run_all_training.py` script provides a unified interface to run all training scripts:
+
+### List Available Jobs
+
+```bash
+python run_all_training.py --list
+```
+
+This shows all discovered training scripts and their capabilities.
+
+### Run All Training
+
+```bash
+# Run all models with default settings
+python run_all_training.py
+
+# Run with custom parameters
+python run_all_training.py --epochs 30 --folds 5
+
+# Dry run (preview commands without executing)
+python run_all_training.py --dry-run
+```
+
+### Filter Training Jobs
+
+```bash
+# Run only specific models
+python run_all_training.py --only als alzheimers
+
+# Exclude specific models
+python run_all_training.py --exclude brain_mri
+```
+
+### Parallel Execution
+
+```bash
+# Run multiple models in parallel
+python run_all_training.py --parallel --max-workers 4
+```
+
+### Advanced Options
+
+```bash
+# Use custom config file
+python run_all_training.py --config my_training_config.yaml
+
+# Add extra arguments to all jobs
+python run_all_training.py --extra-arg --batch-size=64 --extra-arg --lr=0.001
+
+# Allow partial success (don't fail if some jobs fail)
+python run_all_training.py --allow-partial-success
+
+# Retry failed jobs
+python run_all_training.py --retries 2
 ```
 
 ## Results and Performance
