@@ -325,7 +325,7 @@ def default_jobs() -> List[TrainingJob]:
             script="src/aimedres/training/train_parkinsons.py",
             output="parkinsons_comprehensive_results",
             id="parkinsons",
-            args={"dataset-choice": "vikasukani"},
+            args={"data-path": "ParkinsonDatasets"},
         ),
     ]
 
