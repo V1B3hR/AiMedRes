@@ -139,31 +139,87 @@ consolidator.run_cycle()
 
 ---
 
-## 🔬 Reproducing Training Runs
+## 🚂 Run Training
+
+### Quick Start - Train All Models
+
+Run all disease prediction models with a single command:
 
 ```bash
-# 1. Environment
-pip install -r requirements.txt
+# Train all models (Alzheimer's, ALS, Parkinson's, Brain MRI, Cardiovascular, Diabetes)
+python run_all_training.py
 
-# 2. Data prep (ADNI example — requires credentials / license)
-python scripts/prepare_adni.py --input ~/raw_adni --output data/adni_processed.csv
+# With custom parameters
+python run_all_training.py --epochs 20 --folds 5
 
-# 3. Train
-python scripts/train_alzheimer.py \
-  --data data/adni_processed.csv \
-  --model out/models/ad_early_v2.pt \
-  --adaptive \
-  --epochs 25 \
-  --batch-size 64
-
-# 4. Evaluate
-python scripts/eval_alzheimer.py --model out/models/ad_early_v2.pt --data data/adni_processed.csv
+# Run in parallel for faster execution
+python run_all_training.py --parallel --max-workers 4
 ```
+
+### Run Specific Models
+
+```bash
+# Train only selected models
+python run_all_training.py --only als alzheimers parkinsons
+
+# Exclude certain models
+python run_all_training.py --exclude brain_mri
+
+# Preview commands without execution (dry run)
+python run_all_training.py --dry-run --epochs 10
+```
+
+### Run Single Model
+
+```bash
+# Train Alzheimer's model with default settings
+python src/aimedres/training/train_alzheimers.py
+
+# Train with custom parameters
+python src/aimedres/training/train_als.py --epochs 50 --folds 3 --output-dir my_results
+```
+
+### List Available Training Jobs
+
+```bash
+# See all discovered training scripts
+python run_all_training.py --list
+```
+
+### Output & Results
+
+Training outputs are saved to `results/` directory by default:
+- Trained models (`.pkl`, `.pth` files)
+- Performance metrics (CSV, JSON)
+- Training logs
+- Visualizations & plots
+
+### Advanced Options
+
+```bash
+# Use custom config file
+python run_all_training.py --config my_config.yaml
+
+# Retry failed jobs
+python run_all_training.py --retries 2
+
+# Allow partial success (continue if some jobs fail)
+python run_all_training.py --allow-partial-success
+```
+
+### Documentation
+
+For detailed training documentation:
+- **Training Usage Guide**: [TRAINING_USAGE.md](TRAINING_USAGE.md)
+- **Training Scripts Reference**: [src/aimedres/training/README.md](src/aimedres/training/README.md)
+- **Implementation Details**: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
+
+### Reproducibility
 
 Determinism options:
 - Set `AIMEDRES_SEED=42`
-- Use `--deterministic` flag in training script
-- Logged configs stored under `out/runs/<timestamp>/config.yaml`
+- Use `--seed` flag in training scripts
+- Logged configs stored under `results/<job_id>/config.yaml`
 
 ---
 
