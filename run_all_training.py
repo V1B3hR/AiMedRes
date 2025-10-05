@@ -75,7 +75,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Iterable
 
@@ -526,7 +526,7 @@ def run_job(
             return job
 
         job.attempts = attempt
-        job.start_time = datetime.utcnow().isoformat()
+        job.start_time = datetime.now(timezone.utc).isoformat()
         start_t = time.time()
         orchestrator_logger.info(f"[{job.id}] 🚀 Starting attempt {attempt}/{attempts_allowed}")
         job_logger.info(f"Command: {' '.join(job.command)}")
@@ -541,7 +541,7 @@ def run_job(
                 text=True,
             )
             code = proc.returncode
-            job.end_time = datetime.utcnow().isoformat()
+            job.end_time = datetime.now(timezone.utc).isoformat()
             job.duration_sec = round(time.time() - start_t, 2)
             if code == 0:
                 job.status = "SUCCESS"
@@ -556,7 +556,7 @@ def run_job(
                     f"[{job.id}] ❌ Failure (code={code}) attempt {attempt}/{attempts_allowed}"
                 )
         except Exception as e:
-            job.end_time = datetime.utcnow().isoformat()
+            job.end_time = datetime.now(timezone.utc).isoformat()
             job.duration_sec = round(time.time() - start_t, 2)
             job.status = "FAILED"
             job.error = repr(e)
@@ -582,7 +582,7 @@ def summarize(
     logger: logging.Logger,
 ) -> Path:
     summary_dir.mkdir(parents=True, exist_ok=True)
-    end_time = datetime.utcnow().isoformat()
+    end_time = datetime.now(timezone.utc).isoformat()
     summary = {
         "pipeline": "AiMedRes Medical AI Training",
         "start_time_utc": start_time,
@@ -612,7 +612,7 @@ def summarize(
             for j in jobs
         ],
     }
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     out_file = summary_dir / f"training_summary_{timestamp}.json"
     with out_file.open("w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
@@ -698,7 +698,7 @@ def parse_args() -> argparse.Namespace:
 def main():
     args = parse_args()
     repo_root = Path(__file__).resolve().parent
-    start_time = datetime.utcnow().isoformat()
+    start_time = datetime.now(timezone.utc).isoformat()
 
     logs_dir = repo_root / args.logs_dir
     logger = setup_logging(logs_dir, verbose=args.verbose)
