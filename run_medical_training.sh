@@ -1,6 +1,6 @@
 #!/bin/bash
 # AiMedRes Medical AI Training Script
-# Runs training for ALS, Alzheimer's, and Parkinson's disease prediction models
+# Runs training for ALL medical AI models using the orchestrator
 
 set -e  # Exit on any error
 
@@ -10,7 +10,12 @@ echo
 
 # Check Python and dependencies
 echo "🔍 Checking dependencies..."
-python -c "import torch, sklearn, xgboost, pandas, numpy; print('✅ All dependencies available')"
+if ! python -c "import numpy, pandas, sklearn" 2>/dev/null; then
+    echo "❌ Missing dependencies. Please install with:"
+    echo "   pip install -r requirements-ml.txt"
+    exit 1
+fi
+echo "✅ Core dependencies available"
 echo
 
 # Create timestamp for this run
@@ -18,43 +23,37 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 echo "📅 Training session: $TIMESTAMP"
 echo
 
-# Training 1: ALS
-echo "🧠 Training ALS (Amyotrophic Lateral Sclerosis) Model..."
-echo "--------------------------------------------------------"
-python training/train_als.py \
-    --dataset-choice als-progression \
-    --output-dir "als_results_${TIMESTAMP}" \
-    --epochs 50 \
-    --folds 5
-echo "✅ ALS training completed"
+# Run all training using the orchestrator
+echo "🚀 Running ALL medical AI training models..."
+echo "-------------------------------------------"
+echo "This will train:"
+echo "  • ALS (Amyotrophic Lateral Sclerosis)"
+echo "  • Alzheimer's Disease"
+echo "  • Parkinson's Disease"
+echo "  • Brain MRI Classification"
+echo "  • Cardiovascular Disease"
+echo "  • Diabetes Prediction"
 echo
 
-# Training 2: Alzheimer's  
-echo "🧠 Training Alzheimer's Disease Model..."
-echo "----------------------------------------"
-python files/training/train_alzheimers.py \
-    --output-dir "alzheimer_results_${TIMESTAMP}" \
+python run_all_training.py \
     --epochs 50 \
-    --folds 5
-echo "✅ Alzheimer's training completed"
-echo
-
-# Training 3: Parkinson's
-echo "🧠 Training Parkinson's Disease Model..."
-echo "----------------------------------------"
-python training/train_parkinsons.py \
-    --dataset-choice vikasukani \
-    --output-dir "parkinsons_results_${TIMESTAMP}" \
-    --epochs 50 \
-    --folds 5
-echo "✅ Parkinson's training completed"
-echo
+    --folds 5 \
+    --verbose
 
 # Summary
+echo
 echo "🎉 All Medical AI Training Completed Successfully!"
 echo "================================================="
-echo "📁 Results saved in directories with timestamp: $TIMESTAMP"
+echo "📁 Results saved in: results/"
+echo "📝 Logs saved in: logs/"
+echo "📊 Summary saved in: summaries/"
 echo "🔬 Models are ready for medical applications!"
 echo
-echo "📊 To view detailed results, run:"
-echo "   python training_results_summary.py"
+echo "To run specific models only:"
+echo "   python run_all_training.py --only als alzheimers"
+echo
+echo "To run in parallel (faster):"
+echo "   python run_all_training.py --parallel --max-workers 4"
+echo
+echo "To see all options:"
+echo "   python run_all_training.py --help"
