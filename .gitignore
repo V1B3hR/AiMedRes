@@ -101,3 +101,4 @@ test_*_output/
 debug/phase[1-9]_*.py
 debug/phase[1-9]_*.json
 debug/PHASE[1-9]_*.md
+memory_state_demo.json
