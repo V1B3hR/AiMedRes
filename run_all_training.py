@@ -95,6 +95,7 @@ class TrainingJob:
     use_output_dir: bool = True
     supports_epochs: bool = True
     supports_folds: bool = True
+    supports_sample: bool = True
 
     # Runtime metadata
     status: str = "PENDING"
@@ -110,6 +111,7 @@ class TrainingJob:
         python_exec: str,
         global_epochs: Optional[int],
         global_folds: Optional[int],
+        global_sample: Optional[int],
         extra_args: List[str],
         base_output_dir: Path,
     ) -> List[str]:
@@ -126,10 +128,14 @@ class TrainingJob:
             folds = self.args.get("folds", global_folds)
             if folds is not None:
                 cmd += ["--folds", str(folds)]
+        if self.supports_sample:
+            sample = self.args.get("sample", global_sample)
+            if sample is not None:
+                cmd += ["--sample", str(sample)]
 
         # Other args
         for k, v in self.args.items():
-            if k in ("epochs", "folds"):
+            if k in ("epochs", "folds", "sample"):
                 continue
             flag = f"--{k.replace('_','-')}"
             if isinstance(v, bool):
@@ -277,6 +283,7 @@ def load_config_yaml(path: Path) -> List[TrainingJob]:
                 use_output_dir=item.get("use_output_dir", True),
                 supports_epochs=item.get("supports_epochs", True),
                 supports_folds=item.get("supports_folds", True),
+                supports_sample=item.get("supports_sample", True),
             )
         )
     return jobs
@@ -312,6 +319,7 @@ def default_jobs() -> List[TrainingJob]:
             output="als_comprehensive_results",
             id="als",
             args={"dataset-choice": "als-progression"},
+            supports_sample=False,  # Sample parameter not supported yet
         ),
         TrainingJob(
             name="Alzheimer's Disease",
@@ -319,6 +327,7 @@ def default_jobs() -> List[TrainingJob]:
             output="alzheimer_comprehensive_results",
             id="alzheimers",
             args={},
+            supports_sample=False,  # Sample parameter not supported yet
         ),
         TrainingJob(
             name="Parkinson's Disease",
@@ -326,6 +335,7 @@ def default_jobs() -> List[TrainingJob]:
             output="parkinsons_comprehensive_results",
             id="parkinsons",
             args={"data-path": "ParkinsonDatasets"},
+            supports_sample=False,  # Sample parameter not supported yet
         ),
         TrainingJob(
             name="Brain MRI Classification",
@@ -334,6 +344,7 @@ def default_jobs() -> List[TrainingJob]:
             id="brain_mri",
             args={},
             supports_folds=False,  # Brain MRI doesn't support --folds
+            supports_sample=False,  # Sample parameter not supported yet
         ),
         TrainingJob(
             name="Cardiovascular Disease Prediction",
@@ -341,6 +352,7 @@ def default_jobs() -> List[TrainingJob]:
             output="cardiovascular_comprehensive_results",
             id="cardiovascular",
             args={},
+            supports_sample=False,  # Sample parameter not supported yet
         ),
         TrainingJob(
             name="Diabetes Prediction",
@@ -348,6 +360,7 @@ def default_jobs() -> List[TrainingJob]:
             output="diabetes_comprehensive_results",
             id="diabetes",
             args={},
+            supports_sample=False,  # Sample parameter not supported yet
         ),
     ]
 
@@ -386,6 +399,7 @@ def infer_support_flags(file_text: str) -> Dict[str, bool]:
     return {
         "supports_epochs": "--epochs" in lower,
         "supports_folds": "--folds" in lower,
+        "supports_sample": "--sample" in lower,
         "use_output_dir": ("--output-dir" in lower) or ("--output_dir" in lower),
     }
 
@@ -466,10 +480,11 @@ def build_jobs_from_discovery(
             use_output_dir=flags["use_output_dir"],
             supports_epochs=flags["supports_epochs"],
             supports_folds=flags["supports_folds"],
+            supports_sample=flags["supports_sample"],
         )
         logger.debug(
             f"[DISCOVERY] Job: id={job.id} script={job.script} "
-            f"epochs={job.supports_epochs} folds={job.supports_folds} out_dir={job.use_output_dir} optional={job.optional}"
+            f"epochs={job.supports_epochs} folds={job.supports_folds} sample={job.supports_sample} out_dir={job.use_output_dir} optional={job.optional}"
         )
         jobs.append(job)
     return jobs
@@ -519,6 +534,7 @@ def run_job(
     python_exec: str,
     global_epochs: Optional[int],
     global_folds: Optional[int],
+    global_sample: Optional[int],
     extra_args: List[str],
     retries: int,
     dry_run: bool,
@@ -533,7 +549,7 @@ def run_job(
         orchestrator_logger.error(f"[{job.id}] ❌ Script missing: {script_path}")
         return job
 
-    job.build_command(python_exec, global_epochs, global_folds, extra_args, base_output_dir)
+    job.build_command(python_exec, global_epochs, global_folds, global_sample, extra_args, base_output_dir)
 
     if dry_run:
         orchestrator_logger.info(f"[{job.id}] (dry-run) Command: {' '.join(job.command)}")
@@ -628,6 +644,7 @@ def summarize(
                 "use_output_dir": j.use_output_dir,
                 "supports_epochs": j.supports_epochs,
                 "supports_folds": j.supports_folds,
+                "supports_sample": j.supports_sample,
                 "command": j.command,
                 "error": j.error,
             }
@@ -679,6 +696,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=str, help="Path to YAML config with job definitions.")
     parser.add_argument("--epochs", type=int, help="Global default epochs (if supported).")
     parser.add_argument("--folds", type=int, help="Global default folds (if supported).")
+    parser.add_argument("--sample", type=int, help="Global default sample size (if supported).")
     parser.add_argument("--only", nargs="*", default=[], help="Run only these job IDs.")
     parser.add_argument("--exclude", nargs="*", default=[], help="Exclude these job IDs.")
     parser.add_argument("--list", action="store_true", help="List selected jobs and exit.")
@@ -829,7 +847,7 @@ def main():
         for j in jobs:
             logger.info(
                 f"- {j.id}: {j.name} | script={j.script} | out={j.output} | "
-                f"epochs={j.supports_epochs} folds={j.supports_folds} outdir={j.use_output_dir} optional={j.optional}"
+                f"epochs={j.supports_epochs} folds={j.supports_folds} sample={j.supports_sample} outdir={j.use_output_dir} optional={j.optional}"
             )
         return 0
 
@@ -857,6 +875,7 @@ def main():
                     sys.executable,
                     args.epochs,
                     args.folds,
+                    args.sample,
                     extra_args,
                     args.retries,
                     args.dry_run,
@@ -885,6 +904,7 @@ def main():
                 sys.executable,
                 args.epochs,
                 args.folds,
+                args.sample,
                 extra_args,
                 args.retries,
                 args.dry_run,
