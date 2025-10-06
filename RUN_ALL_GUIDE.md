@@ -229,8 +229,11 @@ python run_all_training.py --dry-run --epochs 1
 
 ### Production Training
 ```bash
-# Full training with optimal parameters
+# Full training with optimal parameters (100 epochs, 10 folds)
 python run_all_training.py --epochs 100 --folds 10 --parallel --max-workers 6
+
+# Training with 80 epochs, 5 folds in parallel
+python run_all_training.py --parallel --max-workers 6 --epochs 80 --folds 5
 ```
 
 ### Selective Training

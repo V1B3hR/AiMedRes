@@ -199,8 +199,11 @@ python run_all_training.py --exclude brain_mri
 ### Parallel Execution
 
 ```bash
-# Run multiple models in parallel
+# Run multiple models in parallel with 4 workers
 python run_all_training.py --parallel --max-workers 4
+
+# Run with custom parameters in parallel (6 workers, 80 epochs, 5 folds)
+python run_all_training.py --parallel --max-workers 6 --epochs 80 --folds 5
 ```
 
 ### Advanced Options
