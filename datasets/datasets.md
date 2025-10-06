@@ -7,4 +7,4 @@
 7. https://www.kaggle.com/datasets/mubeenshehzadi/ai-innovation-platforms-2025
 8. https://www.kaggle.com/datasets/verracodeguacas/huggingfacedebertav3variants
 9. https://www.kaggle.com/datasets/github/github-repos
-10.https://www.kaggle.com/datasets/ayeshasiddiqa123/ultimate-ai-tools-and-models-collection
+10. https://www.kaggle.com/datasets/ayeshasiddiqa123/ultimate-ai-tools-and-models-collection
