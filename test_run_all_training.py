@@ -164,6 +164,72 @@ def test_orchestrator_filtering():
     return True
 
 
+def test_parallel_with_custom_parameters():
+    """Test parallel execution with custom epochs and folds parameters"""
+    print("Test 5: Parallel execution with custom parameters (--max-workers 6 --epochs 80 --folds 5)...")
+    result = subprocess.run(
+        [sys.executable, "run_all_training.py", "--dry-run", 
+         "--parallel", "--max-workers", "6", "--epochs", "80", "--folds", "5",
+         "--only", "als", "alzheimers", "parkinsons"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    
+    if result.returncode != 0:
+        print(f"✗ Failed with code {result.returncode}")
+        print(result.stderr)
+        return False
+    
+    output = result.stdout + result.stderr
+    
+    # Check parallel mode is enabled
+    if "Parallel mode enabled" in output:
+        print("✓ Parallel mode enabled")
+    else:
+        print("✗ Parallel mode not enabled")
+        return False
+    
+    # Check that epochs 80 is in the commands
+    if "--epochs 80" in output:
+        print("✓ Custom epochs parameter (80) applied to commands")
+    else:
+        print("✗ Custom epochs parameter not found in commands")
+        return False
+    
+    # Check that folds 5 is in the commands
+    if "--folds 5" in output:
+        print("✓ Custom folds parameter (5) applied to commands")
+    else:
+        print("✗ Custom folds parameter not found in commands")
+        return False
+    
+    # Check that 3 jobs are selected
+    if "Selected jobs: 3" in output:
+        print("✓ Correct number of jobs selected (3)")
+    else:
+        print("✗ Incorrect number of jobs selected")
+        return False
+    
+    # Verify all three specified jobs have commands generated
+    jobs_found = 0
+    if "[als] (dry-run) Command:" in output:
+        jobs_found += 1
+    if "[alzheimers] (dry-run) Command:" in output:
+        jobs_found += 1
+    if "[parkinsons] (dry-run) Command:" in output:
+        jobs_found += 1
+    
+    if jobs_found == 3:
+        print(f"✓ All 3 job commands generated correctly")
+    else:
+        print(f"✗ Only {jobs_found}/3 job commands found")
+        return False
+    
+    print("✓ Test passed: Parallel execution with custom parameters works\n")
+    return True
+
+
 def main():
     """Run all tests"""
     print("=" * 60)
@@ -181,6 +247,7 @@ def main():
         test_orchestrator_dry_run,
         test_orchestrator_parallel,
         test_orchestrator_filtering,
+        test_parallel_with_custom_parameters,
     ]
     
     passed = 0

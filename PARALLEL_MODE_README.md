@@ -67,7 +67,11 @@ python run_all_training.py --parallel --max-workers 4
 
 ### Parallel with Custom Parameters
 ```bash
+# With 6 workers, 50 epochs, 5 folds
 python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5
+
+# With 6 workers, 80 epochs, 5 folds
+python run_all_training.py --parallel --max-workers 6 --epochs 80 --folds 5
 ```
 
 ### Parallel with Filtering
