@@ -45,7 +45,7 @@ def test_orchestrator_list():
         print("✓ Legacy scripts correctly skipped")
     
     # Check for proper flag detection
-    if "epochs=True folds=True outdir=True" in output:
+    if "epochs=True" in output and "folds=True" in output and "outdir=True" in output:
         print("✓ Flags properly detected for canonical scripts")
     else:
         print("✗ Flags not properly detected")
