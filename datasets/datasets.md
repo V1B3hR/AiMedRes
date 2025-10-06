@@ -1,10 +1,10 @@
-https://www.kaggle.com/datasets/rohitgrewal/hr-data-mnc
-https://www.kaggle.com/datasets/umerhaddii/palantir-stock-data-2025
-https://www.kaggle.com/datasets/ayeshaimran123/generative-ai-tools-2025
-https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset
-https://www.kaggle.com/datasets/wardabilal/global-generative-ai-tools-landscape-2025
-https://www.kaggle.com/datasets/eshummalik/ai-universe-explorer
-https://www.kaggle.com/datasets/mubeenshehzadi/ai-innovation-platforms-2025
-https://www.kaggle.com/datasets/verracodeguacas/huggingfacedebertav3variants
-https://www.kaggle.com/datasets/github/github-repos
-https://www.kaggle.com/datasets/ayeshasiddiqa123/ultimate-ai-tools-and-models-collection
+1. https://www.kaggle.com/datasets/rohitgrewal/hr-data-mnc
+2. https://www.kaggle.com/datasets/umerhaddii/palantir-stock-data-2025
+3. https://www.kaggle.com/datasets/ayeshaimran123/generative-ai-tools-2025
+4. https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset
+5. https://www.kaggle.com/datasets/wardabilal/global-generative-ai-tools-landscape-2025
+6. https://www.kaggle.com/datasets/eshummalik/ai-universe-explorer
+7. https://www.kaggle.com/datasets/mubeenshehzadi/ai-innovation-platforms-2025
+8. https://www.kaggle.com/datasets/verracodeguacas/huggingfacedebertav3variants
+9. https://www.kaggle.com/datasets/github/github-repos
+10.https://www.kaggle.com/datasets/ayeshasiddiqa123/ultimate-ai-tools-and-models-collection
