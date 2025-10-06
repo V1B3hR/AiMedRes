@@ -154,6 +154,9 @@ python run_all_training.py --epochs 20 --folds 5
 
 # Run in parallel for faster execution
 python run_all_training.py --parallel --max-workers 4
+
+# Production-ready configuration (6 workers, 50 epochs, 5 folds)
+python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5
 ```
 
 ### Run Specific Models
@@ -213,6 +216,7 @@ For detailed training documentation:
 - **Training Usage Guide**: [TRAINING_USAGE.md](TRAINING_USAGE.md)
 - **Training Scripts Reference**: [src/aimedres/training/README.md](src/aimedres/training/README.md)
 - **Implementation Details**: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
+- **Parallel Training (6 workers, 50 epochs, 5 folds)**: [PARALLEL_6WORKERS_50EPOCHS_5FOLDS.md](PARALLEL_6WORKERS_50EPOCHS_5FOLDS.md)
 
 ### Reproducibility
 
