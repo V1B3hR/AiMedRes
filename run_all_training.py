@@ -303,7 +303,7 @@ def humanize_script_name(path: Path) -> str:
 
 
 def default_jobs() -> List[TrainingJob]:
-    # Minimal core fallback if discovery yields nothing
+    # Core disease prediction models - all 6 main models
     # Using canonical location: src/aimedres/training/
     return [
         TrainingJob(
@@ -326,6 +326,28 @@ def default_jobs() -> List[TrainingJob]:
             output="parkinsons_comprehensive_results",
             id="parkinsons",
             args={"data-path": "ParkinsonDatasets"},
+        ),
+        TrainingJob(
+            name="Brain MRI Classification",
+            script="src/aimedres/training/train_brain_mri.py",
+            output="brain_mri_comprehensive_results",
+            id="brain_mri",
+            args={},
+            supports_folds=False,  # Brain MRI doesn't support --folds
+        ),
+        TrainingJob(
+            name="Cardiovascular Disease Prediction",
+            script="src/aimedres/training/train_cardiovascular.py",
+            output="cardiovascular_comprehensive_results",
+            id="cardiovascular",
+            args={},
+        ),
+        TrainingJob(
+            name="Diabetes Prediction",
+            script="src/aimedres/training/train_diabetes.py",
+            output="diabetes_comprehensive_results",
+            id="diabetes",
+            args={},
         ),
     ]
 
