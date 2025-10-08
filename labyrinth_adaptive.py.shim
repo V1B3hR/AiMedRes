@@ -1,0 +1,17 @@
+"""
+Compatibility shim for labyrinth_adaptive module.
+This module has moved to aimedres.core.labyrinth
+
+This shim will be removed in version 2.0.0
+"""
+import warnings
+warnings.warn(
+    "Importing from 'labyrinth_adaptive' at root level is deprecated. "
+    "Use 'from aimedres.core.labyrinth import ...' instead. "
+    "This compatibility shim will be removed in version 2.0.0",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export everything from new location
+from aimedres.core.labyrinth import *
