@@ -737,7 +737,8 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 def main(argv=None):
     args = parse_args(argv)
-    repo_root = Path(__file__).resolve().parent
+    # Find repository root (go up from src/aimedres/cli to the repo root)
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
     start_time = datetime.now(timezone.utc).isoformat()
 
     logs_dir = repo_root / args.logs_dir

@@ -13,7 +13,7 @@ This document summarizes the implementation of the ARCHITECTURE_REFACTOR_PLAN.md
 - `src/aimedres/compliance/` - Regulatory and compliance modules  
 - `src/aimedres/integration/` - External system integrations
 - `src/aimedres/dashboards/` - Visualization and monitoring
-- `src/aimedres/cli/` - Command-line interface (placeholder)
+- `src/aimedres/cli/` - Command-line interface
 
 **Core Modules Moved:**
 1. `duetmind.py` → `src/aimedres/core/production_agent.py`
@@ -57,6 +57,61 @@ This document summarizes the implementation of the ARCHITECTURE_REFACTOR_PLAN.md
 **Dashboard Modules Moved:**
 1. `explainable_ai_dashboard.py` → `src/aimedres/dashboards/explainable_ai.py`
 2. `data_quality_monitor.py` → `src/aimedres/dashboards/data_quality.py`
+
+### Phase 4: CLI & Entry Points ✅
+
+**Entry Points Restructured:**
+1. `main.py` → `src/aimedres/__main__.py`
+   - Primary entry point for DuetMind Adaptive System
+   - Provides interactive menu and subcommand functionality
+   - Can be invoked with `python -m aimedres`
+
+2. `run_all_training.py` → `src/aimedres/cli/train.py`
+   - Comprehensive training orchestrator
+   - Supports parallel execution, auto-discovery, and job filtering
+   - Invoked via `aimedres train` command
+
+3. `secure_api_server.py` → `src/aimedres/cli/serve.py`
+   - API server for remote training and inference
+   - Security and authentication features
+   - Invoked via `aimedres serve` command
+
+**Unified CLI Structure Created:**
+- `src/aimedres/cli/commands.py` - Main CLI entry point with subcommands
+  - `aimedres train` - Run training pipelines
+  - `aimedres serve` - Start API server  
+  - `aimedres interactive` - Legacy interactive menu
+  - `aimedres --version` - Show version
+
+**Console Scripts Updated:**
+Updated `setup.py` entry points:
+```python
+entry_points={
+    'console_scripts': [
+        'aimedres=aimedres.cli.commands:main',           # Unified CLI
+        'aimedres-train=aimedres.cli.train:main',       # Direct training access
+        'aimedres-serve=aimedres.cli.serve:main',       # Direct server access
+    ],
+}
+```
+
+**CLI Command Examples:**
+```bash
+# List available training jobs
+aimedres train --list
+
+# Train specific models
+aimedres train --only alzheimers parkinsons --epochs 30
+
+# Train all models in parallel
+aimedres train --parallel --max-workers 4 --epochs 50
+
+# Start API server
+aimedres serve --port 8000 --host 0.0.0.0
+
+# Run interactive mode
+aimedres interactive
+```
 
 ## Backward Compatibility
 
@@ -121,6 +176,10 @@ from aimedres.core.constants import Config
 from aimedres.utils.helpers import some_function
 from aimedres.clinical.decision_support import ClinicalDecisionSupport
 from aimedres.compliance.fda import FDADocumentation
+
+# CLI modules
+from aimedres.cli.train import main as train_cli
+from aimedres.cli.serve import main as serve_cli
 ```
 
 ## Package Structure
@@ -168,8 +227,11 @@ src/aimedres/
 │   ├── explainable_ai.py
 │   └── data_quality.py
 │
-├── cli/                         # CLI (NEW - placeholder)
-│   └── __init__.py
+├── cli/                         # CLI (NEW)
+│   ├── __init__.py
+│   ├── commands.py              # Unified CLI entry point
+│   ├── train.py                 # Training orchestrator
+│   └── serve.py                 # API server
 │
 ├── training/                    # Training pipelines (existing)
 ├── security/                    # Security modules (existing)
@@ -229,12 +291,6 @@ A validation script (`validate_refactoring.py`) was created to test all imports:
 
 The following phases from the original plan are not yet implemented:
 
-### Phase 4: CLI & Entry Points
-- Move `main.py` to `src/aimedres/__main__.py`
-- Move `run_all_training.py` to CLI
-- Move `secure_api_server.py` to CLI
-- Create unified CLI structure
-
 ### Phase 5: Demo Scripts
 - Reorganize `demo_*.py` files to `examples/` subdirectories
 - Create basic/, clinical/, advanced/, enterprise/ example categories
@@ -252,12 +308,18 @@ The following phases from the original plan are not yet implemented:
 
 ## Conclusion
 
-The core architectural refactoring (Phases 1-3) has been successfully completed. The repository now has a clean, professional structure that follows Python packaging best practices while maintaining full backward compatibility with existing code.
+The core architectural refactoring (Phases 1-4) has been successfully completed. The repository now has a clean, professional structure that follows Python packaging best practices while maintaining full backward compatibility with existing code.
 
-**Files Moved:** 15 modules
+**Files Moved:** 18 modules (15 from Phases 1-3, 3 from Phase 4)
 **Compatibility Shims Created:** 17 shims  
 **New Directories Created:** 5 packages
 **Validation Success Rate:** 87%
 **Breaking Changes:** None (backward compatible)
+
+**Phase 4 Additions:**
+- Unified CLI structure with `aimedres` command
+- Entry points reorganized under `src/aimedres/cli/`
+- Main application entry point moved to `src/aimedres/__main__.py`
+- Console scripts updated in `setup.py`
 
 The refactoring provides a solid foundation for future development and makes the codebase more maintainable and professional.
