@@ -113,6 +113,14 @@ aimedres serve --port 8000 --host 0.0.0.0
 aimedres interactive
 ```
 
+**Backward Compatibility:**
+The original entry point files remain at the root level as thin wrapper scripts that delegate to the new CLI modules:
+- `main.py` → calls `src/aimedres/__main__.py`
+- `run_all_training.py` → calls `src/aimedres/cli/train.py`
+- `secure_api_server.py` → calls `src/aimedres/cli/serve.py`
+
+These wrappers emit deprecation warnings but ensure existing scripts and workflows continue to function.
+
 ## Backward Compatibility
 
 All moved modules have compatibility shims at their original locations with deprecation warnings:
