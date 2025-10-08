@@ -1,0 +1,17 @@
+"""
+Compatibility shim for clinical_decision_support module.
+This module has moved to aimedres.clinical.decision_support
+
+This shim will be removed in version 2.0.0
+"""
+import warnings
+warnings.warn(
+    "Importing from 'clinical_decision_support' at root level is deprecated. "
+    "Use 'from aimedres.clinical.decision_support import ...' instead. "
+    "This compatibility shim will be removed in version 2.0.0",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export everything from new location
+from aimedres.clinical.decision_support import *
