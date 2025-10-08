@@ -168,8 +168,6 @@ Use this as the single source of truth for planning, sequencing, and status upda
 #### Next Actions
 1. P8B: Begin clinical pilot programs with institutional partnerships
 2. P9: Initiate FDA regulatory pathway planning and pre-submission documentation
-3. P10: Complete disaster recovery drills and RPO/RTO measurement
-4. P11: Complete human oversight audit workflow implementation
 
 ---
 
