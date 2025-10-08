@@ -146,30 +146,33 @@ consolidator.run_cycle()
 Run all disease prediction models with a single command:
 
 ```bash
-# Train all models (Alzheimer's, ALS, Parkinson's, Brain MRI, Cardiovascular, Diabetes)
+# Using the unified CLI (recommended)
+aimedres train
+
+# Or using the legacy script (still supported)
 python run_all_training.py
 
 # With custom parameters
-python run_all_training.py --epochs 20 --folds 5
+aimedres train --epochs 20 --folds 5
 
 # Run in parallel for faster execution
-python run_all_training.py --parallel --max-workers 4
+aimedres train --parallel --max-workers 4
 
 # Production-ready configuration (6 workers, 50 epochs, 5 folds)
-python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5
+aimedres train --parallel --max-workers 6 --epochs 50 --folds 5
 ```
 
 ### Run Specific Models
 
 ```bash
 # Train only selected models
-python run_all_training.py --only als alzheimers parkinsons
+aimedres train --only als alzheimers parkinsons
 
 # Exclude certain models
-python run_all_training.py --exclude brain_mri
+aimedres train --exclude brain_mri
 
 # Preview commands without execution (dry run)
-python run_all_training.py --dry-run --epochs 10
+aimedres train --dry-run --epochs 10
 ```
 
 ### Run Single Model
@@ -186,7 +189,7 @@ python src/aimedres/training/train_als.py --epochs 50 --folds 3 --output-dir my_
 
 ```bash
 # See all discovered training scripts
-python run_all_training.py --list
+aimedres train --list
 ```
 
 ### Output & Results
@@ -197,26 +200,51 @@ Training outputs are saved to `results/` directory by default:
 - Training logs
 - Visualizations & plots
 
+### Run Examples
+
+Explore organized examples by category:
+
+```bash
+# Basic examples (getting started)
+python examples/basic/run_all_demo.py
+python examples/basic/training_demo.py
+
+# Clinical examples (disease-specific)
+python examples/clinical/alzheimer_demo.py
+python examples/clinical/als_demo.py
+
+# Advanced examples (parallel processing, optimization)
+python examples/advanced/parallel_mode.py
+python examples/advanced/enhanced_features_demo.py
+
+# Enterprise examples (production, compliance)
+python examples/enterprise/production_demo.py
+python examples/enterprise/security_demo.py
+```
+
+See [examples/README.md](examples/README.md) for a complete guide.
+
 ### Advanced Options
 
 ```bash
 # Use custom config file
-python run_all_training.py --config my_config.yaml
+aimedres train --config my_config.yaml
 
 # Retry failed jobs
-python run_all_training.py --retries 2
+aimedres train --retries 2
 
 # Allow partial success (continue if some jobs fail)
-python run_all_training.py --allow-partial-success
+aimedres train --allow-partial-success
 ```
 
 ### Documentation
 
 For detailed training documentation:
+- **Examples Guide**: [examples/README.md](examples/README.md)
 - **Training Usage Guide**: [TRAINING_USAGE.md](TRAINING_USAGE.md)
 - **Training Scripts Reference**: [src/aimedres/training/README.md](src/aimedres/training/README.md)
 - **Implementation Details**: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
-- **Parallel Training (6 workers, 50 epochs, 5 folds)**: [PARALLEL_6WORKERS_50EPOCHS_5FOLDS.md](PARALLEL_6WORKERS_50EPOCHS_5FOLDS.md)
+- **Refactoring Summary**: [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)
 
 ### Reproducibility
 
@@ -243,34 +271,84 @@ Determinism options:
 ## 📁 Project Structure (Consolidated)
 
 ```
-src/aimedres/
-  training/                  # Disease-specific training pipelines & core training infrastructure
-    train_alzheimers.py      # Alzheimer's disease classification
-    train_als.py             # ALS classification
-    train_parkinsons.py      # Parkinson's disease classification
-    train_brain_mri.py       # Brain MRI image classification
-    train_cardiovascular.py  # Cardiovascular risk prediction
-    train_diabetes.py        # Diabetes classification
-    automation_system.py     # Training automation
-    custom_pipeline.py       # Dynamic pipeline builder
-    orchestration.py         # Workflow orchestration
-  agents/                    # Medical reasoning & specialized agents
-    specialized_medical_agents.py  # Multi-agent medical simulation
-  agent_memory/              # Memory consolidation & storage
-    memory_consolidation.py  # Dual-store consolidation system
-    embed_memory.py          # Vector memory store
-    agent_extensions.py      # Plugin system
-  core/                      # Core components
-    neural_network.py        # Adaptive neural networks
-    agent.py                 # DuetMind agent framework
-    config.py                # Configuration management
-  security/                  # Security & validation
-  api/                       # REST API
-  utils/                     # Utilities
-scripts/                     # CLI utilities
-tests/                       # Unit / integration tests
-examples/                    # Usage examples
+src/aimedres/              # Main package
+  core/                    # Core AI/ML components
+    agent.py               # DuetMind agent framework
+    neural_network.py      # Adaptive neural networks
+    config.py              # Configuration management
+    production_agent.py    # Production deployment manager
+    cognitive_engine.py    # Cognitive components
+    constants.py           # Global constants
+    labyrinth.py          # Adaptive labyrinth simulation
+  
+  training/                # Disease-specific training pipelines
+    train_alzheimers.py    # Alzheimer's disease classification
+    train_als.py           # ALS classification
+    train_parkinsons.py    # Parkinson's disease classification
+    train_brain_mri.py     # Brain MRI image classification
+    train_cardiovascular.py # Cardiovascular risk prediction
+    train_diabetes.py      # Diabetes classification
+    automation_system.py   # Training automation
+    custom_pipeline.py     # Dynamic pipeline builder
+    orchestration.py       # Workflow orchestration
+  
+  clinical/                # Clinical decision support
+    decision_support.py    # Clinical decision support system
+    parkinsons_als.py      # Disease-specific modules
+    medical_processor.py   # Medical data processor
+  
+  compliance/              # Regulatory compliance
+    fda.py                 # FDA compliance
+    regulatory.py          # Regulatory framework
+    gdpr.py               # GDPR compliance
+  
+  integration/             # External integrations
+    ehr.py                 # EHR integration
+    multimodal.py          # Multimodal data integration
+  
+  dashboards/              # Visualization & monitoring
+    explainable_ai.py      # XAI dashboard
+    data_quality.py        # Data quality monitoring
+  
+  cli/                     # Command-line interface
+    commands.py            # Main CLI entry point
+    train.py              # Training orchestrator
+    serve.py              # API server
+  
+  agents/                  # Medical reasoning & specialized agents
+  agent_memory/            # Memory consolidation & storage
+  security/                # Security & validation
+  api/                     # REST API
+  utils/                   # Utilities
+
+examples/                  # Usage examples (organized by complexity)
+  basic/                   # Getting started examples
+  clinical/                # Disease-specific demos
+  advanced/                # Advanced features & optimization
+  enterprise/              # Production & compliance demos
+
+tests/                     # Test suite
+  unit/                    # Unit tests
+    test_security/         # Security module tests
+    test_training/         # Training module tests
+  integration/             # Integration tests
+  performance/             # Performance benchmarks
+  regression/              # Regression tests
+
+scripts/                   # CLI utilities
+mlops/                     # MLOps infrastructure
+docs/                      # Documentation
+configs/                   # Configuration files
+data/                      # Data files
 ```
+
+**New in this refactoring:**
+- Organized examples into basic/, clinical/, advanced/, enterprise/ categories
+- Reorganized tests into unit/, integration/, performance/ directories
+- Added clinical/, compliance/, integration/, dashboards/ packages
+- Unified CLI under src/aimedres/cli/
+
+For migration guide, see [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)
 
 ---
 
