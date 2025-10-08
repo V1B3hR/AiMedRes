@@ -1,0 +1,17 @@
+"""
+Compatibility shim for ParkinsonsALS module.
+This module has moved to aimedres.clinical.parkinsons_als
+
+This shim will be removed in version 2.0.0
+"""
+import warnings
+warnings.warn(
+    "Importing from 'ParkinsonsALS' at root level is deprecated. "
+    "Use 'from aimedres.clinical.parkinsons_als import ...' instead. "
+    "This compatibility shim will be removed in version 2.0.0",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export everything from new location
+from aimedres.clinical.parkinsons_als import *

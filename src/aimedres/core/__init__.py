@@ -8,4 +8,12 @@ from .neural_network import AdaptiveNeuralNetwork
 from .agent import DuetMindAgent  
 from .config import DuetMindConfig
 
-__all__ = ["AdaptiveNeuralNetwork", "DuetMindAgent", "DuetMindConfig"]
+__all__ = [
+    "AdaptiveNeuralNetwork", 
+    "DuetMindAgent", 
+    "DuetMindConfig",
+    "constants",
+    "labyrinth",
+    "production_agent",
+    "cognitive_engine"
+]

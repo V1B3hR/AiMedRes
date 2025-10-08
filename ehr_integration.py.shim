@@ -1,0 +1,17 @@
+"""
+Compatibility shim for ehr_integration module.
+This module has moved to aimedres.integration.ehr
+
+This shim will be removed in version 2.0.0
+"""
+import warnings
+warnings.warn(
+    "Importing from 'ehr_integration' at root level is deprecated. "
+    "Use 'from aimedres.integration.ehr import ...' instead. "
+    "This compatibility shim will be removed in version 2.0.0",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export everything from new location
+from aimedres.integration.ehr import *

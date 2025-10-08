@@ -1,0 +1,17 @@
+"""
+Compatibility shim for secure_medical_processor module.
+This module has moved to aimedres.clinical.medical_processor
+
+This shim will be removed in version 2.0.0
+"""
+import warnings
+warnings.warn(
+    "Importing from 'secure_medical_processor' at root level is deprecated. "
+    "Use 'from aimedres.clinical.medical_processor import ...' instead. "
+    "This compatibility shim will be removed in version 2.0.0",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+# Re-export everything from new location
+from aimedres.clinical.medical_processor import *
