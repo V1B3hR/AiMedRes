@@ -65,6 +65,50 @@ Welcome to the AiMedRes project! We're excited to have you contribute to advanci
 
 ## 📋 Development Process
 
+### Project Structure
+
+AiMedRes follows a modular, organized structure. Before contributing, familiarize yourself with the layout:
+
+```
+src/aimedres/              # Main package
+  core/                    # Core AI/ML components
+  training/                # Disease-specific training pipelines
+  clinical/                # Clinical decision support
+  compliance/              # Regulatory compliance
+  integration/             # External integrations
+  dashboards/              # Visualization & monitoring
+  cli/                     # Command-line interface
+  agents/                  # Medical reasoning agents
+  agent_memory/            # Memory systems
+  security/                # Security modules
+  api/                     # REST API
+  utils/                   # Utilities
+
+examples/                  # Usage examples (organized by complexity)
+  basic/                   # Getting started examples
+  clinical/                # Disease-specific demos
+  advanced/                # Advanced features & optimization
+  enterprise/              # Production & compliance demos
+
+tests/                     # Test suite
+  unit/                    # Unit tests
+    test_security/         # Security tests
+    test_training/         # Training tests
+  integration/             # Integration tests
+  performance/             # Performance benchmarks
+  regression/              # Regression tests
+```
+
+**Where to add new code:**
+- New training pipelines → `src/aimedres/training/`
+- Example scripts → `examples/` (choose appropriate category: basic, clinical, advanced, or enterprise)
+- Unit tests → `tests/unit/` (organize by module)
+- Integration tests → `tests/integration/`
+- Clinical modules → `src/aimedres/clinical/`
+- Compliance features → `src/aimedres/compliance/`
+
+See [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) for the complete migration guide.
+
 ### 1. Choose an Issue
 - Look for issues labeled `good first issue` or `help wanted`
 - Comment on the issue to let others know you're working on it
@@ -92,10 +136,24 @@ pytest tests/
 pytest tests/ --cov=. --cov-report=html
 
 # Run specific test categories
-pytest tests/unit/        # Unit tests
-pytest tests/integration/ # Integration tests
-pytest tests/regression/  # Regression tests
+pytest tests/unit/                    # All unit tests
+pytest tests/unit/test_security/      # Security unit tests
+pytest tests/unit/test_training/      # Training unit tests
+pytest tests/integration/             # Integration tests
+pytest tests/performance/             # Performance tests
+pytest tests/regression/              # Regression tests
+
+# Run specific test file
+pytest tests/integration/test_training_pipeline.py
 ```
+
+**Test Organization:**
+- `tests/unit/` - Fast, isolated tests for individual components
+  - `test_security/` - Security module tests
+  - `test_training/` - Training module tests
+- `tests/integration/` - Tests for component interactions and workflows
+- `tests/performance/` - Performance benchmarks and optimization validation
+- `tests/regression/` - Tests to prevent regression of fixed bugs
 
 ### 5. Code Quality Checks
 ```bash
