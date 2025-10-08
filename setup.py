@@ -141,9 +141,9 @@ setup(
     # --- Command-line Scripts ---
     entry_points={
         'console_scripts': [
-            'aimedres=aimedres.main:main',
-            'aimedres-train=aimedres.training.cli:train_cli',
-            'aimedres-api=aimedres.api.server:run_server',
+            'aimedres=aimedres.cli.commands:main',
+            'aimedres-train=aimedres.cli.train:main',
+            'aimedres-serve=aimedres.cli.serve:main',
         ],
     },
     
