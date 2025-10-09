@@ -321,14 +321,14 @@ Use this as the single source of truth for planning, sequencing, and status upda
 - ✅ Penetration test & remediation; compile compliance dossier  
 
 ### P6. EHR Connectivity
-- Real-time ingestion protocol stress tests (throughput, ordering, idempotency)  
-- API security: OAuth2 / SMART on FHIR scopes, threat model review  
-- Pilot hospital ingestion (synthetic → de-identified real) feedback loop  
+- ✅ Real-time ingestion protocol stress tests (throughput, ordering, idempotency)  
+- ✅ API security: OAuth2 / SMART on FHIR scopes, threat model review  
+- ✅ Pilot hospital ingestion (synthetic → de-identified real) feedback loop  
 
 ### P7. Clinical Decision Support Dashboard
-- Real-time monitoring components (websocket/stream updates)  
-- Risk stratification visualizations (calibration + uncertainty)  
-- Workflow integration pilot (shadow mode + clinician feedback capture)  
+- ✅ Real-time monitoring components (websocket/stream updates)  
+- ✅ Risk stratification visualizations (calibration + uncertainty)  
+- ✅ Workflow integration pilot (shadow mode + clinician feedback capture)  
 
 ### P8A. Multi-Condition Support
 - Stroke detection models (feature extraction, evaluation)  
