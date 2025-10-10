@@ -273,7 +273,9 @@ class PredictiveHealthcareEngine:
         if len(historical_data) >= 365:
             # Simple seasonality check using autocorrelation
             mean_val = np.mean(historical_data)
-            seasonal_variance = np.var([historical_data[i::30] for i in range(12)])
+            # Calculate variance of monthly means
+            monthly_means = [np.mean(historical_data[i::30]) for i in range(min(12, len(historical_data) // 30))]
+            seasonal_variance = np.var(monthly_means) if len(monthly_means) > 1 else 0.0
             if seasonal_variance > 0.1 * mean_val**2:
                 return TrendType.SEASONAL
         
