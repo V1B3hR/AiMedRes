@@ -24,50 +24,53 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 
 - **Alzheimer's Disease** – Early detection, progression risk modeling  
 - **Stroke / Cerebrovascular** – Risk stratification & recovery trajectory scoring  
-- **Neurocognitive Disorders** – Expansion toward broader spectrum (in progress)  
-- **Mental Health State Modeling** – (roadmap / prototype status)  
+- **Neurocognitive Disorders** – Expansion toward broader spectrum  
+- **Mental Health State Modeling** – Early research modules  
+- **Parkinson's & ALS** – Dataset integration and pilot modules added
 
 ---
 
-## 🚀 Key Features
+## 🚀 Key Features (2025)
 
 ### 🧩 Intelligence & Architecture
 - Adaptive neural evolution engine (dynamic layer & pathway adjustment)
 - Multi-agent consultation & consensus system
 - Biological state simulators (energy, mood, circadian influences)
 - Dual-store + prioritized replay memory consolidation
+- Multi-Hospital Network and Specialty Modules
+- 3D Brain Visualization (NEW)
+- Multi-Modal AI Integration (EHR, imaging, notes)
 
 ### 📊 Clinical AI
 - Risk scoring & uncertainty estimates
 - Explainable prediction frames (feature attributions + causal hints)
 - Configurable safety thresholds & override gating
 - Quantitative performance dashboards (CLI + API + dashboard module)
+- Predictive Healthcare Analytics (NEW)
+- Population-level Insights
 
 ### 🏥 Integration Layer
 - FHIR / HL7 interface modules
 - Real-time EHR streaming hooks (event-driven ingestion)
 - Immutable audit log & trace provenance tagging
 - Compliance scaffolding (HIPAA/FDA alignment docs)
+- FDA Regulatory Pathway in progress
 
 ---
 
 ## 🔁 Recent Training Progress (Updated)
 
-| Model / Variant | Dataset(s) | Target Task | Best Metric | Prev Metric | Δ | Notes |
-|-----------------|-----------|-------------|-------------|-------------|----|-------|
-| AD_EARLY_V2 | ADNI + INTERNAL_SET_V1 | MCI→AD conversion (12–24m) | AUC = PLACEHOLDER | PLACEHOLDER | +PLACEHOLDER | Improved temporal embeddings |
-| AD_SCREEN_V1 | ADNI subset | Screening classifier | Sens = PLACEHOLDER / Spec = PLACEHOLDER | Sens = PLACEHOLDER / Spec = PLACEHOLDER | +PLACEHOLDER | Class imbalance reweighting |
-| MULTI_AGENT_CONSENSUS_V3 | Simulated + Expert Annotation | Agreement score |  PLACEHOLDER% | PLACEHOLDER% | +PLACEHOLDER | New conflict resolver |
-| MEMORY_CONSOLIDATION_V4 | Synthetic episodic tasks | Retention @24h |  PLACEHOLDER% | PLACEHOLDER% | +PLACEHOLDER | Added synaptic tagging decay |
-| LATENCY_OPT_BATCH_OPT | Live inference harness | p95 latency |  PLACEHOLDER ms | PLACEHOLDER ms | -PLACEHOLDER ms | CUDA graphs + fused ops |
-
-(Replace PLACEHOLDER values with actual results; I can regenerate this table.)
+| Model / Variant          | Dataset(s)             | Target Task                    | Best Metric      | Prev Metric     | Δ           | Notes                      |
+|------------------------- |-----------------------|-------------------------------|------------------|-----------------|-------------|----------------------------|
+| AD_EARLY_V2              | ADNI + INTERNAL_SET_V1| MCI→AD conversion (12–24m)     | AUC = PLACEHOLDER| PLACEHOLDER     | +PLACEHOLDER| Improved temporal embeddings|
+| AD_SCREEN_V1             | ADNI subset           | Screening classifier           | Sens = PLACEHOLDER / Spec = PLACEHOLDER | Sens = PLACEHOLDER / Spec = PLACEHOLDER | +PLACEHOLDER | Class imbalance reweighting|
+| MULTI_AGENT_CONSENSUS_V3 | Simulated + Expert Annotation | Agreement score         | PLACEHOLDER%     | PLACEHOLDER%    | +PLACEHOLDER| New conflict resolver      |
+| MEMORY_CONSOLIDATION_V4  | Synthetic episodic tasks | Retention @24h              | PLACEHOLDER%     | PLACEHOLDER%    | +PLACEHOLDER| Added synaptic tagging decay|
+| LATENCY_OPT_BATCH_OPT    | Live inference harness | p95 latency                   | PLACEHOLDER ms   | PLACEHOLDER ms  | -PLACEHOLDER ms | CUDA graphs + fused ops  |
 
 ---
 
 ## 📈 Current Performance Snapshot
-
-Update these with your latest numbers:
 
 - Response Time: p50 = PLACEHOLDER ms | p95 = PLACEHOLDER ms (target <100ms)
 - Alzheimer's Early Detection:
@@ -143,103 +146,79 @@ consolidator.run_cycle()
 
 ### Quick Start - Train All Models
 
-Run all disease prediction models with a single command:
-
 ```bash
-# Using the unified CLI (recommended)
+# Unified CLI (recommended)
 aimedres train
 
-# Or using the legacy script (still supported)
+# Legacy script (still supported)
 python run_all_training.py
 
 # With custom parameters
 aimedres train --epochs 20 --folds 5
 
-# Run in parallel for faster execution
+# Parallel execution
 aimedres train --parallel --max-workers 4
 
-# Production-ready configuration (6 workers, 50 epochs, 5 folds)
+# Production-ready config
 aimedres train --parallel --max-workers 6 --epochs 50 --folds 5
 ```
 
 ### Run Specific Models
 
 ```bash
-# Train only selected models
+# Only selected models
 aimedres train --only als alzheimers parkinsons
 
 # Exclude certain models
 aimedres train --exclude brain_mri
 
-# Preview commands without execution (dry run)
+# Dry run
 aimedres train --dry-run --epochs 10
 ```
 
 ### Run Single Model
 
 ```bash
-# Train Alzheimer's model with default settings
+# Alzheimer's model default
 python src/aimedres/training/train_alzheimers.py
 
-# Train with custom parameters
+# Custom parameters
 python src/aimedres/training/train_als.py --epochs 50 --folds 3 --output-dir my_results
 ```
 
 ### List Available Training Jobs
 
 ```bash
-# See all discovered training scripts
 aimedres train --list
 ```
 
 ### Output & Results
 
-Training outputs are saved to `results/` directory by default:
-- Trained models (`.pkl`, `.pth` files)
-- Performance metrics (CSV, JSON)
-- Training logs
-- Visualizations & plots
+Training outputs to `results/`:
+- Trained models (`.pkl`, `.pth`)
+- Metrics (CSV, JSON)
+- Logs, plots
 
 ### Run Examples
 
-Explore organized examples by category:
-
 ```bash
-# Basic examples (getting started)
 python examples/basic/run_all_demo.py
-python examples/basic/training_demo.py
-
-# Clinical examples (disease-specific)
 python examples/clinical/alzheimer_demo.py
-python examples/clinical/als_demo.py
-
-# Advanced examples (parallel processing, optimization)
 python examples/advanced/parallel_mode.py
-python examples/advanced/enhanced_features_demo.py
-
-# Enterprise examples (production, compliance)
 python examples/enterprise/production_demo.py
-python examples/enterprise/security_demo.py
 ```
-
-See [examples/README.md](examples/README.md) for a complete guide.
+See [examples/README.md](examples/README.md) for more.
 
 ### Advanced Options
 
 ```bash
-# Use custom config file
 aimedres train --config my_config.yaml
-
-# Retry failed jobs
 aimedres train --retries 2
-
-# Allow partial success (continue if some jobs fail)
 aimedres train --allow-partial-success
 ```
 
 ### Documentation
 
-For detailed training documentation:
 - **Examples Guide**: [examples/README.md](examples/README.md)
 - **Training Usage Guide**: [TRAINING_USAGE.md](TRAINING_USAGE.md)
 - **Training Scripts Reference**: [src/aimedres/training/README.md](src/aimedres/training/README.md)
@@ -248,167 +227,132 @@ For detailed training documentation:
 
 ### Reproducibility
 
-Determinism options:
 - Set `AIMEDRES_SEED=42`
-- Use `--seed` flag in training scripts
-- Logged configs stored under `results/<job_id>/config.yaml`
+- Use `--seed` in scripts
+- Configs stored under `results/<job_id>/config.yaml`
 
 ---
 
 ## 🧪 Model Zoo (Emerging)
 
-| Name | Task | Status | Checkpoint | Notes |
-|------|------|--------|------------|-------|
-| ad_early_v2 | 12–24m conversion | Stable Candidate | (planned) | Temporal embedding + adaptive pruning |
-| ad_screen_v1 | Screening classifier | Beta | (planned) | High sensitivity emphasis |
-| consensus_v3 | Multi-agent aggregator | Experimental | (planned) | Weighted disagreement resolution |
-| memory_v4 | Consolidation kernel | Experimental | (planned) | Synaptic tagging + decay curves |
-
-(If you want, I can script automatic table generation from a registry file.)
+| Name                 | Task                  | Status           | Checkpoint | Notes                               |
+|----------------------|-----------------------|------------------|------------|-------------------------------------|
+| ad_early_v2          | 12–24m conversion     | Stable Candidate | (planned)  | Temporal embedding + adaptive pruning|
+| ad_screen_v1         | Screening classifier  | Beta             | (planned)  | High sensitivity emphasis           |
+| consensus_v3         | Multi-agent aggregator| Experimental     | (planned)  | Weighted disagreement resolution    |
+| memory_v4            | Consolidation kernel  | Experimental     | (planned)  | Synaptic tagging + decay curves     |
 
 ---
 
-## 📁 Project Structure (Consolidated)
+## 📁 Project Structure
 
 ```
-src/aimedres/              # Main package
-  core/                    # Core AI/ML components
-    agent.py               # DuetMind agent framework
-    neural_network.py      # Adaptive neural networks
-    config.py              # Configuration management
-    production_agent.py    # Production deployment manager
-    cognitive_engine.py    # Cognitive components
-    constants.py           # Global constants
-    labyrinth.py          # Adaptive labyrinth simulation
-  
-  training/                # Disease-specific training pipelines
-    train_alzheimers.py    # Alzheimer's disease classification
-    train_als.py           # ALS classification
-    train_parkinsons.py    # Parkinson's disease classification
-    train_brain_mri.py     # Brain MRI image classification
-    train_cardiovascular.py # Cardiovascular risk prediction
-    train_diabetes.py      # Diabetes classification
-    automation_system.py   # Training automation
-    custom_pipeline.py     # Dynamic pipeline builder
-    orchestration.py       # Workflow orchestration
-  
-  clinical/                # Clinical decision support
-    decision_support.py    # Clinical decision support system
-    parkinsons_als.py      # Disease-specific modules
-    medical_processor.py   # Medical data processor
-  
-  compliance/              # Regulatory compliance
-    fda.py                 # FDA compliance
-    regulatory.py          # Regulatory framework
-    gdpr.py               # GDPR compliance
-  
-  integration/             # External integrations
-    ehr.py                 # EHR integration
-    multimodal.py          # Multimodal data integration
-  
-  dashboards/              # Visualization & monitoring
-    explainable_ai.py      # XAI dashboard
-    data_quality.py        # Data quality monitoring
-  
-  cli/                     # Command-line interface
-    commands.py            # Main CLI entry point
-    train.py              # Training orchestrator
-    serve.py              # API server
-  
-  agents/                  # Medical reasoning & specialized agents
-  agent_memory/            # Memory consolidation & storage
-  security/                # Security & validation
-  api/                     # REST API
-  utils/                   # Utilities
-
-examples/                  # Usage examples (organized by complexity)
-  basic/                   # Getting started examples
-  clinical/                # Disease-specific demos
-  advanced/                # Advanced features & optimization
-  enterprise/              # Production & compliance demos
-
-tests/                     # Test suite
-  unit/                    # Unit tests
-    test_security/         # Security module tests
-    test_training/         # Training module tests
-  integration/             # Integration tests
-  performance/             # Performance benchmarks
-  regression/              # Regression tests
-
-scripts/                   # CLI utilities
-mlops/                     # MLOps infrastructure
-docs/                      # Documentation
-configs/                   # Configuration files
-data/                      # Data files
+src/aimedres/
+  core/
+  training/
+  clinical/
+  compliance/
+  integration/
+  dashboards/
+  cli/
+  agents/
+  agent_memory/
+  security/
+  api/
+  utils/
+examples/
+  basic/
+  clinical/
+  advanced/
+  enterprise/
+tests/
+  unit/
+    test_security/
+    test_training/
+  integration/
+  performance/
+  regression/
+scripts/
+mlops/
+docs/
+configs/
+data/
 ```
-
-**New in this refactoring:**
-- Organized examples into basic/, clinical/, advanced/, enterprise/ categories
-- Reorganized tests into unit/, integration/, performance/ directories
-- Added clinical/, compliance/, integration/, dashboards/ packages
+- Examples are now organized by category
+- Tests are split into unit, integration, performance
+- Added clinical, compliance, integration, dashboards packages
 - Unified CLI under src/aimedres/cli/
-
-For migration guide, see [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)
 
 ---
 
 ## 🛡️ Safety & Compliance
 
 - Configurable risk thresholds & human-in-loop gating
-- Immutable audit trails (planned: hash chain / ledger)
-- Bias & drift monitoring hooks (framework present; dashboards WIP)
-- Privacy: de-identification utilities (PHI scrubber module planned)
+- Immutable audit trails (hash chain/ledger planned)
+- Bias & drift monitoring (dashboards in progress)
+- Privacy: de-identification utilities (PHI scrubber planned)
+- FDA regulatory pathway planning underway
 
 ---
 
 ## 📚 Documentation
 
-| Topic | Link |
-|-------|------|
-| Technical Architecture | docs/architecture.md |
-| Medical Applications | docs/medical-applications.md |
-| API Reference | docs/api-reference.md |
-| Compliance Tracking | docs/compliance.md |
-| Publications / Notes | docs/publications.md |
+| Topic                 | Link                               |
+|-----------------------|------------------------------------|
+| Technical Architecture| docs/architecture.md               |
+| Medical Applications  | docs/medical-applications.md       |
+| API Reference         | docs/api-reference.md              |
+| Compliance Tracking   | docs/compliance.md                 |
+| Publications / Notes  | docs/publications.md               |
 
-(Generate missing docs via `scripts/scaffold_docs.py` – planned.)
+(Missing docs: generate via `scripts/scaffold_docs.py`)
 
 ---
 
-## 🛣️ Roadmap (High-Level Update)
+## 🛣️ Roadmap (2025-10-10, Recent Progress)
 
-### Active (Now)
-- [x] Core adaptive architecture
-- [x] Multi-agent baseline
-- [x] Memory dual-store prototype
-- [🟧] Latency optimization pass (CUDA graph + kernel fusion)
-- [🟧] Expanded evaluation harness (uncertainty + calibration)
-- [🟧] FHIR ingestion pipeline hardening
-- [🟧] Explainability dashboard backend
-- [ ] Formal clinical pilot onboarding
-- [ ] Regulatory pre-assessment packet
+### Recently Implemented
+- Core adaptive architecture
+- Multi-agent baseline
+- Memory dual-store prototype
+- Latency optimization (CUDA, kernel fusion)
+- Expanded evaluation harness (uncertainty, calibration)
+- FHIR ingestion pipeline hardened
+- Explainability dashboard backend
+- EHR connectivity
+- Clinical Decision Support
+- 3D Brain Visualization
+- Multi-Modal AI Integration
+- Predictive Analytics
+- Multi-Hospital Network
+- Population-Level Insights
+- FDA Regulatory Pathway (in progress)
+- Clinical Pilot Programs (in progress)
 
 ### Upcoming
-- [ ] Parkinson's & ALS dataset integration
-- [ ] Adversarial robustness testing suite
-- [ ] Advanced safety monitor (causal anomaly detection)
-- [ ] Model card auto-generation
-- [ ] Deployment orchestrator (K8s + streaming inference)
+- Formal clinical pilot onboarding
+- Advanced safety monitor (causal anomaly detection)
+- Model card auto-generation
+- Deployment orchestrator (K8s + streaming inference)
+- Adversarial robustness suite
+
+> For full roadmap and documentation, see [ROADMAP.md](ROADMAP.md) and [architecture docs](docs/architecture.md).  
+> Recent PRs: [Implement P15-P17: 3D Brain Visualization, Multi-Modal AI Integration, and Predictive Healthcare Analytics](https://github.com/V1B3hR/AiMedRes/pull/162), [Implement P8B Clinical Pilot Programs and P9 FDA Regulatory Pathway Planning](https://github.com/V1B3hR/AiMedRes/pull/161), [Implement P12, P13, P14 roadmap phases](https://github.com/V1B3hR/AiMedRes/pull/160), [more...](https://github.com/V1B3hR/AiMedRes/pulls?q=is%3Apr+is%3Aclosed)
 
 ---
 
 ## 🧾 Data Sources & Ethics
 
-| Dataset | Usage | Access |
-|---------|-------|--------|
-| ADNI | Alzheimer's progression training/eval | Licensed / user-supplied |
-| INTERNAL_SIM_V1 | Synthetic multimodal cases | Generated |
-| CLINICAL_NOTES_PROTOTYPE (planned) | Context enrichment | Pending de-ID pipeline |
+| Dataset                | Usage                             | Access                    |
+|------------------------|-----------------------------------|---------------------------|
+| ADNI                   | Alzheimer's progression           | Licensed / user-supplied  |
+| INTERNAL_SIM_V1        | Synthetic multimodal cases        | Generated                 |
+| CLINICAL_NOTES_PROTOTYPE| Context enrichment (planned)     | Pending de-ID pipeline    |
 
 Ethics:
 - No raw PHI stored in repo
 - Synthetic augmentation to reduce demographic skew
-- Planned fairness reporting: stratified sensitivity/specificity
+- Fairness reporting: stratified sensitivity/specificity (planned)
 
 ---
 
@@ -419,7 +363,8 @@ Focus areas:
 - Safety / auditing modules
 - Latency + systems optimization
 - Advanced memory & continual learning
-See CONTRIBUTING.md (coming update: new code style + testing matrix).
+
+See CONTRIBUTING.md (coming: new code style + testing matrix).
 
 ---
 
@@ -453,3 +398,5 @@ This software is for **research & development**. It does **not** provide medical
 ---
 
 *Advancing responsible AI for neurological health.* 🧠
+
+> **Note:** This summary is based on the 30 most recent PRs/issues. There are 162 total; for a complete changelog and more details, visit [all closed PRs/issues](https://github.com/V1B3hR/AiMedRes/issues?q=is%3Apr+is%3Aclosed).
