@@ -12,17 +12,28 @@ Main Components:
 - Utils: Shared utilities and helper functions
 """
 
-__version__ = "1.0.0"
+__version__ = "0.2.0"
 __author__ = "AiMedRes Team"
 
-# Core imports for external use
-from .core.neural_network import AdaptiveNeuralNetwork
-from .core.agent import DuetMindAgent
-from .core.config import DuetMindConfig
-
-# Security imports  
-from .security.auth import SecureAuthManager
-from .security.validation import InputValidator
+# Lazy imports to avoid loading heavy dependencies on import
+def __getattr__(name):
+    """Lazy load modules on first access."""
+    if name == "AdaptiveNeuralNetwork":
+        from .core.neural_network import AdaptiveNeuralNetwork
+        return AdaptiveNeuralNetwork
+    elif name == "DuetMindAgent":
+        from .core.agent import DuetMindAgent
+        return DuetMindAgent
+    elif name == "DuetMindConfig":
+        from .core.config import DuetMindConfig
+        return DuetMindConfig
+    elif name == "SecureAuthManager":
+        from .security.auth import SecureAuthManager
+        return SecureAuthManager
+    elif name == "InputValidator":
+        from .security.validation import InputValidator
+        return InputValidator
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [
     "AdaptiveNeuralNetwork", 

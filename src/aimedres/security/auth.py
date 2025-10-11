@@ -13,12 +13,27 @@ import hashlib
 import hmac
 import secrets
 import time
-import jwt
 from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import request, jsonify, current_app
 import logging
+
+# Optional dependencies
+try:
+    import jwt
+    JWT_AVAILABLE = True
+except ImportError:
+    JWT_AVAILABLE = False
+    jwt = None
+
+try:
+    from flask import request, jsonify, current_app
+    FLASK_AVAILABLE = True
+except ImportError:
+    FLASK_AVAILABLE = False
+    request = None
+    jsonify = None
+    current_app = None
 
 # Configure security logging
 security_logger = logging.getLogger('duetmind.security')
