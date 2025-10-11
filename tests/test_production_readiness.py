@@ -27,7 +27,7 @@ from datetime import datetime, timedelta
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from training import AlzheimerTrainer
+from aimedres.training import AlzheimerTrainer
 from clinical_decision_support import RiskStratificationEngine
 from data_quality_monitor import DataQualityMonitor
 

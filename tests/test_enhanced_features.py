@@ -27,7 +27,7 @@ from multimodal_data_integration import (
     MultiModalDataLoader, DataFusionProcessor, 
     PrivacyPreservingFederatedLearning, MultiModalMedicalAI
 )
-from training import AlzheimerTrainer
+from aimedres.training import AlzheimerTrainer
 from labyrinth_adaptive import AliveLoopNode, ResourceRoom
 
 
