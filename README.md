@@ -88,14 +88,45 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 ```bash
 git clone https://github.com/V1B3hR/AiMedRes.git
 cd AiMedRes
-pip install -r requirements.txt
-# optional extras: pip install -e ".[dev,docs]"
+pip install -e .
+# optional extras: pip install -e ".[dev]"
 ```
 
 Quick import check:
 ```bash
-python -c "from aimedres.training.alzheimer_training_system import load_alzheimer_data; print('OK')"
+python -c "from aimedres.training import AlzheimerTrainingPipeline; print('✓ Installation successful')"
 ```
+
+### Requirements
+- Python 3.10+
+- Core: NumPy, Pandas, Scikit-learn
+- Optional: PyTorch, XGBoost, MLflow (for advanced features)
+
+See [docs/requirements.md](docs/requirements.md) for full details.
+
+---
+
+## 📁 Repository Structure
+
+```
+AiMedRes/
+├── src/aimedres/           # Main package (all code here)
+│   ├── training/           # Training pipelines (Alzheimer's, ALS, etc.)
+│   ├── agents/             # Specialized medical agents
+│   ├── agent_memory/       # Memory consolidation systems
+│   ├── clinical/           # Clinical decision support
+│   ├── compliance/         # HIPAA, FDA, regulatory modules
+│   ├── core/               # Core utilities and agents
+│   ├── dashboards/         # Visualization dashboards
+│   └── ...
+├── docs/                   # Documentation (guides, API, architecture)
+├── tests/                  # Test suite
+├── examples/               # Example scripts and demos
+├── mlops/                  # Production MLOps infrastructure
+└── configs/                # Configuration files
+```
+
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for v0.2.0 cleanup details.
 
 ---
 
@@ -368,17 +399,25 @@ See CONTRIBUTING.md (coming: new code style + testing matrix).
 
 ---
 
-## 📢 Citing
+## 📚 Documentation
 
-(Add once first preprint is available)
-```
-@article{aimedres2026,
-  title   = {AiMedRes: Adaptive Multi-Agent Clinical Reasoning with Biological Memory Enhancement},
-  author  = {...},
-  year    = {2026},
-  journal = {Preprint}
-}
-```
+For comprehensive documentation, see the [docs/](docs/) directory:
+
+- **Getting Started**: [Quick Reference](docs/guides/QUICK_REFERENCE.md), [Training Guide](docs/guides/TRAINING_USAGE.md)
+- **Architecture**: [System Architecture](docs/ARCHITECTURE_REFACTOR_PLAN.md), [MLOps](docs/MLOPS_ARCHITECTURE.md)
+- **API Reference**: [API Docs](docs/API_REFERENCE.md), [Clinical Decision Support](docs/CLINICAL_DECISION_SUPPORT_README.md)
+- **Compliance**: [Data Handling](docs/DATA_HANDLING_PROCEDURES.md), [Security](docs/SECURITY_GUIDELINES.md)
+
+Full documentation index: [docs/README.md](docs/README.md)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see:
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [security.md](security.md) - Security policies
+- [CHANGELOG.md](CHANGELOG.md) - Version history
 
 ---
 
@@ -388,15 +427,30 @@ This software is for **research & development**. It does **not** provide medical
 
 ---
 
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+---
+
+## 🌟 Project Status
+
+- ✅ v0.2.0 - Repository cleanup and standardization complete
+- ✅ Core training pipelines operational
+- ✅ MLOps infrastructure implemented
+- 🔄 Production deployment guides (in progress)
+- 🔄 Enhanced testing coverage (in progress)
+
+See [docs/roadmap.md](docs/roadmap.md) and [RELEASE_NOTES.md](RELEASE_NOTES.md) for details.
+
+---
+
 ## 📞 Contact
 
 - Lead: [V1B3hR](https://github.com/V1B3hR)
 - Issues: https://github.com/V1B3hR/AiMedRes/issues
-- Discussions: https://github.com/V1B3hR/AiMedRes/discussions
 - Collaboration: Open to research & clinical partners
 
 ---
 
 *Advancing responsible AI for neurological health.* 🧠
-
-> **Note:** This summary is based on the 30 most recent PRs/issues. There are 162 total; for a complete changelog and more details, visit [all closed PRs/issues](https://github.com/V1B3hR/AiMedRes/issues?q=is%3Apr+is%3Aclosed).
