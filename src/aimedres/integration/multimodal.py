@@ -26,6 +26,14 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 
+# Optional MLflow import
+try:
+    import mlflow
+    MLFLOW_AVAILABLE = True
+except ImportError:
+    MLFLOW_AVAILABLE = False
+    mlflow = None
+
 # Import base components
 from data_loaders import DataLoader
 
@@ -317,13 +325,13 @@ class DataFusionProcessor:
         
         logger.info("Performing late fusion...")
         
-        if use_mlflow:
+        if use_mlflow and MLFLOW_AVAILABLE and mlflow is not None:
             import mlflow
             import mlflow.sklearn
             mlflow.set_experiment(mlflow_experiment)
         
         # Use MLflow context if enabled
-        if use_mlflow:
+        if use_mlflow and MLFLOW_AVAILABLE and mlflow is not None:
             with mlflow.start_run():
                 return self._perform_late_fusion_with_mlflow(data_dict, target_column, True)
         else:
@@ -332,9 +340,8 @@ class DataFusionProcessor:
     def _perform_late_fusion_with_mlflow(self, data_dict: Dict[str, pd.DataFrame], 
                                         target_column: str, use_mlflow: bool) -> Dict[str, Any]:
         """Internal method to perform late fusion with optional MLflow logging."""
-        """Internal method to perform late fusion with optional MLflow logging."""
         
-        if use_mlflow:
+        if use_mlflow and MLFLOW_AVAILABLE and mlflow is not None:
             mlflow.log_param("fusion_type", "late_fusion")
             mlflow.log_param("num_modalities", len(data_dict))
             mlflow.log_param("modalities", list(data_dict.keys()))
@@ -354,7 +361,7 @@ class DataFusionProcessor:
             X = data.drop(columns=[target_column])
             y = data[target_column]
             
-            if use_mlflow:
+            if use_mlflow and MLFLOW_AVAILABLE and mlflow is not None:
                 mlflow.log_param(f"{modality_name}_features", X.shape[1])
                 mlflow.log_param(f"{modality_name}_samples", X.shape[0])
             
@@ -387,7 +394,7 @@ class DataFusionProcessor:
                 'f1_score': report['weighted avg']['f1-score']
             }
             
-            if use_mlflow:
+            if use_mlflow and MLFLOW_AVAILABLE and mlflow is not None:
                 mlflow.log_metric(f"{modality_name}_accuracy", accuracy)
                 mlflow.log_metric(f"{modality_name}_precision", report['weighted avg']['precision'])
                 mlflow.log_metric(f"{modality_name}_recall", report['weighted avg']['recall'])
@@ -417,7 +424,7 @@ class DataFusionProcessor:
                     'f1_score': ensemble_report['weighted avg']['f1-score']
                 }
                 
-                if use_mlflow:
+                if use_mlflow and MLFLOW_AVAILABLE and mlflow is not None:
                     mlflow.log_metric("ensemble_accuracy", ensemble_accuracy)
                     mlflow.log_metric("ensemble_precision", ensemble_report['weighted avg']['precision'])
                     mlflow.log_metric("ensemble_recall", ensemble_report['weighted avg']['recall'])

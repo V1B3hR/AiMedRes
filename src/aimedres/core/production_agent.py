@@ -261,7 +261,6 @@ class ParallelProcessingManager:
     def _process_chunk(self, chunk: List[Any], operation: Callable) -> List[Any]:
         """Process a chunk of nodes efficiently"""
         return [operation(node) for node in chunk]
-        return results
     
     def parallel_vector_search(self, query_vector: np.ndarray, document_vectors: List[np.ndarray], top_k: int = 10) -> List[Tuple[int, float]]:
         """Parallel vector similarity search"""

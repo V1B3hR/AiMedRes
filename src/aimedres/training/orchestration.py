@@ -380,6 +380,7 @@ class WorkflowOrchestrator:
     def _run_workflow_ray(self, timeout: Optional[float] = None) -> Dict[str, TaskResult]:
         """Run workflow using Ray."""
         ray_futures = {}
+        start_time = datetime.now()
         
         while len(self.task_results) < len(self.tasks):
             # Get ready tasks
