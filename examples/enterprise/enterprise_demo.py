@@ -9,10 +9,13 @@ import numpy as np
 from typing import Dict, Any
 
 # Import constants
-from constants import (
-    DEFAULT_API_PORT, DEFAULT_RATE_LIMIT, DEFAULT_MAX_CONCURRENT_REQUESTS,
-    ENTERPRISE_MIN_WORKERS, ENTERPRISE_SCALING_FACTOR
+from aimedres.core.constants import (
+    DEFAULT_API_PORT, DEFAULT_RATE_LIMIT, DEFAULT_MAX_CONCURRENT_REQUESTS
 )
+
+# Enterprise-specific defaults
+ENTERPRISE_MIN_WORKERS = 4
+ENTERPRISE_SCALING_FACTOR = 1.5
 
 def _create_enterprise_config() -> Dict[str, Any]:
     """Create enterprise configuration with default values"""
@@ -36,7 +39,7 @@ def _setup_enterprise_engine(config: Dict[str, Any]):
     print("🏗️  Setting up enterprise-grade systems...")
     
     # Import here to avoid circular imports
-    from duetmind import OptimizedAdaptiveEngine
+    from aimedres.core.production_agent import OptimizedAdaptiveEngine
     
     # Create optimized engine
     print("  🧠 Initializing OptimizedAdaptiveEngine...")

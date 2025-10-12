@@ -12,10 +12,10 @@ from typing import Dict, Any
 # Add current directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from duetmind import OptimizedAdaptiveEngine
-from security.performance_monitor import ClinicalPerformanceMonitor, ClinicalPriority
-from security.ai_safety import ClinicalAISafetyMonitor
-from security.privacy import PrivacyManager
+from aimedres.core.production_agent import OptimizedAdaptiveEngine
+from aimedres.security.performance_monitor import ClinicalPerformanceMonitor, ClinicalPriority
+from aimedres.security.ai_safety import ClinicalAISafetyMonitor
+from aimedres.security.privacy import PrivacyManager
 
 def demonstrate_performance_optimization():
     """Demonstrate <100ms performance target achievement."""
