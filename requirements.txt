@@ -1,0 +1,26 @@
+# Core AiMedRes Requirements
+# Base dependencies for the package to function
+
+# Core scientific computing
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.10.0
+
+# Machine learning
+scikit-learn>=1.3.0
+torch>=2.0.0
+
+# System utilities
+psutil>=5.9.0
+
+# Data visualization
+matplotlib>=3.5.0
+seaborn>=0.12.0
+
+# Web framework and API
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# Optional but commonly used
+joblib>=1.3.0
+pyyaml>=6.0.0
