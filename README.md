@@ -220,10 +220,9 @@ aimedres train --allow-partial-success
 ### Documentation
 
 - **Examples Guide**: [examples/README.md](examples/README.md)
-- **Training Usage Guide**: [TRAINING_USAGE.md](TRAINING_USAGE.md)
+- **Training Usage Guide**: [docs/TRAINING_USAGE.md](docs/TRAINING_USAGE.md)
 - **Training Scripts Reference**: [src/aimedres/training/README.md](src/aimedres/training/README.md)
-- **Implementation Details**: [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
-- **Refactoring Summary**: [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)
+- **Documentation Index**: [docs/](docs/)
 
 ### Reproducibility
 

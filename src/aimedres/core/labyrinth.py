@@ -4,7 +4,7 @@ import math
 import time
 import uuid
 import logging
-from collections import deque, defaultdict, Counter
+from collections import deque, Counter
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional
 
