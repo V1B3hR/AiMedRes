@@ -13,18 +13,7 @@ Provides a production-ready Flask API server with:
 import os
 import sys
 import logging
-from flask import Flask, request, jsonify
-from flask_cors import CORS
 import argparse
-
-# Add project root to path for imports
-project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_root)
-
-# Import security and training components
-from security.auth import SecureAuthManager
-from security.encryption import DataEncryption
-from remote_training_manager import RemoteTrainingManager
 
 # Configure logging
 logging.basicConfig(
@@ -32,6 +21,50 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger('duetmind.api_server')
+
+# Lazy imports to avoid errors when module is only being imported
+Flask = None
+request = None
+jsonify = None
+CORS = None
+SecureAuthManager = None
+DataEncryption = None
+RemoteTrainingManager = None
+
+def _ensure_imports():
+    """Lazy import of dependencies to avoid errors when module is only being imported."""
+    global Flask, request, jsonify, CORS, SecureAuthManager, DataEncryption, RemoteTrainingManager
+    
+    if Flask is not None:
+        return  # Already imported
+    
+    try:
+        from flask import Flask as _Flask, request as _request, jsonify as _jsonify
+        from flask_cors import CORS as _CORS
+        Flask = _Flask
+        request = _request
+        jsonify = _jsonify
+        CORS = _CORS
+    except ImportError as e:
+        logger.error(f"Failed to import Flask dependencies: {e}")
+        raise
+    
+    # Add project root to path for imports
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
+    
+    # Import security and training components
+    try:
+        from security.auth import SecureAuthManager as _SecureAuthManager
+        from security.encryption import DataEncryption as _DataEncryption
+        from remote_training_manager import RemoteTrainingManager as _RemoteTrainingManager
+        SecureAuthManager = _SecureAuthManager
+        DataEncryption = _DataEncryption
+        RemoteTrainingManager = _RemoteTrainingManager
+    except ImportError as e:
+        logger.error(f"Failed to import security/training components: {e}")
+        raise
 
 def create_app(config=None):
     """
@@ -43,6 +76,7 @@ def create_app(config=None):
     Returns:
         Configured Flask application
     """
+    _ensure_imports()
     app = Flask(__name__)
     
     # Default configuration
@@ -92,6 +126,7 @@ def create_app(config=None):
 
 def main(argv=None):
     """Main entry point for the API server."""
+    _ensure_imports()
     parser = argparse.ArgumentParser(description='DuetMind Remote Training API Server')
     parser.add_argument('--host', default='127.0.0.1', help='Host to bind to')
     parser.add_argument('--port', type=int, default=5000, help='Port to bind to')

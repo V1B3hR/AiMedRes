@@ -160,7 +160,7 @@ aimedres train --epochs 20 --folds 5
 aimedres train --parallel --max-workers 4
 
 # Production-ready config
-aimedres train --parallel --max-workers 6 --epochs 50 --folds 5
+aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 ```
 
 ### Run Specific Models
@@ -174,6 +174,9 @@ aimedres train --exclude brain_mri
 
 # Dry run
 aimedres train --dry-run --epochs 10
+
+# With batch size
+aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 ```
 
 ### Run Single Model
