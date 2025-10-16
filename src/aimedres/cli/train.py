@@ -137,7 +137,7 @@ class TrainingJob:
         if self.supports_batch:
             batch = self.args.get("batch", global_batch)
             if batch is not None:
-                cmd += ["--batch", str(batch)]
+                cmd += ["--batch-size", str(batch)]
 
         # Other args
         for k, v in self.args.items():
@@ -327,7 +327,7 @@ def default_jobs() -> List[TrainingJob]:
             id="als",
             args={"dataset-choice": "als-progression"},
             supports_sample=False,  # Sample parameter not supported yet
-            supports_batch=False,  # Batch parameter not supported yet
+            supports_batch=True,  # Batch size parameter supported as --batch-size
         ),
         TrainingJob(
             name="Alzheimer's Disease",
@@ -413,7 +413,7 @@ def infer_support_flags(file_text: str) -> Dict[str, bool]:
         "supports_epochs": "--epochs" in lower,
         "supports_folds": "--folds" in lower,
         "supports_sample": "--sample" in lower,
-        "supports_batch": "--batch" in lower,
+        "supports_batch": ("--batch" in lower) or ("--batch-size" in lower),
         "use_output_dir": ("--output-dir" in lower) or ("--output_dir" in lower),
     }
 
