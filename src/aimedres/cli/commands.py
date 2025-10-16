@@ -74,6 +74,7 @@ Examples:
     train_parser.add_argument('--exclude', nargs='*', default=[], help='Exclude these models')
     train_parser.add_argument('--epochs', type=int, help='Number of training epochs')
     train_parser.add_argument('--folds', type=int, help='Number of cross-validation folds')
+    train_parser.add_argument('--batch', type=int, help='Batch size for training')
     train_parser.add_argument('--parallel', action='store_true', help='Run jobs in parallel')
     train_parser.add_argument('--max-workers', type=int, default=4, help='Max parallel workers')
     train_parser.add_argument('--dry-run', action='store_true', help='Show commands without executing')
@@ -134,6 +135,8 @@ Examples:
             train_argv.extend(['--epochs', str(args.epochs)])
         if args.folds is not None:
             train_argv.extend(['--folds', str(args.folds)])
+        if args.batch is not None:
+            train_argv.extend(['--batch', str(args.batch)])
         if args.parallel:
             train_argv.append('--parallel')
             train_argv.extend(['--max-workers', str(args.max_workers)])
