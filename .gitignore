@@ -87,6 +87,8 @@ dist/
 
 # Training outputs
 summaries/
+als_outputs/
+alzheimer_outputs/
 
 # Demo outputs and intermediate results
 demo_outputs/
