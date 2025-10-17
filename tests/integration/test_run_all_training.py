@@ -12,7 +12,7 @@ def test_orchestrator_list():
     """Test that the orchestrator can list all discovered jobs"""
     print("Test 1: List all training jobs...")
     result = subprocess.run(
-        [sys.executable, "run_all_training.py", "--list"],
+        [sys.executable, "src/aimedres/cli/train.py", "--list"],
         capture_output=True,
         text=True,
         timeout=30
@@ -59,7 +59,7 @@ def test_orchestrator_dry_run():
     """Test that the orchestrator generates correct commands"""
     print("Test 2: Dry run with parameters...")
     result = subprocess.run(
-        [sys.executable, "run_all_training.py", "--dry-run", 
+        [sys.executable, "src/aimedres/cli/train.py", "--dry-run", 
          "--epochs", "10", "--folds", "3", "--only", "als"],
         capture_output=True,
         text=True,
@@ -102,7 +102,7 @@ def test_orchestrator_parallel():
     """Test that parallel mode is recognized"""
     print("Test 3: Parallel execution mode...")
     result = subprocess.run(
-        [sys.executable, "run_all_training.py", "--dry-run", 
+        [sys.executable, "src/aimedres/cli/train.py", "--dry-run", 
          "--parallel", "--max-workers", "2", "--only", "als", "alzheimers"],
         capture_output=True,
         text=True,
@@ -132,7 +132,7 @@ def test_orchestrator_filtering():
     
     # Test --only filter
     result = subprocess.run(
-        [sys.executable, "run_all_training.py", "--list", "--only", "als", "alzheimers"],
+        [sys.executable, "src/aimedres/cli/train.py", "--list", "--only", "als", "alzheimers"],
         capture_output=True,
         text=True,
         timeout=30
@@ -168,7 +168,7 @@ def test_parallel_with_custom_parameters():
     """Test parallel execution with custom epochs and folds parameters"""
     print("Test 5: Parallel execution with custom parameters (--max-workers 6 --epochs 80 --folds 5)...")
     result = subprocess.run(
-        [sys.executable, "run_all_training.py", "--dry-run", 
+        [sys.executable, "src/aimedres/cli/train.py", "--dry-run", 
          "--parallel", "--max-workers", "6", "--epochs", "80", "--folds", "5",
          "--only", "als", "alzheimers", "parkinsons"],
         capture_output=True,
@@ -230,6 +230,95 @@ def test_parallel_with_custom_parameters():
     return True
 
 
+def test_exact_problem_statement_command():
+    """Test the exact command from the problem statement"""
+    print("Test 6: Problem statement command (--parallel --max-workers 6 --epochs 50 --folds 5 --batch 128 --only als alzheimers parkinsons)...")
+    result = subprocess.run(
+        [sys.executable, "src/aimedres/cli/train.py", "--dry-run",
+         "--parallel", "--max-workers", "6", "--epochs", "50", "--folds", "5", 
+         "--batch", "128", "--only", "als", "alzheimers", "parkinsons"],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+    
+    if result.returncode != 0:
+        print(f"✗ Failed with code {result.returncode}")
+        print(result.stderr)
+        return False
+    
+    output = result.stdout + result.stderr
+    
+    # Check parallel mode with 6 workers
+    if "Parallel mode enabled" in output:
+        print("✓ Parallel mode enabled with max-workers 6")
+    else:
+        print("✗ Parallel mode not enabled")
+        return False
+    
+    # Check epochs 50
+    if "--epochs 50" in output:
+        print("✓ Epochs parameter (50) applied")
+    else:
+        print("✗ Epochs parameter not found")
+        return False
+    
+    # Check folds 5
+    if "--folds 5" in output:
+        print("✓ Folds parameter (5) applied")
+    else:
+        print("✗ Folds parameter not found")
+        return False
+    
+    # Check batch 128 is applied to ALS (which supports it)
+    if "--batch-size 128" in output and "[als]" in output:
+        print("✓ Batch parameter (128) applied to ALS")
+    else:
+        print("✗ Batch parameter not applied correctly")
+        return False
+    
+    # Verify batch is NOT applied to scripts that don't support it
+    als_command = None
+    alzheimers_command = None
+    parkinsons_command = None
+    
+    for line in output.split('\n'):
+        if "[als] (dry-run) Command:" in line:
+            als_command = line
+        if "[alzheimers] (dry-run) Command:" in line:
+            alzheimers_command = line
+        if "[parkinsons] (dry-run) Command:" in line:
+            parkinsons_command = line
+    
+    if als_command and "--batch-size 128" in als_command:
+        print("✓ ALS command includes batch-size (supported)")
+    else:
+        print("✗ ALS command missing batch-size")
+        return False
+    
+    if alzheimers_command and "--batch-size" not in alzheimers_command:
+        print("✓ Alzheimers command excludes batch-size (not supported)")
+    else:
+        print("✗ Alzheimers command incorrectly includes batch-size")
+        return False
+    
+    if parkinsons_command and "--batch-size" not in parkinsons_command:
+        print("✓ Parkinsons command excludes batch-size (not supported)")
+    else:
+        print("✗ Parkinsons command incorrectly includes batch-size")
+        return False
+    
+    # Check that 3 jobs are selected
+    if "Selected jobs: 3" in output:
+        print("✓ Correct number of jobs selected (3)")
+    else:
+        print("✗ Incorrect number of jobs selected")
+        return False
+    
+    print("✓ Test passed: Problem statement command works correctly\n")
+    return True
+
+
 def main():
     """Run all tests"""
     print("=" * 60)
@@ -238,7 +327,7 @@ def main():
     print()
     
     # Change to repository root
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).parent.parent.parent
     import os
     os.chdir(repo_root)
     
@@ -248,6 +337,7 @@ def main():
         test_orchestrator_parallel,
         test_orchestrator_filtering,
         test_parallel_with_custom_parameters,
+        test_exact_problem_statement_command,
     ]
     
     passed = 0
