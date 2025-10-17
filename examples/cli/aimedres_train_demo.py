@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Demo script for: python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5
+Demo script for the aimedres CLI train command:
+  aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 
-This demonstrates the complete command in action with dry-run mode.
+This demonstrates the modern CLI interface for training medical AI models.
 """
 
 import subprocess
@@ -11,30 +12,29 @@ from pathlib import Path
 
 
 def run_demo():
-    """Run demonstration of the command."""
+    """Run demonstration of the aimedres CLI train command."""
     print()
     print("=" * 80)
-    print("DEMONSTRATION: Parallel Training with 6 Workers, 50 Epochs, 5 Folds")
+    print("DEMONSTRATION: aimedres CLI Train Command")
     print("=" * 80)
     print()
     print("Command:")
-    print("  python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5")
+    print("  aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128")
     print()
     print("This demonstration will run in dry-run mode to show what would execute.")
     print()
     
     # Change to repo root
     repo_root = Path(__file__).parent.parent.parent
-    import os
-    os.chdir(repo_root)
     
     # Run with dry-run to show what would happen
     cmd = [
-        sys.executable, "run_all_training.py",
+        "./aimedres", "train",
         "--parallel",
         "--max-workers", "6",
         "--epochs", "50",
         "--folds", "5",
+        "--batch", "128",
         "--dry-run"
     ]
     
@@ -43,7 +43,7 @@ def run_demo():
     print("=" * 80)
     print()
     
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=repo_root)
     output = result.stdout + result.stderr
     
     # Print key information
@@ -63,18 +63,37 @@ def run_demo():
         print("✅ SUCCESS: Command executed successfully (dry-run mode)")
         print()
         print("Key Features Demonstrated:")
+        print("  ✓ Modern aimedres CLI interface")
         print("  ✓ Parallel execution enabled")
         print("  ✓ Up to 6 concurrent workers")
         print("  ✓ 50 epochs for neural network training")
         print("  ✓ 5-fold cross-validation")
+        print("  ✓ Batch size of 128")
         print("  ✓ Automatic job discovery")
         print("  ✓ Parameter propagation to all compatible scripts")
         print()
-        print("To run actual training (not dry-run), use:")
-        print("  python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5")
+        print("Usage Examples:")
         print()
-        print("To run specific jobs only:")
-        print("  python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5 --only als alzheimers")
+        print("1. Run all training jobs with specified parameters:")
+        print("   aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128")
+        print()
+        print("2. Run specific jobs only:")
+        print("   aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128 \\")
+        print("                  --only als alzheimers parkinsons")
+        print()
+        print("3. List all available training jobs:")
+        print("   aimedres train --list")
+        print()
+        print("4. Run in dry-run mode to preview commands:")
+        print("   aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128 \\")
+        print("                  --dry-run")
+        print()
+        print("5. Sequential execution (no parallelism):")
+        print("   aimedres train --epochs 50 --folds 5 --batch 128")
+        print()
+        print("Backward Compatibility:")
+        print("  The old command format is still supported:")
+        print("  python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128")
         print()
         return 0
     else:
