@@ -24,7 +24,7 @@ def run_demo():
     print()
     
     # Change to repo root
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).parent.parent.parent
     import os
     os.chdir(repo_root)
     

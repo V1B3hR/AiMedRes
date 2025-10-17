@@ -130,7 +130,7 @@ def verify_command_structure():
 
 def main():
     """Main verification routine"""
-    repo_root = Path(__file__).parent
+    repo_root = Path(__file__).parent.parent.parent
     import os
     os.chdir(repo_root)
     
