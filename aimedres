@@ -12,8 +12,15 @@ import os
 repo_root = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(repo_root, 'src'))
 
-# Import and run the CLI
-from aimedres.cli.commands import main
-
+# Import and run the CLI without loading the main package
+# This avoids loading heavy dependencies when just running CLI commands
 if __name__ == '__main__':
-    sys.exit(main())
+    # Directly import the commands module to avoid loading aimedres/__init__.py
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "aimedres.cli.commands",
+        os.path.join(repo_root, 'src', 'aimedres', 'cli', 'commands.py')
+    )
+    commands_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(commands_module)
+    sys.exit(commands_module.main())
