@@ -303,7 +303,7 @@ class BrainMRITrainingPipeline:
             mlflow.log_param("optimizer", "AdamW")
             mlflow.log_param("learning_rate", 0.0008)
             mlflow.log_param("weight_decay", 2e-4)
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=5, verbose=True)
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.3, patience=5)
             
             scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
             early_stopping = EarlyStopping(patience=10, verbose=True, delta=0.001)
