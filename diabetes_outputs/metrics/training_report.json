@@ -1,0 +1,68 @@
+{
+  "timestamp": "20251019_083505",
+  "dataset_info": {
+    "shape": [
+      1000,
+      17
+    ],
+    "features": [
+      "Age",
+      "Gender",
+      "Polyuria",
+      "Polydipsia",
+      "sudden_weight_loss",
+      "weakness",
+      "Polyphagia",
+      "Genital_thrush",
+      "visual_blurring",
+      "Itching",
+      "Irritability",
+      "delayed_healing",
+      "partial_paresis",
+      "muscle_stiffness",
+      "Alopecia",
+      "Obesity"
+    ],
+    "target_classes": [
+      "Negative",
+      "Positive"
+    ]
+  },
+  "classical_models": {
+    "Logistic Regression": {
+      "accuracy": 0.697,
+      "accuracy_std": 0.04781213235152768,
+      "balanced_accuracy": 0.6960248755634846,
+      "balanced_accuracy_std": 0.0472052096208056,
+      "f1_macro": 0.6958640528807306,
+      "f1_macro_std": 0.04747072983308964,
+      "roc_auc": 0.7601396743682745,
+      "roc_auc_std": 0.04467151857969735
+    },
+    "Random Forest": {
+      "accuracy": 0.6769999999999999,
+      "accuracy_std": 0.048228622207149976,
+      "balanced_accuracy": 0.674568750990653,
+      "balanced_accuracy_std": 0.047663705475045434,
+      "f1_macro": 0.6747270290149122,
+      "f1_macro_std": 0.04792234621139194,
+      "roc_auc": 0.7257519069453974,
+      "roc_auc_std": 0.042807065391699275
+    }
+  },
+  "neural_network": {
+    "accuracy": 0.706,
+    "balanced_accuracy": 0.7039941535261546,
+    "f1_macro": 0.7042919905373437,
+    "roc_auc": 0.7862623926372978,
+    "training_losses": [
+      0.6794921215623617,
+      0.630454245954752
+    ],
+    "epochs": 2
+  },
+  "training_config": {
+    "epochs": 2,
+    "cross_validation_folds": 5
+  }
+}
