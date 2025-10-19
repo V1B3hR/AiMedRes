@@ -90,6 +90,7 @@ summaries/
 als_outputs/
 alzheimer_outputs/
 alzheimer_outputs_enhanced/
+diabetes_outputs/
 
 # Demo outputs and intermediate results
 demo_outputs/
