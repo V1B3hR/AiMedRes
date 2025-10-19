@@ -89,6 +89,7 @@ dist/
 summaries/
 als_outputs/
 alzheimer_outputs/
+alzheimer_outputs_enhanced/
 
 # Demo outputs and intermediate results
 demo_outputs/
@@ -104,3 +105,4 @@ debug/phase[1-9]_*.py
 debug/phase[1-9]_*.json
 debug/PHASE[1-9]_*.md
 memory_state_demo.json
+training_output.log

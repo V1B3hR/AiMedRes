@@ -48,8 +48,15 @@ lgb, LIGHTGBM_AVAILABLE = _try_import("lightgbm")
 mlflow, MLFLOW_AVAILABLE = _try_import("mlflow")
 yaml, YAML_AVAILABLE = _try_import("yaml")
 kagglehub, KAGGLEHUB_AVAILABLE = _try_import("kagglehub")
-plt, MPL_AVAILABLE = _try_import("matplotlib.pyplot")
 imblearn, IMBLEARN_AVAILABLE = _try_import("imblearn")
+
+# Import matplotlib.pyplot properly
+try:
+    import matplotlib.pyplot as plt
+    MPL_AVAILABLE = True
+except ImportError:
+    plt = None
+    MPL_AVAILABLE = False
 
 if IMBLEARN_AVAILABLE:
     from imblearn.over_sampling import SMOTE
@@ -279,7 +286,24 @@ def cross_validate_model(
         X_tr_tf = preprocessor_fold.fit_transform(X_tr)
         X_va_tf = preprocessor_fold.transform(X_va)
 
-        # SMOTE (numeric-only matrix already)
+        # Model tuning with GridSearchCV (before SMOTE to avoid data mismatch)
+        if param_grid and cfg.get('model_tuning', False):
+            # Create a fresh preprocessor for GridSearchCV
+            preprocessor_grid = pickle.loads(pickle.dumps(preprocessor))
+            pipe = Pipeline([
+                ('preprocessor', preprocessor_grid),
+                ('classifier', pickle.loads(pickle.dumps(model)))
+            ])
+            grid = GridSearchCV(pipe, param_grid, cv=3, n_jobs=-1, scoring='f1_macro')
+            grid.fit(X_tr, y_tr)
+            best_clf = grid.best_estimator_.named_steps['classifier']
+            logger.info(f"[{name}] Fold {fold+1} best params: {grid.best_params_}")
+            # Re-fit preprocessor_fold to ensure consistency
+            X_tr_tf = preprocessor_fold.fit_transform(X_tr)
+        else:
+            best_clf = pickle.loads(pickle.dumps(model))
+
+        # SMOTE (numeric-only matrix already) - apply after GridSearchCV
         if cfg['use_smote'] and IMBLEARN_AVAILABLE:
             unique, counts = np.unique(y_tr, return_counts=True)
             min_count = counts.min()
@@ -287,19 +311,14 @@ def cross_validate_model(
             sm = SMOTE(random_state=cfg['random_seed'], k_neighbors=k_neighbors)
             X_tr_tf, y_tr = sm.fit_resample(X_tr_tf, y_tr)
 
-        # Model tuning with GridSearchCV
-        if param_grid and cfg.get('model_tuning', False):
-            pipe = Pipeline([
-                ('preprocessor', preprocessor_fold),
-                ('classifier', pickle.loads(pickle.dumps(model)))
-            ])
-            grid = GridSearchCV(pipe, param_grid, cv=3, n_jobs=-1, scoring='f1_macro')
-            grid.fit(X_tr, y_tr)
-            best_clf = grid.best_estimator_.named_steps['classifier']
-            logger.info(f"[{name}] Fold {fold+1} best params: {grid.best_params_}")
-        else:
-            best_clf = pickle.loads(pickle.dumps(model))
+        # Fit the classifier on the (possibly SMOTE'd) data
+        if not (param_grid and cfg.get('model_tuning', False)):
+            # Only fit if we didn't already fit via GridSearchCV
             best_clf.fit(X_tr_tf, y_tr)
+        else:
+            # Re-fit the best model from GridSearchCV with SMOTE'd data if SMOTE was applied
+            if cfg['use_smote'] and IMBLEARN_AVAILABLE:
+                best_clf.fit(X_tr_tf, y_tr)
 
         y_va_pred = best_clf.predict(X_va_tf)
         if hasattr(best_clf, "predict_proba"):
@@ -342,6 +361,23 @@ def fit_full_model(
     preprocessor_full = pickle.loads(pickle.dumps(preprocessor))
     X_tf = preprocessor_full.fit_transform(X)
 
+    # Model tuning with GridSearchCV (before SMOTE to avoid data mismatch)
+    if param_grid and cfg.get('model_tuning', False):
+        # Create a fresh preprocessor for GridSearchCV
+        preprocessor_grid = pickle.loads(pickle.dumps(preprocessor))
+        pipe = Pipeline([
+            ('preprocessor', preprocessor_grid),
+            ('classifier', pickle.loads(pickle.dumps(model)))
+        ])
+        grid = GridSearchCV(pipe, param_grid, cv=3, n_jobs=-1, scoring='f1_macro')
+        grid.fit(X, y)
+        best_clf = grid.best_estimator_.named_steps['classifier']
+        # Re-fit preprocessor_full to ensure consistency
+        X_tf = preprocessor_full.fit_transform(X)
+    else:
+        best_clf = pickle.loads(pickle.dumps(model))
+
+    # SMOTE (numeric-only matrix already) - apply after GridSearchCV
     if cfg['use_smote'] and IMBLEARN_AVAILABLE:
         unique, counts = np.unique(y, return_counts=True)
         min_count = counts.min()
@@ -349,18 +385,14 @@ def fit_full_model(
         sm = SMOTE(random_state=cfg['random_seed'], k_neighbors=k_neighbors)
         X_tf, y = sm.fit_resample(X_tf, y)
 
-    # Model tuning with GridSearchCV
-    if param_grid and cfg.get('model_tuning', False):
-        pipe = Pipeline([
-            ('preprocessor', preprocessor_full),
-            ('classifier', pickle.loads(pickle.dumps(model)))
-        ])
-        grid = GridSearchCV(pipe, param_grid, cv=3, n_jobs=-1, scoring='f1_macro')
-        grid.fit(X, y)
-        best_clf = grid.best_estimator_.named_steps['classifier']
-    else:
-        best_clf = pickle.loads(pickle.dumps(model))
+    # Fit the classifier on the (possibly SMOTE'd) data
+    if not (param_grid and cfg.get('model_tuning', False)):
+        # Only fit if we didn't already fit via GridSearchCV
         best_clf.fit(X_tf, y)
+    else:
+        # Re-fit the best model from GridSearchCV with SMOTE'd data if SMOTE was applied
+        if cfg['use_smote'] and IMBLEARN_AVAILABLE:
+            best_clf.fit(X_tf, y)
 
     artifact = {
         'preprocessor': preprocessor_full,

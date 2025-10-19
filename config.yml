@@ -1,0 +1,15 @@
+calibration_plots: true
+dataset_handle: rabieelkharoua/alzheimers-disease-dataset
+enable_polynomial_features: true
+folds: 5
+mlflow_experiment_name: Alzheimer_Classification_Enhanced
+model_selection_metric: f1_macro
+model_tuning: false
+output_dir: alzheimer_outputs_enhanced
+poly_degree: 2
+poly_interaction_only: false
+random_seed: 42
+run_voting_ensemble: true
+smote_k_neighbors: 5
+target_column: Diagnosis
+use_smote: true
