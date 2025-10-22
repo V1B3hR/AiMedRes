@@ -142,24 +142,40 @@ consolidator.run_cycle()
 
 ---
 
-## 🚂 Run Training
+## 🚂 Run Training for ALL Medical AI Models
+
+AiMedRes includes **7 comprehensive medical AI models** that can be trained using the unified orchestrator:
+
+1. **ALS** (Amyotrophic Lateral Sclerosis)
+2. **Alzheimer's Disease**
+3. **Parkinson's Disease**
+4. **Brain MRI Classification**
+5. **Cardiovascular Disease**
+6. **Diabetes Prediction**
+7. **Specialized Medical Agents**
 
 ### Quick Start - Train All Models
 
 ```bash
+# Simple wrapper script (easiest)
+./train_all_models.sh
+
+# With parallel execution (faster)
+./train_all_models.sh --parallel --max-workers 4
+
+# With custom training parameters
+./train_all_models.sh --parallel --max-workers 6 --epochs 50 --folds 5
+
 # Unified CLI (recommended)
 aimedres train
-
-# Legacy script (still supported)
-python run_all_training.py
 
 # With custom parameters
 aimedres train --epochs 20 --folds 5
 
-# Parallel execution
+# Parallel execution for faster training
 aimedres train --parallel --max-workers 4
 
-# Production-ready config
+# Production-ready configuration
 aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 ```
 
@@ -172,17 +188,17 @@ aimedres train --only als alzheimers parkinsons
 # Exclude certain models
 aimedres train --exclude brain_mri
 
-# Dry run
+# Dry run (preview commands without execution)
 aimedres train --dry-run --epochs 10
 
-# With batch size
+# With batch size for compatible models
 aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 ```
 
 ### Run Single Model
 
 ```bash
-# Alzheimer's model default
+# Alzheimer's model
 python src/aimedres/training/train_alzheimers.py
 
 # Custom parameters
@@ -193,7 +209,17 @@ python src/aimedres/training/train_als.py --epochs 50 --folds 3 --output-dir my_
 
 ```bash
 aimedres train --list
+
+# Or use the wrapper
+./train_all_models.sh --dry-run
 ```
+
+### Complete Documentation
+
+For comprehensive documentation on running all models, see:
+- **[RUN_ALL_MODELS_GUIDE.md](RUN_ALL_MODELS_GUIDE.md)** - Complete usage guide
+- **[run_all_models_demo.sh](run_all_models_demo.sh)** - Interactive demonstration
+- **[train_all_models.sh](train_all_models.sh)** - Simple wrapper script
 
 ### Output & Results
 

@@ -79,6 +79,8 @@ Examples:
     train_parser.add_argument('--max-workers', type=int, default=4, help='Max parallel workers')
     train_parser.add_argument('--dry-run', action='store_true', help='Show commands without executing')
     train_parser.add_argument('--config', type=str, help='Path to YAML config file')
+    train_parser.add_argument('--no-auto-discover', action='store_true', help='Disable auto-discovery')
+    train_parser.add_argument('--verbose', action='store_true', help='Verbose logging')
     
     # Serve subcommand
     serve_parser = subparsers.add_parser(
@@ -144,6 +146,10 @@ Examples:
             train_argv.append('--dry-run')
         if args.config:
             train_argv.extend(['--config', args.config])
+        if hasattr(args, 'no_auto_discover') and args.no_auto_discover:
+            train_argv.append('--no-auto-discover')
+        if hasattr(args, 'verbose') and args.verbose:
+            train_argv.append('--verbose')
         
         result = subprocess.run(train_argv)
         return result.returncode
