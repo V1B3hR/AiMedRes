@@ -25,7 +25,7 @@ from security.performance_monitor import (
     get_performance_monitor, ClinicalPriority, monitor_performance
 )
 from security.ai_safety import get_safety_monitor, RiskLevel
-from regulatory_compliance import FDAValidationManager
+from aimedres.compliance.regulatory import FDAValidationManager
 
 def demonstrate_comprehensive_security_compliance():
     """

@@ -23,7 +23,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from clinical_decision_support import RiskStratificationEngine
+from aimedres.clinical.decision_support import RiskStratificationEngine
 # from regulatory_compliance import RegulatoryCompliance, HIPAAValidator, ValidationProtocol
 
 

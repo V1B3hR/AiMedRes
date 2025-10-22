@@ -25,9 +25,9 @@ import subprocess
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from training import AlzheimerTrainer, TrainingIntegratedAgent
-from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom
+from aimedres.core.cognitive_engine import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom
 from data_loaders import create_data_loader, CSVDataLoader, MockDataLoader
-from clinical_decision_support import RiskStratificationEngine
+from aimedres.clinical.decision_support import RiskStratificationEngine
 from data_quality_monitor import DataQualityMonitor
 
 

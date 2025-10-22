@@ -17,7 +17,7 @@ import gc
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from neuralnet import (
+from aimedres.core.cognitive_engine import (
     UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, 
     MazeMaster, Memory, SocialSignal, CapacitorInSpace
 )

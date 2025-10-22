@@ -576,7 +576,7 @@ if __name__ == "__main__":
     }
     
     # Mock assessment data
-    from clinical_decision_support import RiskAssessment
+    from aimedres.clinical.decision_support import RiskAssessment
     
     mock_assessment = RiskAssessment(
         patient_id='PATIENT_001',

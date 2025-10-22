@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from training import AlzheimerTrainer, TrainingIntegratedAgent
-from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom
+from aimedres.core.cognitive_engine import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom
 from data_loaders import create_data_loader
 
 

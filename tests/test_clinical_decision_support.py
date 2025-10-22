@@ -19,23 +19,23 @@ from unittest.mock import Mock, patch
 import uuid
 
 # Import the modules to test
-from clinical_decision_support import (
+from aimedres.clinical.decision_support import (
     ClinicalDecisionSupportSystem, RiskStratificationEngine, 
     RiskAssessment, InterventionRecommendation
 )
-from explainable_ai_dashboard import (
+from aimedres.dashboards.explainable_ai import (
     DashboardGenerator, AlzheimerExplainer, 
     FeatureImportance, DecisionExplanation
 )
-from ehr_integration import (
+from aimedres.integration.ehr import (
     EHRConnector, FHIRConverter, HL7MessageProcessor,
     FHIRPatient, FHIRObservation, FHIRDiagnosticReport
 )
-from regulatory_compliance import (
+from aimedres.compliance.regulatory import (
     HIPAAComplianceManager, FDAValidationManager, ComplianceDashboard,
     AuditEvent, AuditEventType, ValidationRecord, AdverseEvent
 )
-from clinical_decision_support_main import ClinicalWorkflowOrchestrator
+from aimedres.clinical.decision_support_main import ClinicalWorkflowOrchestrator
 
 
 class TestRiskStratificationEngine:

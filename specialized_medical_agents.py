@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 
 # Import base components - create our own MedicalKnowledgeAgent to avoid import issues
-from neuralnet import UnifiedAdaptiveAgent
+from aimedres.core.cognitive_engine import UnifiedAdaptiveAgent
 
 logger = logging.getLogger("SpecializedMedicalAgents")
 

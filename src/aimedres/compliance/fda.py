@@ -25,7 +25,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import uuid
 
-from regulatory_compliance import FDAValidationManager
+from .regulatory import FDAValidationManager
 
 # Configure FDA-specific logging
 fda_logger = logging.getLogger('duetmind.fda')

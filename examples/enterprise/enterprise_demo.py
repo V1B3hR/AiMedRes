@@ -96,7 +96,7 @@ def _generate_deployment_files(config: Dict[str, Any]) -> bool:
     print(f"\n🚀 Generating Enterprise Deployment Files...")
     
     # Import here to avoid circular imports
-    from duetmind import ProductionDeploymentManager
+    from aimedres.core.production_agent import ProductionDeploymentManager
     
     deployment_manager = ProductionDeploymentManager(config)
     success = deployment_manager.deploy_to_files()
@@ -123,7 +123,7 @@ def _generate_deployment_files(config: Dict[str, Any]) -> bool:
 def _demonstrate_api_features(config: Dict[str, Any]):
     """Demonstrate API and monitoring features"""
     # Import here to avoid circular imports
-    from duetmind import EnterpriseAPI, ObservabilitySystem
+    from aimedres.core.production_agent import EnterpriseAPI, ObservabilitySystem
     
     # API Demo (simplified)
     print(f"\n🌐 Enterprise API Demo:")

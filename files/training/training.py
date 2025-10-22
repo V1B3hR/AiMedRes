@@ -38,7 +38,7 @@ def _lazy_import_framework():
     global UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
     global create_data_loader, DataLoader, CSVDataLoader, MockDataLoader
     
-    from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
+    from aimedres.core.cognitive_engine import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
     from scripts.data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
 
 # Import existing components - using lazy loading

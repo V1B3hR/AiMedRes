@@ -10,7 +10,7 @@ import json
 import tempfile
 import os
 from datetime import datetime, timedelta
-from regulatory_compliance import FDAValidationManager, ValidationRecord, AdverseEvent
+from aimedres.compliance.regulatory import FDAValidationManager, ValidationRecord, AdverseEvent
 
 
 def demonstrate_fda_pre_submission_framework():

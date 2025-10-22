@@ -6,7 +6,7 @@ import pandas as pd
 import tempfile
 import os
 
-from aimedres.training.training import AlzheimerTrainer, TrainingConfig
+from training.training import AlzheimerTrainer, TrainingConfig
 from scripts.data_loaders import MockDataLoader, CSVDataLoader, create_data_loader
 
 
@@ -150,7 +150,7 @@ class TestTrainingWithNeuralNetwork:
     def test_training_integrated_agent_creation(self, sample_alzheimer_data):
         """Test creating training-integrated agents"""
         from aimedres.training.training import TrainingIntegratedAgent
-        from neuralnet import AliveLoopNode, ResourceRoom
+        from aimedres.core.cognitive_engine import AliveLoopNode, ResourceRoom
         
         # Setup components
         mock_loader = MockDataLoader(mock_data=sample_alzheimer_data)

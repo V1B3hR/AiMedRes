@@ -21,7 +21,7 @@ from pathlib import Path
 import random
 
 # Import existing components
-from neuralnet import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
+from aimedres.core.cognitive_engine import UnifiedAdaptiveAgent, AliveLoopNode, ResourceRoom, NetworkMetrics, MazeMaster
 # from files.dataset.create_test_data import create_test_alzheimer_data  # Removed redundant files
 from scripts.data_loaders import DataLoader, CSVDataLoader, MockDataLoader, create_data_loader
 
