@@ -152,7 +152,7 @@ def test_fda_documentation_implemented():
     print("🏥 Testing FDA Documentation Implementation...")
     
     try:
-        from fda_documentation import FDADocumentationGenerator, DeviceInformation, DeviceClassification
+        from aimedres.compliance.fda import FDADocumentationGenerator, DeviceInformation, DeviceClassification
         
         # Create device information
         device_info = DeviceInformation(
@@ -255,7 +255,7 @@ def test_regulatory_readiness():
                 os.unlink(temp_db.name)
         
         # Test FDA documentation module
-        from fda_documentation import create_fda_documentation_generator
+        from aimedres.compliance.fda import create_fda_documentation_generator
         generator = create_fda_documentation_generator("Test Device")
         
         submission = generator.generate_510k_submission()

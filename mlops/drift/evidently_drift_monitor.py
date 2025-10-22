@@ -16,7 +16,7 @@ from scipy import stats
 
 # Import drift detection constants
 try:
-    from constants import (
+    from aimedres.core.constants import (
         DRIFT_DETECTION_KS_THRESHOLD, DRIFT_DETECTION_WASSERSTEIN_THRESHOLD,
         DRIFT_DETECTION_TV_THRESHOLD, DRIFT_DETECTION_JS_THRESHOLD, 
         DRIFT_DETECTION_CHI2_THRESHOLD

@@ -19,7 +19,7 @@ def demo_deployment_toolkit():
     print("=" * 50)
     
     try:
-        from duetmind import ProductionDeploymentManager
+        from aimedres.core.production_agent import ProductionDeploymentManager
         
         # Configure deployment
         config = {
@@ -145,7 +145,7 @@ def demo_clinical_validation():
         
         # Check for clinical decision support module
         try:
-            import clinical_decision_support
+            import aimedres.clinical.decision_support
             print("✅ Clinical decision support module available")
         except ImportError:
             print("⚠️  Clinical decision support module not available")

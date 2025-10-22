@@ -22,7 +22,7 @@ import uuid
 from dataclasses import asdict
 
 # Import all CDSS components
-from clinical_decision_support import ClinicalDecisionSupportSystem, RiskAssessment
+from .decision_support import ClinicalDecisionSupportSystem, RiskAssessment
 from explainable_ai_dashboard import DashboardGenerator
 from ehr_integration import EHRConnector
 from regulatory_compliance import (

@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from training import AlzheimerTrainer
-from clinical_decision_support import RiskStratificationEngine
+from aimedres.clinical.decision_support import RiskStratificationEngine
 from data_quality_monitor import DataQualityMonitor
 
 

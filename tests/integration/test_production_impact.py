@@ -10,7 +10,7 @@ from pathlib import Path
 def test_deployment_toolkit():
     """Test that deployment toolkit works"""
     try:
-        from duetmind import ProductionDeploymentManager
+        from aimedres.core.production_agent import ProductionDeploymentManager
         import tempfile
         
         print("🔧 Testing Deployment Toolkit...")
@@ -99,7 +99,7 @@ def test_clinical_validation_components():
     
     # Test if clinical decision support components exist
     try:
-        import clinical_decision_support
+        import aimedres.clinical.decision_support
         print("✅ Clinical decision support module available")
         clinical_available = True
     except ImportError as e:

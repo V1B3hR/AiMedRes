@@ -14,7 +14,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from aimedres.training.training import AlzheimerTrainer, TrainingIntegratedAgent, run_training_simulation
-from neuralnet import AliveLoopNode, ResourceRoom
+from aimedres.core.cognitive_engine import AliveLoopNode, ResourceRoom
 
 
 class TestAlzheimerTrainer(unittest.TestCase):
