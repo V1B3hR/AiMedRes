@@ -23,15 +23,15 @@ from aimedres.clinical.decision_support import (
     ClinicalDecisionSupportSystem, RiskStratificationEngine, 
     RiskAssessment, InterventionRecommendation
 )
-from explainable_ai_dashboard import (
+from aimedres.dashboards.explainable_ai import (
     DashboardGenerator, AlzheimerExplainer, 
     FeatureImportance, DecisionExplanation
 )
-from ehr_integration import (
+from aimedres.integration.ehr import (
     EHRConnector, FHIRConverter, HL7MessageProcessor,
     FHIRPatient, FHIRObservation, FHIRDiagnosticReport
 )
-from regulatory_compliance import (
+from aimedres.compliance.regulatory import (
     HIPAAComplianceManager, FDAValidationManager, ComplianceDashboard,
     AuditEvent, AuditEventType, ValidationRecord, AdverseEvent
 )
