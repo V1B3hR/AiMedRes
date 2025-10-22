@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 import json
 
-from regulatory_compliance import FDAValidationManager, ValidationRecord, AdverseEvent
+from aimedres.compliance.regulatory import FDAValidationManager, ValidationRecord, AdverseEvent
 
 
 class TestFDAPreSubmissionFramework:
