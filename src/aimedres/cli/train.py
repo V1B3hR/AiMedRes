@@ -317,7 +317,7 @@ def humanize_script_name(path: Path) -> str:
 
 
 def default_jobs() -> List[TrainingJob]:
-    # Core disease prediction models - all 6 main models
+    # Core disease prediction models - all 7 main models
     # Using canonical location: src/aimedres/training/
     return [
         TrainingJob(
@@ -371,6 +371,15 @@ def default_jobs() -> List[TrainingJob]:
             script="src/aimedres/training/train_diabetes.py",
             output="diabetes_comprehensive_results",
             id="diabetes",
+            args={},
+            supports_sample=False,  # Sample parameter not supported yet
+            supports_batch=False,  # Batch parameter not supported yet
+        ),
+        TrainingJob(
+            name="Specialized Medical Agents",
+            script="src/aimedres/training/train_specialized_agents.py",
+            output="specialized_agents_comprehensive_results",
+            id="specialized_agents",
             args={},
             supports_sample=False,  # Sample parameter not supported yet
             supports_batch=False,  # Batch parameter not supported yet
