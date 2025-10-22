@@ -1,18 +1,18 @@
 """
-Compatibility shim for training module.
+Training module.
 
-This module has been moved to src/aimedres/training/.
-This shim provides backward compatibility for existing imports.
+Provides training functionality for various medical AI models.
 """
 
-import warnings
+# Import local training modules
+from .training import AlzheimerTrainer, TrainingConfig, TrainingIntegratedAgent, run_training_simulation
+from .cross_validation import Phase5CrossValidator, CrossValidationConfig
 
-warnings.warn(
-    "Importing from 'training' is deprecated. "
-    "Use 'from aimedres.training import ...' instead.",
-    DeprecationWarning,
-    stacklevel=2
-)
-
-# Re-export everything from the new location
-from aimedres.training import *  # noqa: F401, F403
+__all__ = [
+    "AlzheimerTrainer",
+    "TrainingConfig", 
+    "TrainingIntegratedAgent",
+    "run_training_simulation",
+    "Phase5CrossValidator",
+    "CrossValidationConfig",
+]

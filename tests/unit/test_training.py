@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import tempfile
 import os
 
-from aimedres.training.training import AlzheimerTrainer, TrainingConfig
+from training.training import AlzheimerTrainer, TrainingConfig
 from scripts.data_loaders import MockDataLoader
 from aimedres.core.cognitive_engine import AliveLoopNode, ResourceRoom
 
