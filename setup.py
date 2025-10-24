@@ -25,7 +25,7 @@ DESCRIPTION = "AiMedRes - AI Medical Research Assistant for advanced healthcare 
 AUTHOR = "VIBEHR"  # Or your GitHub username/organization
 AUTHOR_EMAIL = "your-email@example.com"  # A contact email
 URL = "https://github.com/V1B3hR/aimedres"
-LICENSE = "Apache Software License"
+LICENSE = "GNU General Public License v3 (GPLv3)"
 
 # ==============================================================================
 # HELPER FUNCTIONS
@@ -158,7 +158,7 @@ setup(
         "Intended Audience :: Developers",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Healthcare Industry",
-        "License :: OSI Approved :: Apache Software License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",

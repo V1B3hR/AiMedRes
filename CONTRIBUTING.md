@@ -326,7 +326,21 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ## 📄 License
 
-By contributing to AiMedRes, you agree that your contributions will be licensed under the same license as the project. See [LICENSE](LICENSE) file for details.
+By contributing to AiMedRes, you agree that your contributions will be licensed under the same license as the project: **GNU General Public License v3.0 (GPL-3.0)**.
+
+**What this means:**
+- Your contributions become part of the GPL-3.0 licensed codebase
+- You retain copyright to your contributions
+- Your contributions can be freely used, modified, and distributed under GPL-3.0 terms
+- Any derivative works must also be GPL-3.0 licensed
+
+**Important Notes:**
+- Do not contribute code that is incompatible with GPL-3.0
+- Do not contribute code from proprietary or restrictively-licensed sources
+- Ensure you have the right to contribute your code under GPL-3.0
+- By submitting a pull request, you certify that your contribution is your original work or that you have the right to submit it under GPL-3.0
+
+See the [LICENSE](LICENSE) file for complete legal terms.
 
 ---
 
