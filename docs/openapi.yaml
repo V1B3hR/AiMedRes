@@ -1,0 +1,644 @@
+openapi: 3.0.3
+info:
+  title: AiMedRes Medical AI API
+  description: |
+    API for AI-driven medical research and clinical decision support.
+    
+    **Security:** All endpoints require authentication via API key or OAuth2 token.
+    **Compliance:** HIPAA/GDPR compliant with PHI de-identification and audit logging.
+  version: 1.0.0
+  contact:
+    name: AiMedRes Support
+    url: https://github.com/V1B3hR/AiMedRes
+  license:
+    name: GPL-3.0
+    url: https://www.gnu.org/licenses/gpl-3.0.html
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://staging.aimedres.example.com/api/v1
+    description: Staging server
+  - url: https://api.aimedres.example.com/api/v1
+    description: Production server
+
+security:
+  - ApiKeyAuth: []
+  - OAuth2: [openid, profile, email]
+
+tags:
+  - name: Authentication
+    description: Authentication and authorization endpoints
+  - name: Model Inference
+    description: Model serving and inference endpoints
+  - name: Explainability
+    description: Explainability and interpretability endpoints
+  - name: Cases
+    description: Clinical case management endpoints
+  - name: FHIR
+    description: FHIR integration endpoints
+  - name: Audit
+    description: Audit logging and compliance endpoints
+  - name: Health
+    description: System health and monitoring endpoints
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns system health status
+      operationId: healthCheck
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/login:
+    post:
+      summary: Authenticate user
+      description: Authenticate user and return JWT token
+      operationId: login
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/oidc/authorize:
+    get:
+      summary: Initiate OIDC authentication
+      description: Redirects to OIDC provider for authentication
+      operationId: oidcAuthorize
+      tags: [Authentication]
+      security: []
+      responses:
+        '302':
+          description: Redirect to OIDC provider
+        '500':
+          description: OIDC configuration error
+
+  /model/infer:
+    post:
+      summary: Model inference
+      description: Run inference on medical data
+      operationId: modelInference
+      tags: [Model Inference]
+      parameters:
+        - name: model_version
+          in: query
+          required: false
+          schema:
+            type: string
+            default: latest
+          description: Model version to use
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferenceRequest'
+      responses:
+        '200':
+          description: Inference successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  /model/card:
+    get:
+      summary: Get model card
+      description: Returns model metadata, validation metrics, and intended use
+      operationId: getModelCard
+      tags: [Model Inference]
+      parameters:
+        - name: model_version
+          in: query
+          required: false
+          schema:
+            type: string
+            default: latest
+      responses:
+        '200':
+          description: Model card retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelCard'
+
+  /explain/attribution:
+    post:
+      summary: Feature attribution
+      description: Get feature attributions for model prediction
+      operationId: featureAttribution
+      tags: [Explainability]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExplainRequest'
+      responses:
+        '200':
+          description: Attribution computed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttributionResponse'
+
+  /explain/uncertainty:
+    post:
+      summary: Uncertainty estimation
+      description: Get uncertainty and confidence metrics for prediction
+      operationId: uncertaintyEstimation
+      tags: [Explainability]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExplainRequest'
+      responses:
+        '200':
+          description: Uncertainty computed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UncertaintyResponse'
+
+  /cases:
+    get:
+      summary: List cases
+      description: Get list of clinical cases
+      operationId: listCases
+      tags: [Cases]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_review, completed]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Cases retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseListResponse'
+
+  /cases/{case_id}:
+    get:
+      summary: Get case details
+      description: Get detailed information for a specific case
+      operationId: getCaseDetail
+      tags: [Cases]
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Case details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseDetail'
+        '404':
+          description: Case not found
+
+  /cases/{case_id}/approve:
+    post:
+      summary: Approve case
+      description: Human-in-loop approval for case recommendation
+      operationId: approveCase
+      tags: [Cases]
+      parameters:
+        - name: case_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '200':
+          description: Case approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalResponse'
+
+  /fhir/patients:
+    get:
+      summary: List FHIR patients
+      description: Get list of patients from FHIR server (sandbox/mock)
+      operationId: listFhirPatients
+      tags: [FHIR]
+      responses:
+        '200':
+          description: Patients retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FhirPatientList'
+
+  /fhir/patients/{patient_id}:
+    get:
+      summary: Get patient data
+      description: Get patient data from FHIR server with consent enforcement
+      operationId: getFhirPatient
+      tags: [FHIR]
+      parameters:
+        - name: patient_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Patient data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FhirPatient'
+        '403':
+          description: Consent not granted
+
+  /audit/logs:
+    get:
+      summary: Get audit logs
+      description: Retrieve audit logs with filtering
+      operationId: getAuditLogs
+      tags: [Audit]
+      parameters:
+        - name: user_id
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Audit logs retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLogResponse'
+
+  /audit/export:
+    post:
+      summary: Export audit logs
+      description: Export audit logs in specified format
+      operationId: exportAuditLogs
+      tags: [Audit]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '200':
+          description: Export created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /auth/oidc/authorize
+          tokenUrl: /auth/oidc/token
+          scopes:
+            openid: OpenID Connect
+            profile: User profile
+            email: User email
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        components:
+          type: object
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+        roles:
+          type: array
+          items:
+            type: string
+
+    InferenceRequest:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+        patient_id:
+          type: string
+        case_id:
+          type: string
+
+    InferenceResponse:
+      type: object
+      properties:
+        prediction:
+          type: object
+        confidence:
+          type: number
+          format: float
+        model_version:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    ModelCard:
+      type: object
+      properties:
+        model_name:
+          type: string
+        model_version:
+          type: string
+        intended_use:
+          type: string
+        validation_metrics:
+          type: object
+        dataset_provenance:
+          type: string
+        limitations:
+          type: array
+          items:
+            type: string
+
+    ExplainRequest:
+      type: object
+      required: [prediction_id]
+      properties:
+        prediction_id:
+          type: string
+        case_id:
+          type: string
+
+    AttributionResponse:
+      type: object
+      properties:
+        attributions:
+          type: array
+          items:
+            type: object
+            properties:
+              feature:
+                type: string
+              importance:
+                type: number
+              value:
+                type: number
+
+    UncertaintyResponse:
+      type: object
+      properties:
+        confidence:
+          type: number
+        uncertainty:
+          type: number
+        method:
+          type: string
+
+    CaseListResponse:
+      type: object
+      properties:
+        cases:
+          type: array
+          items:
+            $ref: '#/components/schemas/CaseSummary'
+        total:
+          type: integer
+        page:
+          type: integer
+        per_page:
+          type: integer
+
+    CaseSummary:
+      type: object
+      properties:
+        case_id:
+          type: string
+        patient_id:
+          type: string
+        status:
+          type: string
+        risk_level:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CaseDetail:
+      type: object
+      properties:
+        case_id:
+          type: string
+        patient_id:
+          type: string
+        status:
+          type: string
+        risk_level:
+          type: string
+        prediction:
+          type: object
+        explainability:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    ApprovalRequest:
+      type: object
+      required: [action, rationale]
+      properties:
+        action:
+          type: string
+          enum: [approve, reject, request_review]
+        rationale:
+          type: string
+        notes:
+          type: string
+
+    ApprovalResponse:
+      type: object
+      properties:
+        case_id:
+          type: string
+        status:
+          type: string
+        approved_by:
+          type: string
+        approved_at:
+          type: string
+          format: date-time
+
+    FhirPatientList:
+      type: object
+      properties:
+        patients:
+          type: array
+          items:
+            type: object
+
+    FhirPatient:
+      type: object
+      properties:
+        resourceType:
+          type: string
+        id:
+          type: string
+        name:
+          type: array
+          items:
+            type: object
+        birthDate:
+          type: string
+          format: date
+
+    AuditLogResponse:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLogEntry'
+        total:
+          type: integer
+
+    AuditLogEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        user_id:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        details:
+          type: object
+
+    ExportRequest:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [json, csv]
+        filters:
+          type: object
+
+    ExportResponse:
+      type: object
+      properties:
+        export_id:
+          type: string
+        download_url:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
