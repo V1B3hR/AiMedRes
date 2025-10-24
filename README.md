@@ -315,11 +315,26 @@ data/
 
 ## 🛡️ Safety & Compliance
 
-- Configurable risk thresholds & human-in-loop gating
-- Immutable audit trails (hash chain/ledger planned)
+### Human-in-Loop Gating (P0-5) ✅
+- **Mandatory human approval** for HIGH and CRITICAL risk recommendations
+- **Immutable audit logging** with cryptographic verification (blockchain-like chaining)
+- **Rationale requirements**: Every approval/rejection requires documented clinical rationale
+- **Review time tracking**: Audit logs capture review duration for oversight
+- **Admin override capability**: Emergency overrides logged with detailed justification
+- **Audit chain verification**: Tamper-evident audit trail with hash verification
+
+### PHI Protection (P0-3) ✅
+- **Automated PHI detection**: Comprehensive scrubber detecting 18 HIPAA Safe Harbor identifiers
+- **CI enforcement**: Automated tests prevent PHI from entering repository
+- **De-identification pipeline**: Safe Harbor compliant data sanitization
+- **Clinical term whitelist**: Preserves medical terminology while removing identifiers
+- **Dataset validation**: Batch processing with detailed PHI detection reports
+
+### Additional Security Features
+- Configurable risk thresholds
 - Bias & drift monitoring (dashboards in progress)
-- Privacy: de-identification utilities (PHI scrubber planned)
 - FDA regulatory pathway planning underway
+- Vulnerability disclosure process (see [SECURITY.md](SECURITY.md))
 
 ---
 
