@@ -2,7 +2,22 @@
 
 ## Overview
 
-DuetMind Adaptive implements enterprise-grade security measures to protect medical data and ensure compliance with healthcare regulations (HIPAA, GDPR). All contributors must follow these security guidelines.
+AiMedRes implements enterprise-grade security measures to protect medical data and ensure compliance with healthcare regulations (HIPAA, GDPR). All contributors must follow these security guidelines.
+
+## 🔒 Reporting Security Vulnerabilities
+
+**IMPORTANT**: If you discover a security vulnerability, DO NOT create a public issue.
+
+Please follow the responsible disclosure process documented in [SECURITY.md](../SECURITY.md):
+
+1. Use GitHub's private vulnerability reporting feature, OR
+2. Contact maintainers privately through the process described in SECURITY.md
+
+See [SECURITY.md](../SECURITY.md) for complete details on:
+- How to report vulnerabilities
+- What to include in reports
+- Response timelines
+- Disclosure policy
 
 ## Security Architecture
 

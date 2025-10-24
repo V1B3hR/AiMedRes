@@ -290,17 +290,36 @@ Brief description of changes and medical context.
 
 ## 🔒 Security & Privacy
 
-### Reporting Security Issues
-- **Never** create public issues for security vulnerabilities
-- Use GitHub's private vulnerability reporting feature
-- Include detailed reproduction steps
-- Allow time for responsible disclosure
+### Reporting Security Vulnerabilities
+
+**CRITICAL**: If you discover a security vulnerability, follow our responsible disclosure process:
+
+1. **DO NOT** create a public GitHub issue
+2. **DO NOT** discuss the vulnerability publicly
+3. **DO** report it privately using one of these methods:
+   - GitHub's private vulnerability reporting (preferred)
+   - Contact maintainers privately per [SECURITY.md](SECURITY.md)
+
+**See [SECURITY.md](SECURITY.md) for complete details** including:
+- How to report vulnerabilities
+- What information to include
+- Expected response timeline
+- Coordinated disclosure process
+- Security best practices
 
 ### Privacy Guidelines
 - Use only synthetic or de-identified data
 - Follow HIPAA, GDPR, and local privacy laws
 - Implement privacy-by-design principles
 - Regular privacy impact assessments
+- Never commit PHI or PII to the repository
+
+### Security in Development
+- Follow secure coding practices (see [docs/SECURITY_GUIDELINES.md](docs/SECURITY_GUIDELINES.md))
+- Validate all inputs
+- Use parameterized queries
+- Never hardcode secrets or credentials
+- Keep dependencies updated
 
 ## 📜 Code of Conduct
 
