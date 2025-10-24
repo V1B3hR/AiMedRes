@@ -61,6 +61,9 @@ coverage.xml
 # Logs
 *.log
 
+# Audit logs (runtime-generated)
+audit_logs/
+
 # Test and output directories
 outputs/
 test_outputs/

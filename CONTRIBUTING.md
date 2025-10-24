@@ -290,17 +290,36 @@ Brief description of changes and medical context.
 
 ## 🔒 Security & Privacy
 
-### Reporting Security Issues
-- **Never** create public issues for security vulnerabilities
-- Use GitHub's private vulnerability reporting feature
-- Include detailed reproduction steps
-- Allow time for responsible disclosure
+### Reporting Security Vulnerabilities
+
+**CRITICAL**: If you discover a security vulnerability, follow our responsible disclosure process:
+
+1. **DO NOT** create a public GitHub issue
+2. **DO NOT** discuss the vulnerability publicly
+3. **DO** report it privately using one of these methods:
+   - GitHub's private vulnerability reporting (preferred)
+   - Contact maintainers privately per [SECURITY.md](SECURITY.md)
+
+**See [SECURITY.md](SECURITY.md) for complete details** including:
+- How to report vulnerabilities
+- What information to include
+- Expected response timeline
+- Coordinated disclosure process
+- Security best practices
 
 ### Privacy Guidelines
 - Use only synthetic or de-identified data
 - Follow HIPAA, GDPR, and local privacy laws
 - Implement privacy-by-design principles
 - Regular privacy impact assessments
+- Never commit PHI or PII to the repository
+
+### Security in Development
+- Follow secure coding practices (see [docs/SECURITY_GUIDELINES.md](docs/SECURITY_GUIDELINES.md))
+- Validate all inputs
+- Use parameterized queries
+- Never hardcode secrets or credentials
+- Keep dependencies updated
 
 ## 📜 Code of Conduct
 
@@ -326,7 +345,21 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ## 📄 License
 
-By contributing to AiMedRes, you agree that your contributions will be licensed under the same license as the project. See [LICENSE](LICENSE) file for details.
+By contributing to AiMedRes, you agree that your contributions will be licensed under the same license as the project: **GNU General Public License v3.0 (GPL-3.0)**.
+
+**What this means:**
+- Your contributions become part of the GPL-3.0 licensed codebase
+- You retain copyright to your contributions
+- Your contributions can be freely used, modified, and distributed under GPL-3.0 terms
+- Any derivative works must also be GPL-3.0 licensed
+
+**Important Notes:**
+- Do not contribute code that is incompatible with GPL-3.0
+- Do not contribute code from proprietary or restrictively-licensed sources
+- Ensure you have the right to contribute your code under GPL-3.0
+- By submitting a pull request, you certify that your contribution is your original work or that you have the right to submit it under GPL-3.0
+
+See the [LICENSE](LICENSE) file for complete legal terms.
 
 ---
 

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Clinical Decision Support System</title>
+    <title>Clinical Decision Support System - RESEARCH USE ONLY</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -10,6 +10,17 @@
             margin: 0;
             padding: 0;
             background-color: #f5f5f5;
+        }
+        .disclaimer-banner {
+            background-color: #c0392b;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 3px solid #a93226;
+        }
+        .disclaimer-banner p {
+            margin: 0.5rem 0;
         }
         .header {
             background-color: #2c3e50;
@@ -28,6 +39,12 @@
             padding: 1.5rem;
             margin: 1rem 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .warning-card {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
         }
         .form-group {
             margin: 1rem 0;
@@ -93,15 +110,41 @@
             border-radius: 4px;
             margin: 1rem 0;
         }
+        .footer-disclaimer {
+            background-color: #34495e;
+            color: #ecf0f1;
+            padding: 1rem;
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
+    <div class="disclaimer-banner">
+        <p>⚠️ RESEARCH USE ONLY - NOT FOR CLINICAL DIAGNOSIS ⚠️</p>
+        <p>This software is NOT a medical device and has NOT been approved by the FDA or any regulatory authority.</p>
+        <p>All clinical decisions MUST be made by licensed healthcare professionals.</p>
+    </div>
+    
     <div class="header">
-        <h1>Clinical Decision Support System</h1>
-        <p>AI-Powered Risk Assessment and Clinical Decision Support</p>
+        <h1>Clinical Decision Support System (Research)</h1>
+        <p>AI-Powered Risk Assessment and Clinical Decision Support - EXPERIMENTAL</p>
     </div>
     
     <div class="container">
+        <div class="warning-card">
+            <h3>⚠️ Important Clinical Use Warning</h3>
+            <p><strong>This system is for RESEARCH PURPOSES ONLY and is NOT intended for clinical diagnosis or treatment.</strong></p>
+            <ul>
+                <li>Results are experimental and require validation by licensed professionals</li>
+                <li>Do NOT use these results as the sole basis for clinical decisions</li>
+                <li>Always consult with qualified healthcare professionals</li>
+                <li>This software does NOT replace professional medical judgment</li>
+                <li>No warranties are provided regarding accuracy or reliability</li>
+            </ul>
+        </div>
+        
         <div class="card">
             <h2>Patient Assessment</h2>
             <form id="assessmentForm">
@@ -144,7 +187,7 @@
                     <input type="text" id="userId" name="userId" required>
                 </div>
                 
-                <button type="submit" class="btn">Perform Assessment</button>
+                <button type="submit" class="btn">Perform Assessment (Research Only)</button>
             </form>
         </div>
         
@@ -155,6 +198,12 @@
             <button type="button" class="btn btn-success" onclick="loadComplianceStatus()">Load Compliance Status</button>
             <div id="complianceResults" style="margin-top: 1rem;"></div>
         </div>
+    </div>
+    
+    <div class="footer-disclaimer">
+        <p><strong>AiMedRes Clinical Decision Support - Research Use Only</strong></p>
+        <p>This software is experimental and not approved for clinical use. Licensed under GPL-3.0.</p>
+        <p>© 2025 AiMedRes Project. All results must be validated by licensed healthcare professionals.</p>
     </div>
 
     <script>
@@ -181,7 +230,9 @@
                 
                 if (data.success) {
                     const results = data.results;
-                    let html = '<div class="card"><h3>Assessment Results</h3>';
+                    let html = '<div class="card">';
+                    html += '<div class="warning-card"><p><strong>⚠️ REMINDER:</strong> These results are for research purposes only and must be validated by licensed professionals.</p></div>';
+                    html += '<h3>Assessment Results (Research)</h3>';
                     
                     // Session info
                     html += '<p><strong>Session ID:</strong> ' + results.session_id + '</p>';
@@ -205,7 +256,7 @@
                         html += '<p><strong>Confidence:</strong> ' + assessment.confidence.toFixed(3) + '</p>';
                         
                         if (assessment.recommendations && assessment.recommendations.length > 0) {
-                            html += '<div class="recommendations"><strong>Recommendations:</strong><ul>';
+                            html += '<div class="recommendations"><strong>Recommendations (Research - Require Professional Review):</strong><ul>';
                             for (const rec of assessment.recommendations) {
                                 html += '<li>' + rec + '</li>';
                             }
@@ -214,6 +265,7 @@
                         html += '</div>';
                     }
                     
+                    html += '<div class="warning-card"><p><strong>IMPORTANT:</strong> Do not use these results for clinical decisions without professional review and validation.</p></div>';
                     html += '</div>';
                     resultsDiv.innerHTML = html;
                 } else {

@@ -43,6 +43,22 @@ This checklist ensures the repository is ready for external release to clinical/
 - [ ] Verify no secrets or credentials in code
 - [ ] Check for exposed API keys or tokens
 - [ ] Audit logging is properly configured
+- [ ] PHI scrubber is enabled and tested in CI
+- [ ] Vulnerability disclosure process is documented (SECURITY.md)
+- [ ] Human-in-loop gating is enforced for high-risk recommendations
+
+## 🏥 Clinical Use Classification & Disclaimers (P0-2)
+
+- [ ] **Clinical Use Classification**: Clearly documented as "Research Only / Not a Diagnostic Device"
+- [ ] **README.md**: Contains prominent clinical use warnings and disclaimers
+- [ ] **UI Templates**: All UI templates include research-only disclaimers
+- [ ] **About Page**: Created with comprehensive disclaimers and classification
+- [ ] **Documentation**: All relevant docs include appropriate clinical use warnings
+- [ ] **API Responses**: API includes disclaimer fields in responses
+- [ ] **CLI Output**: CLI tools include disclaimer text in help and output
+- [ ] **Legal Signoff**: Clinical use classification reviewed with legal/clinical lead
+- [ ] **FDA Classification**: Documented that software is NOT an FDA-regulated medical device
+- [ ] **Professional Judgment**: Disclaimers emphasize need for licensed professional oversight
 
 ## 📊 Reproducibility
 
@@ -64,12 +80,13 @@ This checklist ensures the repository is ready for external release to clinical/
 
 ## 📝 Legal & Administrative
 
-- [ ] License is clearly stated (MIT)
+- [ ] License is clearly stated (GPL-3.0)
 - [ ] Copyright notices are accurate
 - [ ] Third-party licenses are acknowledged
 - [ ] CONTRIBUTING.md is complete
 - [ ] Code of conduct is present (if needed)
 - [ ] Citation information is provided
+- [ ] Legal signoff tracked (see docs/LEGAL_SIGNOFF.md)
 
 ## 🎯 User Experience
 

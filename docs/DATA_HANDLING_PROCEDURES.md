@@ -2,7 +2,86 @@
 
 ## Overview
 
-This document outlines the comprehensive data handling procedures for DuetMind Adaptive, ensuring compliance with healthcare data protection regulations and maintaining the highest standards of data security and privacy.
+This document outlines the comprehensive data handling procedures for AiMedRes, ensuring compliance with healthcare data protection regulations and maintaining the highest standards of data security and privacy.
+
+## PHI De-identification (P0-3 Implementation)
+
+### Automated PHI Scrubber
+
+AiMedRes includes a comprehensive PHI detection and de-identification system that implements the HIPAA Safe Harbor method.
+
+**Location**: `src/aimedres/security/phi_scrubber.py`
+
+#### Detects 18 HIPAA Safe Harbor Identifiers
+
+1. **Names** - First and last names (with clinical term whitelist)
+2. **Geographic subdivisions** - Addresses, zip codes
+3. **Dates** - All date formats (years can be preserved)
+4. **Telephone numbers** - All formats including international
+5. **Fax numbers** - Fax-specific patterns
+6. **Email addresses** - All email formats
+7. **Social Security Numbers** - SSN patterns
+8. **Medical Record Numbers** - MRN, Patient ID, etc.
+9. **Health plan beneficiary numbers**
+10. **Account numbers**
+11. **Certificate/License numbers**
+12. **Vehicle identifiers** - VIN numbers
+13. **Device identifiers** - Serial numbers
+14. **Web URLs** - HTTP/HTTPS URLs
+15. **IP addresses** - IPv4 and IPv6
+16. **Biometric identifiers**
+17. **Full-face photos** - (N/A for text data)
+18. **Other unique identifiers**
+
+#### Usage
+
+```python
+from aimedres.security.phi_scrubber import PHIScrubber, enforce_phi_free_ingestion
+
+# Initialize scrubber
+scrubber = PHIScrubber(
+    aggressive=True,        # Stricter detection
+    hash_identifiers=True,  # Use consistent hashes
+    preserve_years=True     # Keep years in dates (HIPAA allows)
+)
+
+# Detect PHI in text
+result = scrubber.detect_phi(text)
+if result.has_phi:
+    print(f"PHI found: {result.phi_types_found}")
+    sanitized = result.sanitized_text
+
+# Validate dataset
+report = scrubber.validate_dataset(dataset)
+if not report['is_clean']:
+    print(f"PHI in {report['records_with_phi']} records")
+
+# Enforce PHI-free ingestion (raises exception if PHI found)
+try:
+    enforce_phi_free_ingestion(data, "input_field")
+except ValueError as e:
+    print(f"PHI detected: {e}")
+```
+
+#### CI/CD Integration
+
+Automated tests run on every commit to detect PHI in:
+- Example data files
+- Documentation
+- Code comments
+- README and other markdown files
+
+**Test Location**: `tests/test_phi_detection.py`
+
+#### Clinical Term Whitelist
+
+The scrubber includes a whitelist of medical and clinical terms that should NOT be redacted:
+- Disease names (Alzheimer, Parkinson, Diabetes, etc.)
+- Assessment scores (MMSE, CDR, APOE)
+- Imaging types (MRI, CT, PET)
+- General clinical terms (Patient, Symptoms, Diagnosis, etc.)
+
+This prevents over-redaction while maintaining privacy protection.
 
 ## Data Classification
 
