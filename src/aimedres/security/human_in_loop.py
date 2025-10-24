@@ -507,6 +507,21 @@ class HumanInLoopGatekeeper:
                     'message': f'Hash chain broken at entry {i}'
                 }
             
+            # Reconstruct objects from JSON data
+            # Convert string risk_level back to enum
+            rec_data = entry_data['recommendation'].copy()
+            if isinstance(rec_data['risk_level'], str):
+                rec_data['risk_level'] = RiskLevel(rec_data['risk_level'])
+            recommendation = ClinicalRecommendation(**rec_data)
+            
+            # Convert string approval status back to enum
+            approval = None
+            if entry_data['approval']:
+                approval_data = entry_data['approval'].copy()
+                if isinstance(approval_data['status'], str):
+                    approval_data['status'] = ApprovalStatus(approval_data['status'])
+                approval = HumanApproval(**approval_data)
+            
             # Verify entry hash
             entry = AuditEntry(
                 entry_id=entry_data['entry_id'],
@@ -514,8 +529,8 @@ class HumanInLoopGatekeeper:
                 previous_hash=entry_data['previous_hash'],
                 timestamp=entry_data['timestamp'],
                 event_type=entry_data['event_type'],
-                recommendation=ClinicalRecommendation(**entry_data['recommendation']),
-                approval=HumanApproval(**entry_data['approval']) if entry_data['approval'] else None,
+                recommendation=recommendation,
+                approval=approval,
                 metadata=entry_data.get('metadata', {})
             )
             
