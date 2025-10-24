@@ -29,6 +29,7 @@ Summary of repository signals used
 
 ---
 
+!!COMPLETED!!
 P0 — Blockers (legal, privacy, security, gating)
 - P0-1: Confirm authoritative LICENSE and legal distribution terms  
   - Acceptance: LICENSE file matches stated license in repo and setup.py; README and packaging metadata updated; legal signoff tracked in an issue.  
