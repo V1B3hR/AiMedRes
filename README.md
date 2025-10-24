@@ -218,6 +218,8 @@ aimedres train --list
 
 For comprehensive documentation on running all models, see:
 - **[RUN_ALL_MODELS_GUIDE.md](RUN_ALL_MODELS_GUIDE.md)** - Complete usage guide
+- **[PARALLEL_MODE_GUIDE.md](PARALLEL_MODE_GUIDE.md)** - Parallel execution guide (NEW!)
+- **[PARALLEL_MODE_QUICKREF.md](PARALLEL_MODE_QUICKREF.md)** - Quick reference card
 - **[run_all_models_demo.sh](run_all_models_demo.sh)** - Interactive demonstration
 - **[train_all_models.sh](train_all_models.sh)** - Simple wrapper script
 
