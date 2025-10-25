@@ -38,7 +38,7 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - Biological state simulators (energy, mood, circadian influences)
 - Dual-store + prioritized replay memory consolidation
 - Multi-Hospital Network and Specialty Modules
-- 3D Brain Visualization (NEW)
+- **3D Brain Visualization (P3-1)** - Interactive anatomical mapping with AI explainability overlays
 - Multi-Modal AI Integration (EHR, imaging, notes)
 
 ### 📊 Clinical AI
@@ -48,6 +48,7 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - Quantitative performance dashboards (CLI + API + dashboard module)
 - Predictive Healthcare Analytics (NEW)
 - Population-level Insights
+- **Advanced DICOM/3D Viewer (P3-1)** - Smooth streaming viewer with treatment simulation
 
 ### 🏥 Integration Layer
 - FHIR / HL7 interface modules
@@ -55,6 +56,20 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - Immutable audit log & trace provenance tagging
 - Compliance scaffolding (HIPAA/FDA alignment docs)
 - FDA Regulatory Pathway in progress
+
+### 🔒 Security & Cryptography (P3-2)
+- **Quantum-Safe Cryptography** - Hybrid Kyber768/AES-256 encryption
+- **Production Key Management** - Automated rotation, KMS integration
+- Zero-Trust Architecture
+- Blockchain Medical Records
+- HIPAA/GDPR compliance built-in
+
+### 🚢 MLOps & Deployment (P3-3)
+- **Canary Deployment Pipeline** - Shadow mode with continuous validation
+- **Automated Testing** - Accuracy, fairness, performance, drift detection
+- **Auto-Rollback** - Intelligent rollback on failures
+- A/B testing for model comparison
+- Production monitoring and alerting
 
 ---
 
