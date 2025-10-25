@@ -92,6 +92,7 @@ class PHIScrubber:
     }
     
     # Medical and clinical terms that should NOT be redacted (whitelist)
+    # These are common medical terms that might match the name pattern
     CLINICAL_WHITELIST = {
         'Cognitive', 'Memory', 'Score', 'Patient', 'Lifestyle', 'Symptoms',
         'Assessment', 'Diagnosis', 'Treatment', 'Therapy', 'Medication',
@@ -103,6 +104,14 @@ class PHIScrubber:
         'January', 'February', 'March', 'April', 'May', 'June', 'July',
         'August', 'September', 'October', 'November', 'December',
         'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+    }
+    
+    # Common medical multi-word phrases that should not be redacted
+    CLINICAL_PHRASES = {
+        'Alzheimer Disease', 'Alzheimer\'s Disease', 'Parkinson Disease',
+        'Parkinson\'s Disease', 'Cognitive Decline', 'Memory Loss',
+        'Mild Cognitive', 'Cognitive Impairment', 'Disease Progression',
+        'Clinical Trial', 'Risk Factor', 'Clinical Assessment'
     }
     
     def __init__(self, 
@@ -143,8 +152,18 @@ class PHIScrubber:
                 
                 # Apply whitelist for names
                 if phi_type == 'name':
+                    # Check if entire match is a known clinical phrase
+                    if matched_text in self.CLINICAL_PHRASES:
+                        continue
+                    # Check if entire match or any word in the match is in whitelist
                     if matched_text in self.CLINICAL_WHITELIST:
                         continue
+                    # Check if ALL words in a multi-word phrase are clinical terms
+                    # This handles cases like "Alzheimer Disease" where both words are clinical
+                    if ' ' in matched_text:
+                        words = matched_text.split()
+                        if all(word in self.CLINICAL_WHITELIST for word in words):
+                            continue
                     # Skip short single words that are likely not names
                     if ' ' not in matched_text and not self.aggressive:
                         continue
@@ -202,8 +221,18 @@ class PHIScrubber:
             
             # Special handling for names - check whitelist
             if phi_type == 'name':
+                # Check if entire match is a known clinical phrase
+                if matched in self.CLINICAL_PHRASES:
+                    return matched
+                # Check if entire match or any word in the match is in whitelist
                 if matched in self.CLINICAL_WHITELIST:
                     return matched
+                # Check if ALL words in a multi-word phrase are clinical terms
+                # This handles cases like "Alzheimer Disease" where both words are clinical
+                if ' ' in matched:
+                    words = matched.split()
+                    if all(word in self.CLINICAL_WHITELIST for word in words):
+                        return matched
                 if ' ' not in matched and not self.aggressive:
                     return matched
             

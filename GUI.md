@@ -198,7 +198,7 @@ Repository locations to examine during implementation (examples)
 
 Notes and cautions
 - Several features are documented as “planned” or “in progress” (immutable audit trail, PHI scrubber, bias dashboards). Before relying on them, confirm code is implemented and tested in the repo (search for actual module files and tests — e.g., security/blockchain_records.py appears referenced in docs).  
-- License inconsistency: README badge shows MIT, setup.py metadata lists Apache — pick and confirm authoritative LICENSE file before distribution.  
+- **License Status**: ✅ RESOLVED - GNU General Public License v3.0 (GPL-3.0) is now consistent across all files (LICENSE, README.md, setup.py, and all package metadata).  
 - Even if docs indicate “P8B: Clinical Pilot Programs — complete” or other archive notes say implementation complete, verify the actual code and tests are present and passing in your branch.
 
 References (examples of repo files used to build this checklist)
