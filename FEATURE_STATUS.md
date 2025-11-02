@@ -114,7 +114,7 @@ All blockchain audit trail features are implemented, tested, and operational.
 
 ### Verification Command
 ```bash
-PYTHONPATH=/home/runner/work/AiMedRes/AiMedRes/src:$PYTHONPATH python -m pytest tests/test_phi_detection.py -v
+$PYTHONPATH=${REPO_ROOT}/src:$PYTHONPATH python -m pytest tests/test_phi_detection.py -v
 ```
 
 ### Documentation References
@@ -280,14 +280,14 @@ Run all feature verification tests:
 python -m pytest tests/test_phase2b_security.py::TestBlockchainMedicalRecords -v
 
 # PHI scrubber tests (requires PYTHONPATH)
-PYTHONPATH=/home/runner/work/AiMedRes/AiMedRes/src:$PYTHONPATH python -m pytest tests/test_phi_detection.py -v
+$PYTHONPATH=${REPO_ROOT}/src:$PYTHONPATH python -m pytest tests/test_phi_detection.py -v
 
 # Bias detector tests
 python -m pytest tests/test_bias_detector.py -v
 
 # Run all three test suites
 python -m pytest tests/test_phase2b_security.py tests/test_bias_detector.py -v
-PYTHONPATH=/home/runner/work/AiMedRes/AiMedRes/src:$PYTHONPATH python -m pytest tests/test_phi_detection.py -v
+$PYTHONPATH=${REPO_ROOT}/src:$PYTHONPATH python -m pytest tests/test_phi_detection.py -v
 ```
 
 ---

@@ -7,8 +7,11 @@ echo "AiMedRes Feature Verification Test Suite"
 echo "=========================================="
 echo ""
 
+# Detect repository root (script should be in repo root)
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Set Python path for PHI scrubber tests
-export PYTHONPATH=/home/runner/work/AiMedRes/AiMedRes/src:$PYTHONPATH
+export PYTHONPATH="${REPO_ROOT}/src:${PYTHONPATH}"
 
 echo "1. Testing Immutable Audit Trail (Blockchain)..."
 echo "   File: security/blockchain_records.py"

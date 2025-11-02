@@ -14,8 +14,7 @@ Tests comprehensive bias detection functionality including:
 import pytest
 import sys
 import os
-from datetime import datetime, timezone, timedelta
-from collections import defaultdict
+from datetime import datetime, timezone
 
 # Add bias_detector module to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'files', 'safety', 'decision_validation'))
@@ -24,6 +23,9 @@ from bias_detector import (
     BiasDetector, BiasType, BiasMetric, BiasSeverity, 
     BiasDetection, BiasMonitoringConfig
 )
+
+# Test constants
+TEST_DECISION_COUNT = 60  # Number of decisions for multi-decision tests
 
 
 class TestBiasDetectorInitialization:
@@ -105,7 +107,7 @@ class TestBiasDetection:
     def test_detect_bias_with_multiple_decisions(self):
         """Test bias detection with multiple decisions"""
         # Create multiple decisions with different demographics
-        for i in range(60):
+        for i in range(TEST_DECISION_COUNT):
             decision_data = {
                 'decision_id': f'test_{i:03d}',
                 'confidence_score': 0.85 if i % 2 == 0 else 0.75,
@@ -134,7 +136,7 @@ class TestBiasDetection:
                 actual_outcome
             )
         
-        assert len(self.detector.decision_history) >= 60
+        assert len(self.detector.decision_history) >= TEST_DECISION_COUNT
 
 
 class TestBiasSeverityClassification:
