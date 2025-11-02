@@ -7,7 +7,7 @@ for clinical AI systems to ensure fair and equitable healthcare.
 
 import logging
 import numpy as np
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional, Tuple, Set, Callable
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime, timezone
