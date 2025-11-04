@@ -110,3 +110,13 @@ debug/phase[1-9]_*.json
 debug/PHASE[1-9]_*.md
 memory_state_demo.json
 training_output.log
+
+# Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# Cypress
+frontend/cypress/screenshots/
+frontend/cypress/videos/
