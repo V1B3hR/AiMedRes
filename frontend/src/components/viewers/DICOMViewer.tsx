@@ -78,8 +78,13 @@ export default function DICOMViewer({
     
     if (viewport && viewportRef.current) {
       const vp = cornerstone.getViewport(viewportRef.current)
-      vp.voi.windowWidth = width
-      vp.voi.windowCenter = center
+      // Initialize voi if not present
+      if (!vp.voi) {
+        vp.voi = { windowWidth: width, windowCenter: center }
+      } else {
+        vp.voi.windowWidth = width
+        vp.voi.windowCenter = center
+      }
       cornerstone.setViewport(viewportRef.current, vp)
     }
   }

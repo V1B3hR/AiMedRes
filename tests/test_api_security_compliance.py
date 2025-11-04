@@ -158,8 +158,15 @@ class TestPHICompliance:
                 
                 # Should not contain email or phone
                 case_str = json.dumps(case).lower()
-                assert "@" not in case_str or "email" not in case_str
-                assert "phone" not in case_str or "tel" not in case_str
+                # If @ symbol is present, it should not be in email context
+                if "@" in case_str:
+                    assert "email" not in case_str, "Email address found in case data"
+                # If phone-related terms are present, actual numbers should be redacted
+                if "phone" in case_str or "tel" in case_str:
+                    # Should not contain actual phone number patterns
+                    import re
+                    phone_pattern = r'\d{3}[-.]?\d{3}[-.]?\d{4}'
+                    assert not re.search(phone_pattern, case_str), "Phone number found in case data"
     
     def test_audit_log_phi_protection(self, auth_tokens):
         """Test that audit logs don't expose PHI."""

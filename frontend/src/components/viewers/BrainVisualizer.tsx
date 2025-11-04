@@ -30,10 +30,11 @@ interface BrainVisualizerProps {
 function BrainMesh({ regions, onRegionClick }: { regions: BrainRegion[], onRegionClick?: (region: BrainRegion) => void }) {
   const meshRef = useRef<THREE.Group>(null)
   const [hoveredRegion, setHoveredRegion] = useState<string | null>(null)
+  const [isRotating, setIsRotating] = useState(true)
 
   useFrame(() => {
-    if (meshRef.current) {
-      // Subtle rotation for better visibility
+    if (meshRef.current && isRotating) {
+      // Subtle rotation for better visibility - can be paused for performance
       meshRef.current.rotation.y += 0.001
     }
   })

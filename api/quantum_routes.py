@@ -262,11 +262,18 @@ def quantum_health():
     Quantum key management health check.
     """
     try:
+        # Check if quantum crypto module is available
+        try:
+            from security.quantum_crypto import QuantumSafeCryptography
+            quantum_available = True
+        except ImportError:
+            quantum_available = False
+        
         health = {
             'status': 'healthy',
             'timestamp': datetime.now().isoformat(),
             'manager_initialized': hasattr(current_app, 'quantum_key_manager'),
-            'quantum_crypto_available': True  # Will be set by actual quantum crypto module
+            'quantum_crypto_available': quantum_available
         }
         
         if hasattr(current_app, 'quantum_key_manager'):
