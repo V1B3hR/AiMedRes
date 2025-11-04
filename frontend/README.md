@@ -6,21 +6,57 @@ This directory contains the React + TypeScript frontend for the AiMedRes Clinica
 
 ## Features
 
+### Clinical Decision Support
 - **Login Page**: Authentication with username/password
 - **Case List View**: Browse and filter clinical cases
 - **Case Detail View**: Detailed case information with AI predictions
 - **Explainability Panel**: Feature attributions and uncertainty visualization
 - **Human-in-Loop Controls**: Clinician approval workflow with rationale
 
+### 3D Visualization & Medical Imaging (NEW)
+- **3D Brain Visualizer**: Interactive anatomical mapping with Three.js
+  - Real-time disease progression visualization
+  - AI explainability overlays
+  - Region-specific analysis
+  - Treatment impact simulation
+- **DICOM Viewer**: Professional medical image viewing with Cornerstone.js
+  - Windowing and leveling controls
+  - Zoom and pan functionality
+  - Multi-series support
+  - PACS integration ready
+
+### MLOps & Infrastructure (NEW)
+- **Canary Monitoring Dashboard**: Real-time deployment monitoring
+  - Shadow mode validation
+  - Gradual traffic rollout
+  - Automated validation tests
+  - Rollback capabilities
+- **Quantum Key Management Dashboard**: Quantum-safe cryptography management
+  - Key rotation monitoring
+  - Policy configuration
+  - Usage statistics
+  - Audit trail visualization
+
 ## Technology Stack
 
+### Core
 - **React 18**: UI framework
 - **TypeScript**: Type-safe development
 - **Vite**: Build tool and dev server
 - **React Router**: Client-side routing
 - **TanStack Query**: Data fetching and caching
 - **Axios**: HTTP client
+
+### 3D Rendering & Medical Imaging
+- **Three.js**: 3D graphics library
+- **React Three Fiber**: React renderer for Three.js
+- **React Three Drei**: Useful helpers for R3F
+- **Cornerstone.js**: Medical image viewing
+- **DICOM Parser**: DICOM format support
+
+### Testing
 - **Cypress**: E2E testing
+- **Vitest**: Unit testing
 
 ## Quick Start
 
@@ -61,19 +97,33 @@ npm run test:e2e
 frontend/
 ├── src/
 │   ├── pages/
-│   │   ├── Login.tsx           # Login page
-│   │   ├── CaseList.tsx        # Case listing
-│   │   └── CaseDetail.tsx      # Case detail view
+│   │   ├── Login.tsx                # Login page
+│   │   ├── CaseList.tsx             # Case listing
+│   │   └── CaseDetail.tsx           # Case detail view
 │   ├── components/
-│   │   ├── Layout.tsx          # App layout wrapper
+│   │   ├── Layout.tsx               # App layout wrapper
 │   │   ├── ExplainabilityPanel.tsx  # Feature attributions
-│   │   └── HumanInLoopControls.tsx  # Approval controls
+│   │   ├── HumanInLoopControls.tsx  # Approval controls
+│   │   ├── viewers/
+│   │   │   ├── BrainVisualizer.tsx  # 3D brain visualization
+│   │   │   └── DICOMViewer.tsx      # DICOM image viewer
+│   │   └── dashboards/
+│   │       ├── CanaryMonitoringDashboard.tsx    # Canary deployment monitor
+│   │       └── QuantumKeyManagementDashboard.tsx # Key management UI
 │   ├── api/
-│   │   └── cases.ts            # API client
-│   ├── App.tsx                 # Main app component
-│   └── main.tsx                # App entry point
+│   │   ├── cases.ts             # Cases API client
+│   │   ├── viewer.ts            # Viewer API client
+│   │   ├── canary.ts            # Canary deployment API
+│   │   └── quantum.ts           # Quantum key management API
+│   ├── App.tsx                  # Main app component
+│   └── main.tsx                 # App entry point
 ├── cypress/
-│   └── e2e/                    # E2E test specs
+│   └── e2e/                     # E2E test specs
+│       ├── login.cy.ts
+│       ├── brain-visualizer.cy.ts
+│       ├── dicom-viewer.cy.ts
+│       ├── canary-dashboard.cy.ts
+│       └── quantum-dashboard.cy.ts
 ├── package.json
 ├── tsconfig.json
 └── vite.config.ts
@@ -83,13 +133,41 @@ frontend/
 
 The frontend connects to the backend API at `http://localhost:8080/api/v1`.
 
-API endpoints used:
+### API Endpoints
+
+#### Authentication
 - `POST /api/v1/auth/login` - Authentication
+
+#### Cases
 - `GET /api/v1/cases` - List cases
 - `GET /api/v1/cases/:id` - Get case detail
 - `POST /api/v1/cases/:id/approve` - Approve/reject case
+
+#### Explainability
 - `POST /api/v1/explain/attribution` - Get feature attributions
 - `POST /api/v1/explain/uncertainty` - Get uncertainty metrics
+
+#### Viewer (NEW)
+- `POST /api/viewer/session` - Create viewer session
+- `GET /api/viewer/brain/:patientId` - Get brain visualization data
+- `GET /api/viewer/dicom/study/:studyId` - Get DICOM study
+- `GET /api/viewer/dicom/series/:studyId/:seriesId/stream` - Stream DICOM series
+
+#### Canary Deployment (NEW)
+- `GET /api/v1/canary/deployments` - List deployments
+- `GET /api/v1/canary/deployments/:id` - Get deployment details
+- `GET /api/v1/canary/deployments/:id/metrics` - Get real-time metrics
+- `POST /api/v1/canary/deployments/:id/rollback` - Trigger rollback
+- `POST /api/v1/canary/deployments/:id/promote` - Promote to stable
+
+#### Quantum Key Management (NEW)
+- `GET /api/v1/quantum/keys` - List cryptographic keys
+- `GET /api/v1/quantum/keys/:id` - Get key details
+- `GET /api/v1/quantum/stats` - Get key manager statistics
+- `GET /api/v1/quantum/policy` - Get rotation policy
+- `PUT /api/v1/quantum/policy` - Update rotation policy
+- `POST /api/v1/quantum/keys/:id/rotate` - Manually rotate key
+- `GET /api/v1/quantum/history` - Get rotation history
 
 ## Environment Variables
 
