@@ -232,6 +232,28 @@ class SecureAPIServer:
     def _register_routes(self):
         """Register API routes with security"""
         
+        # Register P3 blueprints for advanced features
+        try:
+            from .visualization_routes import visualization_bp
+            self.app.register_blueprint(visualization_bp)
+            logger.info("Visualization routes registered (P3-1)")
+        except Exception as e:
+            logger.warning(f"Failed to register visualization routes: {e}")
+        
+        try:
+            from .canary_routes import canary_bp
+            self.app.register_blueprint(canary_bp)
+            logger.info("Canary deployment routes registered (P3-3)")
+        except Exception as e:
+            logger.warning(f"Failed to register canary routes: {e}")
+        
+        try:
+            from .quantum_routes import quantum_bp
+            self.app.register_blueprint(quantum_bp)
+            logger.info("Quantum crypto routes registered (P3-2)")
+        except Exception as e:
+            logger.warning(f"Failed to register quantum routes: {e}")
+        
         @self.app.route('/health', methods=['GET'])
         @rate_limit(limit=30, window=60)  # 30 requests per minute
         def health_check():
