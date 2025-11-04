@@ -1,118 +1,208 @@
-### Site access note
-I could not load the AiMedRes repository page because the URL requires signing in to GitHub; the page returned a sign-in/error page when accessed.
+Phase 0 — Prep and alignment (1 week)
+Goal: Agree scope, repo layout, and minimal acceptance criteria so the first commit is runnable and deployable.
 
----
+Milestones
 
-### Prompt — Generate a runnable, cheap, efficient Webapp GUI for AiMedRes
+Finalize minimal feature set (MVP): auth, Cases List, Case Detail, model call stub, background job stub, SQLite persistence, Dockerfile, README.
 
-Goal
-- Produce a complete, runnable single-repo web application that provides a fast, low-cost GUI front end for AiMedRes. Prioritise minimal infra, low memory/CPU footprint, quick response for typical medical-research workflows, and clear extendability for advanced features.
+Lock tech stack: FastAPI backend, React + Vite frontend, SQLite, optional Redis.
 
-High-level constraints
-- Must run locally and in a low-cost cloud container (single small instance).
-- Use a lightweight backend framework and static-first frontend (fast cold start).
-- Keep persistent storage simple (file + embedded DB) with optional migration to managed DB.
-- Provide configuration for safe, auditable model/service endpoints (do not embed proprietary model weights in the web UI).
-- Include automated dev start, simple Dockerfile, and a documented deploy path (e.g., Docker -> single small VM or container host).
+Create issue tracker with prioritized tasks and owner assignments.
 
-Non-functional requirements
-- Performance: sub-second UI interactions for control actions; async background tasks for long-running model ops with progress UI.
-- Cost: minimal runtime memory and CPU; default to CPU inference or remote model APIs.
-- Security: authentication (basic but pluggable), TLS-ready, input validation, logging of actions/audit trail.
-- Accessibility: keyboard navigable, semantic HTML, responsive layout for desktop and tablet.
-- Observability: health endpoint, simple metrics, log rotation/basic audit log.
+Deliverables
 
-Suggested tech stack (one-line rationale)
-- Backend: Python FastAPI (async, small, well-documented) or Node.js + Express if preferred.
-- Frontend: React + Vite or SvelteKit (fast dev builds, small bundles).
-- DB: SQLite for local runs; optional PostgreSQL for production.
-- Task queue: built-in asyncio + Redis optional for scale; simple background worker for PoC.
-- Containerization: Dockerfile with small base image (python:3.x-slim or node:18-slim).
-- Deployment: single container on small host (e.g., low-tier cloud container service).
+Project brief, acceptance tests, and repo skeleton tickets.
 
-Core features (each with dedicated options)
-- Patient / Case Management
-  - Create/edit patient/case record; tags for cohorting; import/export CSV; view timeline.
-  - Options: anonymize toggle; schema mapping for custom fields.
-- Data Upload and Preprocessing
-  - Upload clinical text, images, structured CSVs; preview, simple validation, sanitise; run built-in preprocessing pipelines.
-  - Options: batch size, trimming rules, anonymization level, replace missing strategy.
-- Model Inference Console
-  - Select model endpoint (local, remote API, or containerized service); send a case for inference; show structured outputs and confidence metadata.
-  - Options: model selection dropdown; request timeout; beam/temperature for generative models; cached responses toggle.
-- Interactive Explanation & Evidence Viewer
-  - Show model rationale, provenance links to source data, highlighted text spans, and supporting evidence list.
-  - Options: explanation mode (saliency, LIME-like, attention viz), toggle raw tokens, confidence threshold filter.
-- Clinician Review Workflow
-  - Assign cases to reviewers, annotate model outputs, accept/reject suggestions, add notes; audit log of decisions.
-  - Options: reviewer roles, required sign-off, export annotated cases.
-- Evaluation & Metrics Dashboard
-  - Track throughput, latency, per-model metrics, and clinician acceptance rates; downloadable evaluation CSV.
-  - Options: rolling window, per-cohort breakouts, custom metric upload.
-- Secure Export & Reporting
-  - Export anonymised reports (PDF/CSV) and datasets for research; selective field redaction.
-  - Options: include audit trail, export template selection.
-- Settings & Admin
-  - Configure model endpoints, API keys, storage paths, retention policy, and user accounts.
-  - Options: import/export configuration, DB backup, retention policy controls.
+Success criteria
 
-UI/UX — pages and key interactions
-- Landing / Dashboard
-  - Quick system health, queued tasks, recent cases, quick action buttons.
-- Cases List
-  - Filter by status, cohort, model used, reviewer; multi-select and batch actions (run model, export).
-- Case Detail (primary instrument)
-  - Left: case metadata and timeline; center: model outputs with confidence and explanation panels; right: annotation tools and reviewer comments.
-  - Inline controls: re-run inference with altered params, add evidence link, flag for escalation.
-- Model Console (dev mode)
-  - Raw request builder and JSON response view; ability to save common payloads.
-- Admin / Settings
-  - API endpoint management, feature flags, user roles, logs.
+Team sign-off on MVP checklist and time estimates.
 
-Background jobs and UX for long tasks
-- Queue submission returns job id.
-- Polling endpoint / WebSocket push for updates.
-- Progress indicator + incremental partial results display (if supported).
+Risks
 
-Developer DX and runnable deliverables
-- Repository structure proposal:
-  - /app/backend (FastAPI)
-  - /app/frontend (Vite React)
-  - /app/workers (background tasks)
-  - /infra/Dockerfile, docker-compose.yml, Makefile
-  - /migrations, /data (sqlite by default), /config (env examples)
-- Commands (examples)
-  - Local dev: make dev -> starts backend, frontend, optional redis
-  - Build: make build
-  - Run container: docker build -t aimedres-ui .; docker run -p 8000:80 aimedres-ui
-- Health checks: GET /health, GET /metrics
-- Example minimal Dockerfile and docker-compose that run in small cloud containers.
+Scope creep; mitigate with strict MVP checklist.
 
-Extensibility hooks (developer-focused)
-- Plugin API for new preprocessing modules, new model adapters (wrap any REST/gRPC model), and new explanation methods.
-- Webhook callbacks for audit events.
-- Config-driven forms for custom case schemas.
+Phase 1 — Minimal runnable MVP (2–3 weeks)
+Goal: Shipping a local, Dockerised app that runs end-to-end with dummy model responses and sample data.
 
-Sample prompt to give to a UI dev / code generator (copy-paste ready)
-- Provide a single-paragraph summary of the project, then a prioritized checklist, then required files to produce. Example:
-  - Summary (1–2 sentences): "Build a small, fast webapp to manage cases, run AiMedRes model inferences, review outputs, and export annotated datasets. Prioritise a runnable Dockerized repo that works locally with SQLite and minimal memory footprint."
-  - Checklist (priority order): implement backend API (FastAPI) with job queue; implement frontend (React+Vite) with Cases List and Case Detail; implement model adapter pattern; authentication; Dockerfile and docker-compose; README with run steps.
-  - Required deliverables: working repo with start scripts, Dockerfile, example config, sample dataset (anonymised), a short test suite (basic route tests), and README showing how to run locally and deploy to a single container host.
-- Non-functional acceptance criteria: startup under 30s on low-tier VM, memory <1.5GB baseline, response latencies <300ms for UI operations (excluding model runtime), background jobs reported and cancellable.
+Milestones
 
-Optional advanced ideas (pick as stretch goals)
-- Lightweight offline-first mode (service worker caching for UI with queueing).
-- Model sandboxing via ephemeral containers to isolate expensive inference.
-- Role-based redaction rules per user group.
-- Differential privacy export mode for dataset releases.
+Backend: FastAPI app with API routes: auth, /cases, /cases/:id, /inference job endpoints, /health, /metrics.
 
-Deliverable checklist for me to produce next (I went ahead and picked the most useful)
-- A runnable starter repo scaffold: minimal FastAPI backend + React frontend + Dockerfile + docker-compose + example data and README.
-- Minimal implementation plan for model adapters and explanation hooks.
-- UI wireframe suggestions for Case Detail page (component list with responsibilities).
+Persistence: SQLite schema and simple migrations; sample anonymized dataset.
 
-If you want, I can now:
-- Generate the starter repo scaffold (file list and content) for immediate cloning and running,
-- Or produce the concrete FastAPI + React code for the core flows (Cases List, Case Detail, model call stub, Dockerfile, README).
+Background worker: lightweight asyncio job queue with job ID/poll API (Redis optional).
 
-Would you like me to generate the runnable starter code now?
+Frontend: React + Vite pages: Login, Cases List, Case Detail with annotation panel and model output area.
+
+Dev ergonomics: Makefile / npm scripts, docker-compose for local dev (backend, frontend, optional redis).
+
+Deliverables
+
+Working repo that starts with one command and exposes frontend at :3000 and backend at :8080; README with run steps.
+
+Success criteria
+
+Full user flow: login → view case list → open case → run inference → view job status → annotate and export sample CSV.
+
+Risks
+
+Integration gaps between frontend expectations and backend API; mitigate by using the API contract in the frontend roadmap as spec.
+
+Phase 2 — Core features and UX polish (3–4 weeks)
+Goal: Harden core clinical workflows, add explainability UI, clinician review loop, and secure exports.
+
+Milestones
+
+Patient/Case Management: create/edit, import/export CSV, anonymize toggle.
+
+Data upload & preprocessing UI: file upload, validation preview, sanitize options.
+
+Model Inference Console: model endpoint selector, param controls (timeout, temperature), cached responses toggle.
+
+Explainability Panel: show rationale, highlighted spans, selectable explanation modes.
+
+Clinician Review Workflow: assign reviewers, annotate outputs, accept/reject with audit log.
+
+Secure Export: anonymised CSV/PDF export templates and redaction controls.
+
+Deliverables
+
+Frontend components wired to backend endpoints; audit logs persisted; export templates implemented.
+
+Success criteria
+
+Clinician can complete review workflow end-to-end and produce an anonymized export.
+
+Risks
+
+PHI handling errors; mitigate with strict validation, de-identification tests, and config-driven redaction.
+
+Phase 3 — Performance, security, and observability (2–3 weeks)
+Goal: Make the webapp cheap to run, resilient, observable, and secure for small-scale deployments.
+
+Milestones
+
+Optimize frontend bundles (Vite code-splitting, lazy loads, virtualized lists).
+
+Add auth hardening (JWT sessions, role-based UI controls, TLS-ready config).
+
+Health and metrics: /health, basic Prometheus-friendly metrics, simple request logging and audit rotation.
+
+Background jobs: retry policy, cancellation, job progress push via WebSocket or server-sent events.
+
+Add basic CI: build/test (unit + simple route tests).
+
+Deliverables
+
+Production Dockerfile (slim base), small memory footprint profile, documented resource expectations.
+
+Success criteria
+
+Cold start under 30s on a low-tier container; baseline memory <1.5 GB; UI interactions <300 ms excluding model runtime.
+
+Risks
+
+Unexpected memory use in image/DICOM components; mitigate with conditional lazy-loading and service limits.
+
+Phase 4 — Evaluation, metrics dashboard, and admin (2 weeks)
+Goal: Provide operators and researchers visibility into system performance, model behavior, and clinician acceptance.
+
+Milestones
+
+Metrics dashboard: latency, throughput, per-model acceptance rates, cohort breakdowns.
+
+Evaluation export: downloadable CSV of recent runs and annotations.
+
+Admin settings: manage model endpoints, API keys, retention policy, backup/export config.
+
+Deliverables
+
+Dashboard pages, export endpoints, admin UI with config import/export.
+
+Success criteria
+
+Admin can view rolling metrics and export evaluation data for a given period.
+
+Risks
+
+Data sensitivity in metrics; minimize PHI in metrics and apply aggregation.
+
+Phase 5 — Optional stretch goals and extensibility (ongoing)
+Goal: Add advanced, optional features that improve safety, isolation, and developer extensibility.
+
+Candidate items
+
+Model sandboxing via ephemeral containers for heavy inference.
+
+Offline-first UI caching and job queueing (service workers).
+
+Plugin API for preprocessing modules and model adapters (REST/gRPC wrappers).
+
+Explainability library pluggable adapters (saliency, LIME-like, attention).
+
+Role-based redaction rules and differential privacy export mode.
+
+Deliverables
+
+Plugin spec, example plugin, sandbox orchestration scripts.
+
+Success criteria
+
+Third-party module can be added without backend changes via plugin contract.
+
+Minimal acceptance tests (run with CI)
+Start app with docker-compose and confirm:
+
+GET /health returns OK.
+
+Auth login returns JWT and protected endpoints reject missing token.
+
+Create case, run inference job, poll job status to completion.
+
+Export anonymized CSV contains no raw PHI fields.
+
+Metrics endpoint returns recent request counts.
+
+Automated E2E: simple Cypress test for login → approve case → export, using sample dataset (aligns to frontend test examples).
+
+Timeline summary (approximate)
+Week 0: Prep and alignment (1 week)
+
+Weeks 1–3: MVP (2–3 weeks)
+
+Weeks 4–6: Core workflows and UX (3–4 weeks)
+
+Weeks 7–8: Performance, security, observability (2–3 weeks)
+
+Weeks 9–10: Metrics, admin, and docs (2 weeks)
+
+Week 11+: Stretch goals and polishing (ongoing)
+
+Total time to robust MVP: ~6–8 weeks depending on team size and parallelization.
+
+Roles, team composition, and suggested sprint cadence
+Core team (recommended for 8-week timeline)
+
+1 full-stack engineer (FastAPI + React)
+
+1 frontend engineer (UX, accessibility, performance)
+
+1 backend/infra engineer (jobs, Docker, security)
+
+1 UX/product lead (wireframes, acceptance tests, clinical workflow)
+
+Sprint cadence: 2-week sprints with clear sprint goals and demos; prioritize MVP stories in sprint 1 and 2.
+
+Key risks and mitigations
+PHI leakage: enforce de-identification, forbid PHI in logs, and add export redaction tests.
+
+Cost blowout from heavy inference: default to remote model APIs and CPU inference; provide per-request timeout and caching.
+
+Integration mismatch: publish an API contract (OpenAPI) and run contract tests during CI.
+
+Regulatory concerns: design audit trail and role separation early.
+
+Next-step checklist for me to produce
+Generate the runnable starter code (FastAPI backend + React frontend + Dockerfile + docker-compose + sample dataset and README).
+
+Or produce the concrete FastAPI + React code for the core flows (Cases List, Case Detail, model call stub, Dockerfile, README). Pick one and I’ll produce the scaffold and files in the requested format.
