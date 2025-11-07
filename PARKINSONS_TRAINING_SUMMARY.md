@@ -1,6 +1,9 @@
 # Parkinson's Disease Classification Training Summary
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
+
 Successfully implemented and executed Parkinson's disease classification training using the `train_parkinsons.py` script with real patient data from the ParkinsonDatasets directory.
 
 ## Changes Made

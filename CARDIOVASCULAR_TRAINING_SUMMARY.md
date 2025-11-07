@@ -1,7 +1,10 @@
 # Cardiovascular Disease Classification Training Summary
 
-## Training Execution Date
-**2025-10-19**
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+## Overview
+
+This document summarizes the cardiovascular disease classification training implementation and results.
 
 ## Overview
 Successfully executed the cardiovascular disease classification training pipeline using the `training/train_cardiovascular.py` script. The training completed with multiple machine learning models including classical ML models and a neural network with early stopping.

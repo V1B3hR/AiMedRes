@@ -1,7 +1,10 @@
 # Diabetes Risk Classification Training Summary
 
-## Training Execution Date
-**2025-10-19**
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+## Overview
+
+This document summarizes the diabetes risk classification training implementation and results.
 
 ## Overview
 Successfully executed the diabetes risk classification training pipeline using the `training/train_diabetes.py` script. The training completed with multiple machine learning models including classical ML models and a neural network trained for 50 epochs.

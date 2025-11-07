@@ -1,8 +1,8 @@
 # Alzheimer's Disease Classification Training Run Summary
 
-**Date:** 2025-10-19  
-**Script:** `training/train_alzheimers.py`  
-**Status:** ✅ COMPLETED SUCCESSFULLY
+**Version**: 1.0.0 | **Last Updated**: November 2025  
+**Script:** `src/aimedres/training/train_alzheimers.py`  
+**Status:** ✅ PRODUCTION READY
 
 ## Overview
 
