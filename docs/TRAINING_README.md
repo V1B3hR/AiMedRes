@@ -1,6 +1,8 @@
-# Training Module for DuetMind Adaptive
+# Training Module for AiMedRes
 
-This document describes the training functionality for the duetmind_adaptive AI framework.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document describes the training functionality for the AiMedRes AI framework.
 
 ## Overview
 
@@ -134,9 +136,9 @@ The training system provides several metrics:
 - **Feature Importance**: Which features are most predictive
 - **Classification Report**: Detailed per-class metrics
 
-## Integration with DuetMind Framework
+## Integration with AiMedRes Framework
 
-The training module seamlessly integrates with the existing duetmind_adaptive components:
+The training module seamlessly integrates with the existing AiMedRes components:
 
 - **UnifiedAdaptiveAgent**: Enhanced with ML prediction capabilities
 - **ResourceRoom**: Stores training data and model predictions

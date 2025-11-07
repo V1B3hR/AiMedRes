@@ -1,5 +1,7 @@
 # AiMedRes Pre-Release Checklist
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 This checklist ensures the repository is ready for external release to clinical/academic partners.
 
 ## 📋 Documentation

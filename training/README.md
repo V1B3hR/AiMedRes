@@ -1,5 +1,7 @@
 # Training Scripts (Legacy)
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 **⚠️ DEPRECATED**: This directory contains legacy training scripts.
 
 **Please use the canonical versions in `src/aimedres/training/` instead.**

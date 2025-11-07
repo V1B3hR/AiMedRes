@@ -1,5 +1,7 @@
 # Examples and Demonstrations
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 This directory contains demonstration scripts and usage examples organized by complexity and use case.
 
 ## Directory Structure

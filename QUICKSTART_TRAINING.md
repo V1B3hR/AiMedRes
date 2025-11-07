@@ -1,5 +1,7 @@
 # Quick Start: Training All Medical AI Models
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 This guide shows you the fastest way to train all 7 medical AI models.
 
 ## 🚀 Fastest Way to Get Started

@@ -1,7 +1,7 @@
-# GUI Implementation Checklist — Prioritized (Repository‑aware)
+# GUI Implementation Checklist
 
-Version: 2025-10-24 (Phase 2 Complete)  
-Author: GitHub Copilot for V1B3hR/AiMedRes
+**Version**: 1.0.0 | **Last Updated**: November 2025  
+**Repository**: V1B3hR/AiMedRes
 
 Purpose
 - This file is a prioritized, actionable implementation checklist to build a clinician/researcher‑facing GUI for AiMedRes.

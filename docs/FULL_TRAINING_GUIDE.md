@@ -1,10 +1,12 @@
-# Full Training Guide for DuetMind Adaptive
+# Full Training Guide for AiMedRes
 
-This guide explains how to run full training for the DuetMind Adaptive AI framework.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This guide explains how to run full training for the AiMedRes AI framework.
 
 ## Overview
 
-The DuetMind Adaptive system now supports comprehensive training with multiple modes and data sources:
+The AiMedRes system supports comprehensive training with multiple modes and data sources:
 
 - **Basic Training**: Using synthetic test data
 - **Kaggle Training**: Using real Alzheimer's MRI data from Kaggle
@@ -233,7 +235,7 @@ trainer.save_model("my_model.pkl")
 results, agents = run_training_simulation()
 ```
 
-### Integration with DuetMind Framework
+### Integration with AiMedRes Framework
 
 The training system seamlessly integrates with:
 - Neural network framework

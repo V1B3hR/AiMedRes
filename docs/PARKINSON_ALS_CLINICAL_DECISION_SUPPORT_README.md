@@ -1,4 +1,6 @@
-# Clinical Decision Support System
+# Clinical Decision Support System - Parkinson's & ALS
+
+**Version**: 1.0.0 | **Last Updated**: November 2025
 
 The `clinical_decision_support.py` module is the core of the AI-powered clinical decision support system. It provides a robust framework for assessing patient risk across multiple medical conditions and recommending appropriate interventions.
 

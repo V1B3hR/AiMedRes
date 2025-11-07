@@ -1,4 +1,6 @@
-# P1 Implementation - PR Review Checklist
+# PR Review Checklist
+
+**Version**: 1.0.0 | **Last Updated**: November 2025
 
 ## Verification Steps for Reviewer
 

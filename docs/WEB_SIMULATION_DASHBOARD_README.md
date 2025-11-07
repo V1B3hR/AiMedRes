@@ -1,6 +1,8 @@
 # Web-Based Simulation Dashboard
 
-A comprehensive clinical scenario simulation platform for DuetMind Adaptive that provides a unified interface for running multi-agent clinical scenarios, monitoring real-time safety & performance metrics, and conducting "what-if" risk perturbations.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+A comprehensive clinical scenario simulation platform for AiMedRes that provides a unified interface for running multi-agent clinical scenarios, monitoring real-time safety & performance metrics, and conducting "what-if" risk perturbations.
 
 ## 🎯 Features
 

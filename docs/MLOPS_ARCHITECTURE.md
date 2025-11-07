@@ -1,6 +1,8 @@
-# DuetMind Adaptive MLOps Architecture
+# AiMedRes MLOps Architecture
 
-This document describes the hybrid MLOps architecture implemented for the DuetMind Adaptive project, providing reproducible machine learning pipelines with advanced agent memory capabilities.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document describes the hybrid MLOps architecture implemented for the AiMedRes project, providing reproducible machine learning pipelines with advanced agent memory capabilities.
 
 ## Architecture Overview
 

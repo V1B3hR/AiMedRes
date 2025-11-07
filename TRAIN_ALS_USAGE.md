@@ -1,5 +1,7 @@
 # train_als.py Usage Guide
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Quick Start
 
 Run the training pipeline with default settings:

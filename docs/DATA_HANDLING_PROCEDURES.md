@@ -1,5 +1,7 @@
 # Data Handling Procedures
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
 This document outlines the comprehensive data handling procedures for AiMedRes, ensuring compliance with healthcare data protection regulations and maintaining the highest standards of data security and privacy.

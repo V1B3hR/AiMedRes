@@ -1,5 +1,7 @@
 # Brain MRI Training Guide
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
 This guide provides comprehensive information about training brain MRI classification models using the AiMedRes training pipeline.

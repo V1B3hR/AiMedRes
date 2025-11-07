@@ -1,6 +1,8 @@
 # Comprehensive Training and Simulation on Real Data
 
-This document provides complete documentation for the comprehensive training and simulation system implemented in the duetmind_adaptive repository.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document provides complete documentation for the comprehensive training and simulation system implemented in the AiMedRes repository.
 
 ## Overview
 

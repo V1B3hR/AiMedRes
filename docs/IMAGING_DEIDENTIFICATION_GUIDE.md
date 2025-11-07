@@ -1,8 +1,10 @@
 # Medical Imaging De-identification Guide
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
-This guide provides comprehensive procedures for de-identifying medical imaging data in compliance with HIPAA Safe Harbor guidelines and medical imaging best practices. The DuetMind Adaptive imaging pipeline includes automated de-identification tools to protect patient privacy while preserving data utility for research and analysis.
+This guide provides comprehensive procedures for de-identifying medical imaging data in compliance with HIPAA Safe Harbor guidelines and medical imaging best practices. The AiMedRes imaging pipeline includes automated de-identification tools to protect patient privacy while preserving data utility for research and analysis.
 
 ## HIPAA Safe Harbor Compliance
 
@@ -312,6 +314,6 @@ with mlflow.start_run():
 
 ## Conclusion
 
-The DuetMind Adaptive imaging de-identification system provides comprehensive, automated protection of patient privacy while preserving data utility for medical research. By following HIPAA Safe Harbor guidelines and implementing technical safeguards, researchers can confidently use medical imaging data for advancing healthcare outcomes.
+The AiMedRes imaging de-identification system provides comprehensive, automated protection of patient privacy while preserving data utility for medical research. By following HIPAA Safe Harbor guidelines and implementing technical safeguards, researchers can confidently use medical imaging data for advancing healthcare outcomes.
 
-For additional support or questions about de-identification procedures, consult the technical documentation or contact the DuetMind support team.
+For additional support or questions about de-identification procedures, consult the technical documentation or contact the AiMedRes support team.

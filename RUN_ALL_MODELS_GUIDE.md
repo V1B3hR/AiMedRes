@@ -1,5 +1,7 @@
 # Running All Medical AI Models - Complete Guide
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
 The AiMedRes platform provides a unified orchestrator that can train **ALL 7 medical AI models** simultaneously or individually. This guide shows you how to use it.

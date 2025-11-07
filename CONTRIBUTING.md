@@ -1,5 +1,7 @@
 # Contributing to AiMedRes
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 Welcome to the AiMedRes project! We're excited to have you contribute to advancing AI in healthcare and medical research. This guide will help you get started with contributing to our open-source medical AI platform.
 
 ## 🚀 Quick Start

@@ -1,6 +1,8 @@
 # Clinical Validation Framework
 
-This document outlines the comprehensive clinical validation framework implemented in DuetMind Adaptive to ensure medical AI models meet clinical standards and regulatory requirements, with specific focus on FDA pre-submission and submission readiness.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document outlines the comprehensive clinical validation framework implemented in AiMedRes to ensure medical AI models meet clinical standards and regulatory requirements, with specific focus on FDA pre-submission and submission readiness.
 
 ## 🎯 Overview
 
@@ -724,4 +726,4 @@ print(f"Validation completed: {validation_result}")
 
 ---
 
-This clinical validation framework ensures that DuetMind Adaptive models meet the highest standards for clinical application while maintaining regulatory compliance and patient safety. 🏥✅
+This clinical validation framework ensures that AiMedRes models meet the highest standards for clinical application while maintaining regulatory compliance and patient safety. 🏥✅

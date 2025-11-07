@@ -1,5 +1,7 @@
 # Quick Start: Parallel Training with Optimal Configuration
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## TL;DR
 
 Run all medical AI training jobs in parallel with production-ready parameters:

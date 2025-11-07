@@ -1,7 +1,10 @@
 # ALS Training Run Summary
 
-## Execution Date
-2025-10-17
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+## Overview
+
+This document summarizes ALS (Amyotrophic Lateral Sclerosis) training implementation and results.
 
 ## Overview
 Successfully executed the `train_als.py` training pipeline for ALS (Amyotrophic Lateral Sclerosis) progression prediction.

@@ -1,8 +1,10 @@
 # Clinical Decision Support System (CDSS)
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
-The Clinical Decision Support System transforms the DuetMind Adaptive research pipeline into a practical medical tool for clinical decision-making. It provides comprehensive AI-powered risk assessment, explainable predictions, EHR integration, and regulatory compliance features.
+The Clinical Decision Support System transforms the AiMedRes research pipeline into a practical medical tool for clinical decision-making. It provides comprehensive AI-powered risk assessment, explainable predictions, EHR integration, and regulatory compliance features.
 
 ## Key Features
 
@@ -62,7 +64,7 @@ The Clinical Decision Support System transforms the DuetMind Adaptive research p
 │  │ • Performance   │  │ • Data Min.     │  │ • Responsive    │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
-│                    Existing DuetMind Components                 │
+│                    Existing AiMedRes Components                 │
 │  • Medical AI Agents • Neural Networks • Security Framework    │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -482,8 +484,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## License
 
-This Clinical Decision Support System is part of the DuetMind Adaptive project and is subject to the same licensing terms.
+This Clinical Decision Support System is part of the AiMedRes project and is subject to the same licensing terms.
 
 ## Contact
 
-For technical support, feature requests, or regulatory compliance questions, please contact the DuetMind Adaptive team.
+For technical support, feature requests, or regulatory compliance questions, please contact the AiMedRes team.
