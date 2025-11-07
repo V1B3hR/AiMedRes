@@ -1,8 +1,8 @@
-# 🛡️ DuetMind Adaptive Security Framework
+# 🛡️ AiMedRes Security Framework
 
 ## Overview
 
-This document outlines the comprehensive security framework for DuetMind Adaptive during the Clinical Integration & Validation phase, ensuring maximum protection of patient data and compliance with healthcare regulations.
+This document outlines the comprehensive security framework for AiMedRes during the Clinical Integration & Validation phase, ensuring maximum protection of patient data and compliance with healthcare regulations.
 
 ## 🔐 Current Security Implementation Status
 

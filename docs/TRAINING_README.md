@@ -136,9 +136,9 @@ The training system provides several metrics:
 - **Feature Importance**: Which features are most predictive
 - **Classification Report**: Detailed per-class metrics
 
-## Integration with DuetMind Framework
+## Integration with AiMedRes Framework
 
-The training module seamlessly integrates with the existing duetmind_adaptive components:
+The training module seamlessly integrates with the existing AiMedRes components:
 
 - **UnifiedAdaptiveAgent**: Enhanced with ML prediction capabilities
 - **ResourceRoom**: Stores training data and model predictions
