@@ -1,6 +1,8 @@
 # Model Promotion Guidelines
 
-This document outlines the guidelines and procedures for promoting models through different stages in the DuetMind Adaptive MLOps pipeline.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document outlines the guidelines and procedures for promoting models through different stages in the AiMedRes MLOps pipeline.
 
 ## Model Lifecycle Stages
 
