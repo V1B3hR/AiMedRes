@@ -1,8 +1,8 @@
-# Medical Imaging Model Card - DuetMind Adaptive
+# Medical Imaging Model Card - AiMedRes
 
 ## Model Overview
 
-**Model Name**: DuetMind Adaptive Brain MRI Classifier  
+**Model Name**: AiMedRes Brain MRI Classifier  
 **Model Version**: 1.0.0  
 **Model Type**: 3D Convolutional Neural Network (CNN) with Late Fusion Multimodal Support  
 **Domain**: Medical Imaging - Brain MRI Analysis  
@@ -10,7 +10,7 @@
 
 ## Model Description
 
-This model is part of the DuetMind Adaptive framework, designed to analyze brain MRI images for neurological assessment, particularly focusing on cognitive impairment and neurodegenerative diseases. The model supports both 2D slice-based and 3D volumetric analysis with multimodal data fusion capabilities.
+This model is part of the AiMedRes framework, designed to analyze brain MRI images for neurological assessment, particularly focusing on cognitive impairment and neurodegenerative diseases. The model supports both 2D slice-based and 3D volumetric analysis with multimodal data fusion capabilities.
 
 ### Architecture Details
 
@@ -194,13 +194,13 @@ results = pipeline.train_model(
 
 ## Contact and Support
 
-**Model Developers**: DuetMind Adaptive Team  
+**Model Developers**: AiMedRes Team  
 **Maintainer**: Medical AI Research Group  
 **Version Date**: 2024-01-XX  
 **Next Review**: 2024-04-XX  
 
 For technical support, model updates, or reporting issues:
-- **GitHub**: [DuetMind Adaptive Repository]
+- **GitHub**: [AiMedRes Repository]
 - **Documentation**: [Technical Documentation]
 - **Support**: medical-ai-support@organization.com
 

@@ -314,6 +314,6 @@ with mlflow.start_run():
 
 ## Conclusion
 
-The DuetMind Adaptive imaging de-identification system provides comprehensive, automated protection of patient privacy while preserving data utility for medical research. By following HIPAA Safe Harbor guidelines and implementing technical safeguards, researchers can confidently use medical imaging data for advancing healthcare outcomes.
+The AiMedRes imaging de-identification system provides comprehensive, automated protection of patient privacy while preserving data utility for medical research. By following HIPAA Safe Harbor guidelines and implementing technical safeguards, researchers can confidently use medical imaging data for advancing healthcare outcomes.
 
 For additional support or questions about de-identification procedures, consult the technical documentation or contact the DuetMind support team.

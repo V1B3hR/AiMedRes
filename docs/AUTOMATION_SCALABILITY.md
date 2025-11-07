@@ -445,4 +445,4 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## 📄 License
 
-This implementation is part of the DuetMind Adaptive project and follows the same licensing terms.
+This implementation is part of the AiMedRes project and follows the same licensing terms.

@@ -542,4 +542,4 @@ python3 secure_api_server.py --debug
 
 ## License
 
-This remote secure training system is part of the DuetMind Adaptive project and follows the same licensing terms.
+This remote secure training system is part of the AiMedRes project and follows the same licensing terms.

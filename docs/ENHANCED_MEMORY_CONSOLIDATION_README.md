@@ -323,7 +323,7 @@ The advanced memory consolidation algorithms have been specifically optimized fo
 
 ## 🎯 Summary
 
-This implementation provides a comprehensive enhancement to the DuetMind Adaptive memory consolidation system with:
+This implementation provides a comprehensive enhancement to the AiMedRes memory consolidation system with:
 
 ✅ **Phase 2 Complete**: Priority replay, synaptic tagging, generative rehearsal
 ✅ **Phase 3 Complete**: Semantic conflict resolution, memory introspection API  
