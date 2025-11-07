@@ -227,7 +227,7 @@ federated_results = federated_learner.simulate_federated_training(
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                Enhanced DuetMind Adaptive                    │
+│                Enhanced AiMedRes System                      │
 ├─────────────────────────────────────────────────────────────┤
 │  Enhanced Model Performance                                 │
 │  ├─ Advanced Feature Engineering                            │
@@ -391,7 +391,7 @@ make ci-pipeline
 
 ## 10. Conclusion
 
-The enhanced DuetMind Adaptive system provides comprehensive improvements across all requested areas:
+The enhanced AiMedRes system provides comprehensive improvements across all requested areas:
 
 1. **Model Performance**: Advanced ensemble methods with comprehensive optimization
 2. **Multi-Agent Simulation**: Specialized medical agents with learning capabilities

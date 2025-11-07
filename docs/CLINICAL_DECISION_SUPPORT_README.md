@@ -64,7 +64,7 @@ The Clinical Decision Support System transforms the AiMedRes research pipeline i
 │  │ • Performance   │  │ • Data Min.     │  │ • Responsive    │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
-│                    Existing DuetMind Components                 │
+│                    Existing AiMedRes Components                 │
 │  • Medical AI Agents • Neural Networks • Security Framework    │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -484,8 +484,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 ## License
 
-This Clinical Decision Support System is part of the DuetMind Adaptive project and is subject to the same licensing terms.
+This Clinical Decision Support System is part of the AiMedRes project and is subject to the same licensing terms.
 
 ## Contact
 
-For technical support, feature requests, or regulatory compliance questions, please contact the DuetMind Adaptive team.
+For technical support, feature requests, or regulatory compliance questions, please contact the AiMedRes team.

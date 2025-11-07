@@ -9,23 +9,23 @@ Welcome to AiMedRes - a comprehensive AI platform for medical research and healt
 ### Installation & Setup
 ```bash
 # Clone the repository
-git clone https://github.com/V1B3hR/duetmind_adaptive.git
-cd duetmind_adaptive
+git clone https://github.com/V1B3hR/AiMedRes.git
+cd AiMedRes
 
 # Install dependencies
 pip install -r requirements-dev.txt
 
 # Run your first example
-python examples/simple_integration_demo.py
+python examples/basic/run_all_demo.py
 ```
 
 ### Quick Start Examples
 ```python
 # Basic medical data analysis
-from duetmind import DuetMindAdaptive
+from aimedres.core.agent import DuetMindAgent
 
 # Initialize the system
-dm = DuetMindAdaptive()
+dm = DuetMindAgent()
 
 # Load and analyze medical data
 result = dm.analyze_patient_data("patient_data.csv")
@@ -94,10 +94,10 @@ print(f"Cardiovascular risk: {risk_assessment}")
 
 ### Multi-Agent Reasoning
 ```python
-from duetmind import MultiAgentSystem
+from aimedres.agents.dialogue_manager import MultiAgentConsultation
 
 # Create specialized medical agents
-agents = MultiAgentSystem([
+agents = MultiAgentConsultation([
     'diagnostic_agent',
     'treatment_agent', 
     'risk_assessment_agent'
