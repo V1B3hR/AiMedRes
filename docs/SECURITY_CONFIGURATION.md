@@ -66,7 +66,7 @@ DUETMIND_INTRUSION_DETECTION=true
 #!/bin/bash
 # generate_keys.sh - Generate secure keys for production
 
-echo "Generating secure keys for DuetMind Adaptive..."
+echo "Generating secure keys for AiMedRes..."
 
 # Master encryption key (64 bytes = 512 bits)
 MASTER_KEY=$(openssl rand -base64 64 | tr -d '\n')
