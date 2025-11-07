@@ -1,5 +1,7 @@
 # AiMedRes Documentation Index
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 Welcome to the AiMedRes documentation! This index helps you find the right documentation for your needs.
 
 ## 📖 Getting Started

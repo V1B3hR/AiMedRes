@@ -1,6 +1,8 @@
 # ALS Training Pipeline Guide
 
-This guide explains how to run the ALS (Amyotrophic Lateral Sclerosis) progression prediction training pipeline as implemented in this repository.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This guide explains how to run the ALS (Amyotrophic Lateral Sclerosis) progression prediction training pipeline as implemented in AiMedRes.
 
 ## Quick Start
 

@@ -1,8 +1,10 @@
 # Security Configuration Guide
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
-This guide provides comprehensive instructions for configuring DuetMind Adaptive's security features for production deployment. Follow these steps to ensure maximum security and compliance.
+This guide provides comprehensive instructions for configuring AiMedRes's security features for production deployment. Follow these steps to ensure maximum security and compliance.
 
 ## Prerequisites
 

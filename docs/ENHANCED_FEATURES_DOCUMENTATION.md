@@ -1,6 +1,8 @@
 # Enhanced Features Documentation
 
-This document describes the comprehensive enhancements implemented for the DuetMind Adaptive system, addressing the requirements for model performance optimization, enhanced multi-agent medical simulation, and advanced data integration.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document describes the comprehensive enhancements implemented for the AiMedRes system, addressing the requirements for model performance optimization, enhanced multi-agent medical simulation, and advanced data integration.
 
 ## 1. Model Performance Optimization & Validation
 

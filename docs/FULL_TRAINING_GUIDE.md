@@ -1,6 +1,8 @@
-# Full Training Guide for DuetMind Adaptive
+# Full Training Guide for AiMedRes
 
-This guide explains how to run full training for the DuetMind Adaptive AI framework.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This guide explains how to run full training for the AiMedRes AI framework.
 
 ## Overview
 

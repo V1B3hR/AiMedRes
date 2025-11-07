@@ -1,5 +1,7 @@
 # Security Guidelines for Contributors
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
 AiMedRes implements enterprise-grade security measures to protect medical data and ensure compliance with healthcare regulations (HIPAA, GDPR). All contributors must follow these security guidelines.

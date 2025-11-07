@@ -1,6 +1,8 @@
 # Production-Ready MLOps Pipeline Guide
 
-This guide demonstrates the advanced production-ready MLOps features implemented for the DuetMind Adaptive system, including automated retraining, A/B testing, and comprehensive monitoring.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This guide demonstrates the advanced production-ready MLOps features implemented for the AiMedRes system, including automated retraining, A/B testing, and comprehensive monitoring.
 
 ## 🏗️ Architecture Overview
 

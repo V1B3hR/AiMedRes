@@ -1,5 +1,7 @@
 # Quick Start: Training Medical AI Models with aimedres CLI
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Command Overview
 
 The `aimedres train` command provides a modern, unified interface for training medical AI models with support for parallel execution and customizable parameters.

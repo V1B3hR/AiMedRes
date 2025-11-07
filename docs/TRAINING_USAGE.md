@@ -1,6 +1,8 @@
 # Medical AI Training Pipeline Usage Guide
 
-This guide explains how to use the comprehensive training pipeline for all disease prediction models.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This guide explains how to use the comprehensive training pipeline for all disease prediction models in AiMedRes.
 
 ## Quick Start
 

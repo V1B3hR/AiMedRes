@@ -1,6 +1,8 @@
-# DuetMind Adaptive API Reference
+# AiMedRes API Reference
 
-This document provides comprehensive documentation for all API endpoints available in the DuetMind Adaptive system.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document provides comprehensive documentation for all API endpoints available in the AiMedRes system.
 
 ## Base URL and Authentication
 
