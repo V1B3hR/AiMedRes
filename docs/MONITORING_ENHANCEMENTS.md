@@ -1,6 +1,9 @@
 # Monitoring Enhancements - Comprehensive Summary
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
+
 This document summarizes all advanced improvements and enhancements made to monitoring-related Python files across the AiMedRes project.
 
 ## Files Enhanced

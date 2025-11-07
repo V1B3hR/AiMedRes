@@ -1,8 +1,10 @@
 # Remote Secure Model Training Documentation
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
-The DuetMind Adaptive system now supports **remote, secure model training** through a comprehensive API-based architecture. This system enables distributed, authenticated model training with enterprise-grade security features.
+The AiMedRes system supports **remote, secure model training** through a comprehensive API-based architecture. This system enables distributed, authenticated model training with enterprise-grade security features.
 
 ## Features
 

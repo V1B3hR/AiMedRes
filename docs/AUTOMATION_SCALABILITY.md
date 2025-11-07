@@ -1,6 +1,8 @@
 # Automation & Scalability Implementation Guide
 
-This document provides a comprehensive guide to the newly implemented Automation & Scalability features for DuetMind Adaptive.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document provides a comprehensive guide to the newly implemented Automation & Scalability features for AiMedRes.
 
 ## 🎯 Overview
 

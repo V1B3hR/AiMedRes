@@ -1,6 +1,8 @@
-# DuetMind Adaptive User Experience Guide
+# AiMedRes User Experience Guide
 
-Welcome to DuetMind Adaptive - a comprehensive AI platform for medical research and healthcare applications. This guide will help you get the most out of the platform's features.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+Welcome to AiMedRes - a comprehensive AI platform for medical research and healthcare applications. This guide will help you get the most out of the platform's features.
 
 ## 🚀 Getting Started
 

@@ -1,5 +1,11 @@
 # Implementation Summary: Specialized Medical Agents Training
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+## Overview
+
+This document describes the implementation of specialized medical agent training for the AiMedRes system.
+
 ## Problem Statement
 Create a training script for `specialized_medical_agents.py` that can be executed with:
 ```bash

@@ -1,5 +1,7 @@
 # API Performance SLOs (Service Level Objectives)
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
 This document defines the performance Service Level Objectives for the AiMedRes API. These SLOs are used to ensure the system meets required performance standards for clinical use.

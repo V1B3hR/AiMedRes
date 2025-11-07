@@ -1,5 +1,7 @@
 # Specialized Medical Agents Training
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Overview
 
 The `train_specialized_agents.py` script trains machine learning models for specialized medical agents (Radiologist, Neurologist, Pathologist) that can work together for enhanced medical diagnosis and consensus-based decision making.

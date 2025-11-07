@@ -1,5 +1,7 @@
 # Validation: Run Training for ALL Medical AI Models
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## Problem Statement
 Run training for ALL medical AI models using the orchestrator.
 

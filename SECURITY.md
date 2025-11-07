@@ -1,5 +1,7 @@
 # Security Policy
 
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
 ## 🔒 Reporting Security Vulnerabilities
 
 **We take security seriously.** If you discover a security vulnerability in AiMedRes, please report it responsibly.

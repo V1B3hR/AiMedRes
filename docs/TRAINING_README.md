@@ -1,6 +1,8 @@
-# Training Module for DuetMind Adaptive
+# Training Module for AiMedRes
 
-This document describes the training functionality for the duetmind_adaptive AI framework.
+**Version**: 1.0.0 | **Last Updated**: November 2025
+
+This document describes the training functionality for the AiMedRes AI framework.
 
 ## Overview
 
