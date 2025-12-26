@@ -5,19 +5,19 @@ Specialized medical agents for enhanced multi-agent medical simulation.
 """
 
 from .specialized_medical_agents import (
-    MedicalKnowledgeAgent,
-    SpecializedMedicalAgent,
-    RadiologistAgent,
-    NeurologistAgent,
     ConsensusManager,
     ExplainabilityEngine,
+    MedicalKnowledgeAgent,
+    NeurologistAgent,
+    RadiologistAgent,
+    SpecializedMedicalAgent,
 )
 
 __all__ = [
-    'MedicalKnowledgeAgent',
-    'SpecializedMedicalAgent',
-    'RadiologistAgent',
-    'NeurologistAgent',
-    'ConsensusManager',
-    'ExplainabilityEngine',
+    "MedicalKnowledgeAgent",
+    "SpecializedMedicalAgent",
+    "RadiologistAgent",
+    "NeurologistAgent",
+    "ConsensusManager",
+    "ExplainabilityEngine",
 ]

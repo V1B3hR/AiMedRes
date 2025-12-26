@@ -13,20 +13,21 @@ Enhancements (2025-10):
 - Thread-safe mutation (optional)
 """
 
-import numpy as np
-import logging
-import time
-import threading
 import json
-from typing import Dict, List, Optional, Tuple, Any, Callable, Iterable
-from dataclasses import dataclass, field, asdict
+import logging
+import math
+import threading
+import time
+import uuid
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-import uuid
-import math
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
-from ..utils.safety import SafetyMonitor
+import numpy as np
+
 from ..security.validation import InputValidator
+from ..utils.safety import SafetyMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -35,22 +36,24 @@ logger = logging.getLogger(__name__)
 # ENUMS WITH ENHANCED SEMANTICS
 # ---------------------------------------------------------------------------
 
+
 class NodeState(Enum):
     """
     Neural node operational states with semantic categories.
-    
+
     Each state may affect:
     - Activation eligibility
     - Energy consumption scaling
     - Learning rate modulation
     - Reliability scoring
-    
+
     New states:
     - DEGRADED: Node is operating below optimal thresholds
     - RECOVERING: Node restoring capacity after stress/sleep
     - QUARANTINED: Isolated due to detected anomaly
     - STANDBY: Available but idling for load balancing
     """
+
     ACTIVE = "active"
     SLEEPING = "sleeping"
     LEARNING = "learning"
@@ -80,12 +83,7 @@ class NodeState(Enum):
     @property
     def allows_activation(self) -> bool:
         """Whether forward activation should proceed."""
-        return self in {
-            self.ACTIVE,
-            self.LEARNING,
-            self.RECOVERING,
-            self.STANDBY
-        }
+        return self in {self.ACTIVE, self.LEARNING, self.RECOVERING, self.STANDBY}
 
     @property
     def category(self) -> str:
@@ -99,7 +97,7 @@ class NodeState(Enum):
             self.MAINTENANCE: "service",
             self.DEGRADED: "impaired",
             self.QUARANTINED: "isolated",
-            self.ERROR: "fault"
+            self.ERROR: "fault",
         }
         return categories[self]
 
@@ -108,12 +106,19 @@ class NodeState(Enum):
         """Constrain state transitions to reduce invalid operational drift."""
         allowed: Dict[NodeState, Iterable[NodeState]] = {
             NodeState.ACTIVE: {
-                NodeState.LEARNING, NodeState.SLEEPING, NodeState.MAINTENANCE,
-                NodeState.DEGRADED, NodeState.ERROR, NodeState.STANDBY
+                NodeState.LEARNING,
+                NodeState.SLEEPING,
+                NodeState.MAINTENANCE,
+                NodeState.DEGRADED,
+                NodeState.ERROR,
+                NodeState.STANDBY,
             },
             NodeState.LEARNING: {
-                NodeState.ACTIVE, NodeState.DEGRADED, NodeState.RECOVERING,
-                NodeState.ERROR, NodeState.STANDBY
+                NodeState.ACTIVE,
+                NodeState.DEGRADED,
+                NodeState.RECOVERING,
+                NodeState.ERROR,
+                NodeState.STANDBY,
             },
             NodeState.SLEEPING: {NodeState.RECOVERING, NodeState.MAINTENANCE},
             NodeState.RECOVERING: {NodeState.ACTIVE, NodeState.LEARNING, NodeState.STANDBY},
@@ -121,7 +126,7 @@ class NodeState(Enum):
             NodeState.DEGRADED: {NodeState.RECOVERING, NodeState.MAINTENANCE, NodeState.ERROR},
             NodeState.QUARANTINED: {NodeState.MAINTENANCE, NodeState.ERROR},
             NodeState.STANDBY: {NodeState.ACTIVE, NodeState.LEARNING, NodeState.SLEEPING},
-            NodeState.ERROR: {NodeState.MAINTENANCE, NodeState.QUARANTINED}
+            NodeState.ERROR: {NodeState.MAINTENANCE, NodeState.QUARANTINED},
         }
         return dst in allowed.get(src, [])
 
@@ -137,6 +142,7 @@ class MoodType(Enum):
     - DEPRESSED: Energy & motivation collapse (long stress + low energy)
     - FLOW: Optimal performance state (high focus, low stress)
     """
+
     NEUTRAL = "neutral"
     EXCITED = "excited"
     TIRED = "tired"
@@ -161,7 +167,7 @@ class MoodType(Enum):
             self.ANXIOUS: 0.90,
             self.OVERLOADED: 0.75,
             self.DEPRESSED: 0.70,
-            self.FLOW: 1.20
+            self.FLOW: 1.20,
         }
         return modifiers[self]
 
@@ -178,7 +184,7 @@ class MoodType(Enum):
             self.STRESSED: 0.85,
             self.ANXIOUS: 0.8,
             self.OVERLOADED: 0.75,
-            self.DEPRESSED: 0.7
+            self.DEPRESSED: 0.7,
         }
         return biases[self]
 
@@ -187,9 +193,11 @@ class MoodType(Enum):
 # CONFIGURATION STRUCTURES
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BiologicalConfig:
     """Centralized tunable constants for biological simulation."""
+
     max_energy: float = 100.0
     max_stress: float = 100.0
     max_sleep_need: float = 100.0
@@ -227,6 +235,7 @@ class BiologicalConfig:
 # BIOLOGICAL STATE
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class BiologicalState:
     """
@@ -241,6 +250,7 @@ class BiologicalState:
     - Serialization
     - Thread-safe optional lock
     """
+
     energy: float = 100.0
     sleep_need: float = 0.0
     stress_level: float = 0.0
@@ -291,9 +301,13 @@ class BiologicalState:
             base_recovery = duration_hours * cfg.sleep_need_recovery_per_hour
             efficiency = self._sleep_efficiency_factor()
             self.energy += base_recovery * efficiency
-            self.stress_level -= duration_hours * cfg.stress_relief_sleep_hour * (0.8 + 0.2 * efficiency)
+            self.stress_level -= (
+                duration_hours * cfg.stress_relief_sleep_hour * (0.8 + 0.2 * efficiency)
+            )
             self.sleep_need -= base_recovery
-            debt_payment = min(self.sleep_debt, duration_hours * cfg.sleep_debt_payment_rate * efficiency)
+            debt_payment = min(
+                self.sleep_debt, duration_hours * cfg.sleep_debt_payment_rate * efficiency
+            )
             self.sleep_debt -= debt_payment
             self.last_sleep = datetime.now()
             self._clamp_all()
@@ -320,19 +334,25 @@ class BiologicalState:
                 "performance_modifier": self.performance_modifier,
                 "homeostasis_score": self.homeostasis_score,
                 "risk_score": self.risk_score,
-                "chronic_stress_exposure_hours": self.chronic_stress_exposure_hours
+                "chronic_stress_exposure_hours": self.chronic_stress_exposure_hours,
             }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], config: Optional[BiologicalConfig] = None) -> "BiologicalState":
+    def from_dict(
+        cls, data: Dict[str, Any], config: Optional[BiologicalConfig] = None
+    ) -> "BiologicalState":
         obj = cls(
             energy=data.get("energy", 100.0),
             sleep_need=data.get("sleep_need", 0.0),
             stress_level=data.get("stress_level", 0.0),
             mood=MoodType(data.get("mood", "neutral")),
-            last_sleep=datetime.fromisoformat(data.get("last_sleep")) if data.get("last_sleep") else datetime.now(),
+            last_sleep=(
+                datetime.fromisoformat(data.get("last_sleep"))
+                if data.get("last_sleep")
+                else datetime.now()
+            ),
             sleep_debt=data.get("sleep_debt", 0.0),
-            config=config or BiologicalConfig()
+            config=config or BiologicalConfig(),
         )
         obj.decay()  # initialize derived metrics
         return obj
@@ -395,16 +415,18 @@ class BiologicalState:
         scores[MoodType.NEUTRAL] = 0.5
 
         # Flow: high energy, low stress, manageable sleep need
-        scores[MoodType.FLOW] = max(0.0,
-            (energy - cfg.flow_energy_min) / (cfg.max_energy - cfg.flow_energy_min + 1e-6)
+        scores[MoodType.FLOW] = max(
+            0.0,
+            (energy - cfg.flow_energy_min)
+            / (cfg.max_energy - cfg.flow_energy_min + 1e-6)
             * (1.0 - stress / (cfg.flow_stress_max + 1e-6))
-            * (1.0 - (need / cfg.max_sleep_need) * 0.5)
+            * (1.0 - (need / cfg.max_sleep_need) * 0.5),
         )
 
         # Tired: high need OR low energy
         scores[MoodType.TIRED] = max(
             need / cfg.max_sleep_need,
-            (cfg.fatigue_energy_threshold - energy) / cfg.fatigue_energy_threshold
+            (cfg.fatigue_energy_threshold - energy) / cfg.fatigue_energy_threshold,
         )
 
         # Stressed
@@ -416,25 +438,30 @@ class BiologicalState:
 
         # Focused: moderate-high energy, low-mid stress, low sleep_need
         scores[MoodType.FOCUSED] = (
-            (energy / cfg.max_energy) * (1.0 - stress / (cfg.max_stress * 1.2)) *
-            (1.0 - (need / cfg.max_sleep_need) * 0.7)
+            (energy / cfg.max_energy)
+            * (1.0 - stress / (cfg.max_stress * 1.2))
+            * (1.0 - (need / cfg.max_sleep_need) * 0.7)
         )
 
         # Calm: low stress + stable energy
-        scores[MoodType.CALM] = (1.0 - stress / cfg.max_stress) * (0.5 + 0.5 * energy / cfg.max_energy)
+        scores[MoodType.CALM] = (1.0 - stress / cfg.max_stress) * (
+            0.5 + 0.5 * energy / cfg.max_energy
+        )
 
         # Anxious: rising stress + moderate-high sleep debt
-        scores[MoodType.ANXIOUS] = (stress / cfg.max_stress) * (0.3 + 0.7 * (debt / (cfg.max_sleep_debt + 1e-6)))
+        scores[MoodType.ANXIOUS] = (stress / cfg.max_stress) * (
+            0.3 + 0.7 * (debt / (cfg.max_sleep_debt + 1e-6))
+        )
 
         # Overloaded: stress + high activation proxies (approx by stress + need)
-        scores[MoodType.OVERLOADED] = min(1.0, (stress / cfg.max_stress) * 0.7 + (need / cfg.max_sleep_need) * 0.5)
+        scores[MoodType.OVERLOADED] = min(
+            1.0, (stress / cfg.max_stress) * 0.7 + (need / cfg.max_sleep_need) * 0.5
+        )
 
         # Depressed: chronic stress + low energy + high debt
         scores[MoodType.DEPRESSED] = (
-            (max(0.0, cfg.depressed_energy_threshold - energy) / cfg.depressed_energy_threshold) *
-            (chronic / 24.0) * 0.6 +
-            (debt / cfg.max_sleep_debt) * 0.4
-        )
+            max(0.0, cfg.depressed_energy_threshold - energy) / cfg.depressed_energy_threshold
+        ) * (chronic / 24.0) * 0.6 + (debt / cfg.max_sleep_debt) * 0.4
 
         # Normalize and pick
         # Smooth with exponential moving average on prior mood distribution
@@ -469,9 +496,7 @@ class BiologicalState:
         debt_norm = self.sleep_debt / cfg.max_sleep_debt
 
         # Fatigue index: combination of low energy + high sleep need/debt
-        self.fatigue_index = float(
-            (1 - energy_norm) * 0.5 + need_norm * 0.3 + debt_norm * 0.2
-        )
+        self.fatigue_index = float((1 - energy_norm) * 0.5 + need_norm * 0.3 + debt_norm * 0.2)
 
         # Homeostasis: inverse disparity of key metrics
         dispersion = np.std([energy_norm, 1 - stress_norm, 1 - need_norm])
@@ -479,16 +504,16 @@ class BiologicalState:
 
         # Performance modifier from mood + fatigue penalty
         self.performance_modifier = float(
-            self.mood.processing_modifier *
-            (1.0 - 0.4 * self.fatigue_index) *
-            max(0.6, self.homeostasis_score)
+            self.mood.processing_modifier
+            * (1.0 - 0.4 * self.fatigue_index)
+            * max(0.6, self.homeostasis_score)
         )
 
         # Risk score (higher = risk of degradation)
         self.risk_score = float(
-            stress_norm * cfg.risk_stress_weight +
-            debt_norm * cfg.risk_debt_weight +
-            (1 - energy_norm) * cfg.risk_energy_inverse_weight
+            stress_norm * cfg.risk_stress_weight
+            + debt_norm * cfg.risk_debt_weight
+            + (1 - energy_norm) * cfg.risk_energy_inverse_weight
         )
 
     def _clamp_all(self):
@@ -504,9 +529,11 @@ class BiologicalState:
 # NEURAL NODE WITH INTEGRATION OF ENHANCED BIOLOGICAL STATE
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class NeuralNode:
     """Adaptive neural node with biological simulation."""
+
     node_id: str
     weights: np.ndarray
     bias: float = 0.0
@@ -522,7 +549,9 @@ class NeuralNode:
 
     def set_state(self, new_state: NodeState):
         if not NodeState.validate_transition(self.state, new_state):
-            logger.warning(f"Illegal state transition {self.state} -> {new_state} for {self.node_id}")
+            logger.warning(
+                f"Illegal state transition {self.state} -> {new_state} for {self.node_id}"
+            )
             return
         self.state = new_state
 
@@ -535,7 +564,7 @@ class NeuralNode:
         bio = self.biological_state
         mood_factor = bio.mood.processing_modifier
         performance_factor = bio.performance_modifier
-        energy_factor = (bio.energy / bio.config.max_energy)
+        energy_factor = bio.energy / bio.config.max_energy
         stress_factor = max(0.4, 1.0 - (bio.stress_level / (bio.config.max_stress * 1.8)))
 
         composite = raw_output * mood_factor * performance_factor * energy_factor * stress_factor
@@ -570,18 +599,21 @@ class NeuralNode:
 # ADAPTIVE NETWORK (TRIMMED TO FOCUS ON ENHANCEMENTS)
 # ---------------------------------------------------------------------------
 
+
 class AdaptiveNeuralNetwork:
     """
     Production-ready adaptive neural network with security and safety features.
     """
 
-    def __init__(self,
-                 input_size: int = 32,
-                 hidden_layers: List[int] = None,
-                 output_size: int = 2,
-                 learning_rate: float = 0.001,
-                 enable_safety_monitoring: bool = True,
-                 biological_config: Optional[BiologicalConfig] = None):
+    def __init__(
+        self,
+        input_size: int = 32,
+        hidden_layers: List[int] = None,
+        output_size: int = 2,
+        learning_rate: float = 0.001,
+        enable_safety_monitoring: bool = True,
+        biological_config: Optional[BiologicalConfig] = None,
+    ):
         self.input_size = input_size
         self.hidden_layers = hidden_layers or [64, 32, 16]
         self.output_size = output_size
@@ -608,7 +640,9 @@ class AdaptiveNeuralNetwork:
 
         self._initialize_network()
 
-        logger.info(f"AdaptiveNeuralNetwork initialized: {input_size}→{self.hidden_layers}→{output_size}")
+        logger.info(
+            f"AdaptiveNeuralNetwork initialized: {input_size}→{self.hidden_layers}→{output_size}"
+        )
 
     def _initialize_network(self):
         layer_sizes = [self.input_size] + self.hidden_layers + [self.output_size]
@@ -625,7 +659,7 @@ class AdaptiveNeuralNetwork:
                         node_id=node_id,
                         weights=weights,
                         bias=bias,
-                        biological_state=BiologicalState(config=self.biological_config)
+                        biological_state=BiologicalState(config=self.biological_config),
                     )
                     self.nodes[node_id] = node
                     layer_nodes.append(node_id)
@@ -656,9 +690,7 @@ class AdaptiveNeuralNetwork:
 
                 if self.safety_monitor:
                     self.safety_monitor.record_operation(
-                        operation="prediction",
-                        duration=time.time() - start_time,
-                        success=True
+                        operation="prediction", duration=time.time() - start_time, success=True
                     )
                 return current_activations
 
@@ -670,7 +702,7 @@ class AdaptiveNeuralNetwork:
                     operation="prediction",
                     duration=time.time() - start_time,
                     success=False,
-                    error=str(e)
+                    error=str(e),
                 )
             raise
 
@@ -678,7 +710,9 @@ class AdaptiveNeuralNetwork:
         if not isinstance(inputs, np.ndarray):
             raise ValueError("Input must be numpy array")
         if inputs.shape[0] != self.input_size:
-            raise ValueError(f"Input size mismatch: expected {self.input_size}, got {inputs.shape[0]}")
+            raise ValueError(
+                f"Input size mismatch: expected {self.input_size}, got {inputs.shape[0]}"
+            )
         if not np.isfinite(inputs).all():
             raise ValueError("Input contains invalid values (inf/nan)")
         if self.input_validator:
@@ -694,7 +728,9 @@ class AdaptiveNeuralNetwork:
             avg_energy = np.mean([n.biological_state.energy for n in self.nodes.values()])
             avg_stress = np.mean([n.biological_state.stress_level for n in self.nodes.values()])
             avg_risk = np.mean([n.biological_state.risk_score for n in self.nodes.values()])
-            avg_perf = np.mean([n.biological_state.performance_modifier for n in self.nodes.values()])
+            avg_perf = np.mean(
+                [n.biological_state.performance_modifier for n in self.nodes.values()]
+            )
 
             health = {
                 "network_state": self.network_state,
@@ -710,8 +746,16 @@ class AdaptiveNeuralNetwork:
                 "total_operations": self.total_operations,
                 "error_count": self.error_count,
                 "error_rate": (self.error_count / max(1, self.total_operations)) * 100,
-                "last_prediction": self.last_prediction_time.isoformat() if self.last_prediction_time else None,
-                "uptime_seconds": (datetime.now() - self.nodes[list(self.nodes.keys())[0]].created_at).total_seconds() if self.nodes else 0
+                "last_prediction": (
+                    self.last_prediction_time.isoformat() if self.last_prediction_time else None
+                ),
+                "uptime_seconds": (
+                    (
+                        datetime.now() - self.nodes[list(self.nodes.keys())[0]].created_at
+                    ).total_seconds()
+                    if self.nodes
+                    else 0
+                ),
             }
             if self.safety_monitor:
                 health["safety_status"] = self.safety_monitor.get_status()

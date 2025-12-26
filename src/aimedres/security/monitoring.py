@@ -9,14 +9,14 @@ Provides real-time security monitoring for:
 - Performance impact monitoring
 """
 
-import time
-import threading
-from datetime import datetime, timedelta
-from collections import defaultdict, deque
-from typing import Dict, Any, List, Callable
-import statistics
-import logging
 import json
+import logging
+import statistics
+import threading
+import time
+from collections import defaultdict, deque
+from datetime import datetime, timedelta
+from typing import Any, Callable, Dict, List
 
 security_logger = logging.getLogger("duetmind.security")
 
@@ -40,7 +40,9 @@ class SecurityMonitor:
 
         # Event storage
         self.security_events = deque(maxlen=10000)
-        self.api_usage_patterns = defaultdict(lambda: {"requests": deque(maxlen=1000), "patterns": {}})
+        self.api_usage_patterns = defaultdict(
+            lambda: {"requests": deque(maxlen=1000), "patterns": {}}
+        )
         self.threat_indicators = {}
 
         # Monitoring threads
@@ -252,14 +254,18 @@ class SecurityMonitor:
             request_rate = len(recent_requests) / 60  # requests per minute
             if request_rate > self.alert_thresholds["high_request_rate"]:
                 self.log_security_event(
-                    "high_request_rate", {"user_pattern": user_pattern_key, "rate": request_rate}, severity="warning"
+                    "high_request_rate",
+                    {"user_pattern": user_pattern_key, "rate": request_rate},
+                    severity="warning",
                 )
 
             # Analyze response times
             response_times = [r["response_time"] for r in recent_requests]
             if len(response_times) > 5:
                 avg_response_time = statistics.mean(response_times)
-                std_response_time = statistics.stdev(response_times) if len(response_times) > 1 else 0
+                std_response_time = (
+                    statistics.stdev(response_times) if len(response_times) > 1 else 0
+                )
 
                 # Check for unusual response times
                 for rt in response_times[-10:]:  # Check last 10 requests
@@ -268,7 +274,11 @@ class SecurityMonitor:
                         if z_score > self.alert_thresholds["response_time_anomaly"]:
                             self.log_security_event(
                                 "response_time_anomaly",
-                                {"response_time": rt, "z_score": z_score, "user_pattern": user_pattern_key},
+                                {
+                                    "response_time": rt,
+                                    "z_score": z_score,
+                                    "user_pattern": user_pattern_key,
+                                },
                                 severity="warning",
                             )
 
@@ -278,7 +288,9 @@ class SecurityMonitor:
 
             if error_rate > self.alert_thresholds["error_rate"]:
                 self.log_security_event(
-                    "high_error_rate", {"user_pattern": user_pattern_key, "error_rate": error_rate}, severity="warning"
+                    "high_error_rate",
+                    {"user_pattern": user_pattern_key, "error_rate": error_rate},
+                    severity="warning",
                 )
 
     def _check_threat_indicators(self):
@@ -308,7 +320,11 @@ class SecurityMonitor:
 
     def _trigger_alert(self, alert_data: Dict[str, Any]):
         """Trigger security alert."""
-        alert = {"timestamp": datetime.now(), "alert_data": alert_data, "alert_id": f"alert_{int(time.time())}"}
+        alert = {
+            "timestamp": datetime.now(),
+            "alert_data": alert_data,
+            "alert_id": f"alert_{int(time.time())}",
+        }
 
         security_logger.warning(f"SECURITY ALERT: {json.dumps(alert_data, default=str)}")
 
@@ -385,16 +401,21 @@ class SecurityMonitor:
 
         # Filter events
         self.security_events = deque(
-            [e for e in self.security_events if e["timestamp"] > cutoff_time], maxlen=self.security_events.maxlen
+            [e for e in self.security_events if e["timestamp"] > cutoff_time],
+            maxlen=self.security_events.maxlen,
         )
 
         # Clear old API patterns
         patterns_before = len(self.api_usage_patterns)
         for pattern_key, data in list(self.api_usage_patterns.items()):
             # Keep only recent requests
-            recent_requests = [r for r in data["requests"] if datetime.fromtimestamp(r["timestamp"]) > cutoff_time]
+            recent_requests = [
+                r for r in data["requests"] if datetime.fromtimestamp(r["timestamp"]) > cutoff_time
+            ]
             if recent_requests:
-                self.api_usage_patterns[pattern_key]["requests"] = deque(recent_requests, maxlen=1000)
+                self.api_usage_patterns[pattern_key]["requests"] = deque(
+                    recent_requests, maxlen=1000
+                )
             else:
                 del self.api_usage_patterns[pattern_key]
 
@@ -467,7 +488,9 @@ class AlertDeduplicator:
     def _cleanup_old_alerts(self, current_time: float) -> None:
         """Remove old alert records outside deduplication window."""
         cutoff_time = current_time - (self.dedup_window_seconds * 2)
-        keys_to_remove = [key for key, timestamp in self.recent_alerts.items() if timestamp < cutoff_time]
+        keys_to_remove = [
+            key for key, timestamp in self.recent_alerts.items() if timestamp < cutoff_time
+        ]
 
         for key in keys_to_remove:
             del self.recent_alerts[key]
@@ -509,7 +532,11 @@ class SecurityMetricsAggregator:
             hourly_data[hour_key]["events"] += 1
             hourly_data[hour_key][event["severity"]] += 1
 
-        return {"period_hours": hours, "hourly_breakdown": dict(hourly_data), "total_events": len(recent_events)}
+        return {
+            "period_hours": hours,
+            "hourly_breakdown": dict(hourly_data),
+            "total_events": len(recent_events),
+        }
 
     def get_top_event_types(self, limit: int = 10) -> List[Dict[str, Any]]:
         """

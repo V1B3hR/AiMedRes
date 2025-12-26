@@ -77,49 +77,61 @@ Author: AiMedRes Enhanced
 
 from __future__ import annotations
 
+import base64
+import functools
+import json
+import logging
+import math
 import os
 import re
-import json
-import uuid
-import math
-import time
-import base64
-import logging
 import secrets
-import functools
-from enum import Enum
-from typing import Any, Dict, List, Optional, Iterable, Tuple, Callable, Union, Set
-from datetime import datetime, timedelta, timezone
+import time
+import uuid
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+from enum import Enum
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import numpy as np
 
 try:
     import tensorflow as tf
+
     TF_AVAILABLE = True
 except Exception:
     TF_AVAILABLE = False
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except Exception:
     TORCH_AVAILABLE = False
 
-from pydantic import BaseModel, Field, validator, root_validator
-
+from pydantic import BaseModel, Field, root_validator, validator
+from sqlalchemy import JSON, TIMESTAMP, Boolean, CheckConstraint
+from sqlalchemy import Enum as PgEnum
 from sqlalchemy import (
-    create_engine, text, func, inspect,
-    String, Integer, Float, Text, JSON, TIMESTAMP, ForeignKey, Boolean,
-    Enum as PgEnum, CheckConstraint, UniqueConstraint, event
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    create_engine,
+    event,
+    func,
+    inspect,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 # pgvector (optional)
 try:
     from pgvector.sqlalchemy import Vector as PGVector
+
     PGVECTOR_AVAILABLE = True
 except Exception:
     PGVECTOR_AVAILABLE = False
@@ -127,6 +139,7 @@ except Exception:
 # Cryptography (optional)
 try:
     from cryptography.fernet import Fernet, InvalidToken
+
     CRYPTO_AVAILABLE = True
 except Exception:
     CRYPTO_AVAILABLE = False
@@ -135,8 +148,7 @@ except Exception:
 # Logging & Audit Setup
 # ------------------------------------------------------------------------------
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
-logging.basicConfig(level=LOG_LEVEL,
-                    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+logging.basicConfig(level=LOG_LEVEL, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger("AiMedResMemory")
 
 AUDIT_LOG_PATH = os.getenv("AIMEDRES_AUDIT_LOG", "aimedres_memory_audit.jsonl")
@@ -144,11 +156,7 @@ AUDIT_LOG_PATH = os.getenv("AIMEDRES_AUDIT_LOG", "aimedres_memory_audit.jsonl")
 
 def audit_log(event: str, payload: Dict[str, Any]) -> None:
     try:
-        rec = {
-            "ts": datetime.utcnow().isoformat() + "Z",
-            "event": event,
-            **payload
-        }
+        rec = {"ts": datetime.utcnow().isoformat() + "Z", "event": event, **payload}
         with open(AUDIT_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     except Exception as e:
@@ -186,7 +194,9 @@ class AssociationError(MemoryError):
 # Configuration
 # ------------------------------------------------------------------------------
 class MemoryConfig(BaseModel):
-    database_url: str = Field(default=os.getenv("DATABASE_URL", "postgresql://user:secret@localhost:5432/agentmem"))
+    database_url: str = Field(
+        default=os.getenv("DATABASE_URL", "postgresql://user:secret@localhost:5432/agentmem")
+    )
     embedding_dim: int = Field(default=int(os.getenv("EMBEDDING_DIM", "384")))
     use_async: bool = Field(default=bool(int(os.getenv("AIMEDRES_USE_ASYNC", "0"))))
     enable_encryption: bool = Field(default=bool(int(os.getenv("AIMEDRES_ENCRYPTION", "0"))))
@@ -194,10 +204,16 @@ class MemoryConfig(BaseModel):
     encrypt_metadata: bool = Field(default=bool(int(os.getenv("AIMEDRES_ENCRYPT_METADATA", "0"))))
     enable_dp_noise: bool = Field(default=bool(int(os.getenv("AIMEDRES_DP_NOISE", "0"))))
     dp_noise_scale: float = Field(default=float(os.getenv("AIMEDRES_DP_NOISE_SCALE", "0.02")))
-    allow_hallucination_storage: bool = Field(default=bool(int(os.getenv("AIMEDRES_ALLOW_HALLUCINATION", "0"))))
+    allow_hallucination_storage: bool = Field(
+        default=bool(int(os.getenv("AIMEDRES_ALLOW_HALLUCINATION", "0")))
+    )
     hybrid_search: bool = Field(default=bool(int(os.getenv("AIMEDRES_HYBRID_SEARCH", "1"))))
-    hybrid_semantic_weight: float = Field(default=float(os.getenv("AIMEDRES_HYBRID_SEMANTIC_W", "0.65")))
-    hybrid_keyword_weight: float = Field(default=float(os.getenv("AIMEDRES_HYBRID_KEYWORD_W", "0.35")))
+    hybrid_semantic_weight: float = Field(
+        default=float(os.getenv("AIMEDRES_HYBRID_SEMANTIC_W", "0.65"))
+    )
+    hybrid_keyword_weight: float = Field(
+        default=float(os.getenv("AIMEDRES_HYBRID_KEYWORD_W", "0.35"))
+    )
     association_traversal_depth: int = Field(default=int(os.getenv("AIMEDRES_ASSOC_DEPTH", "1")))
     max_overflow: int = Field(default=int(os.getenv("AIMEDRES_DB_MAX_OVERFLOW", "10")))
     pool_size: int = Field(default=int(os.getenv("AIMEDRES_DB_POOL_SIZE", "5")))
@@ -360,15 +376,24 @@ class AgentSession(Base):
     agent_version: Mapped[str] = mapped_column(String(50), nullable=False, default="1.0")
     session_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="active", index=True)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
+    )
     ended_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
 
 class AgentMemory(Base):
     __tablename__ = "agent_memory"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    session_id: Mapped[str] = mapped_column(UUID(as_uuid=False), ForeignKey("agent_sessions.id", ondelete="CASCADE"), index=True, nullable=False)
-    memory_type: Mapped[MemoryType] = mapped_column(PgEnum(MemoryType, name="memory_type", create_type=False), nullable=False, index=True)
+    session_id: Mapped[str] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("agent_sessions.id", ondelete="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    memory_type: Mapped[MemoryType] = mapped_column(
+        PgEnum(MemoryType, name="memory_type", create_type=False), nullable=False, index=True
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     importance_score: Mapped[float] = mapped_column(Float, nullable=False)
     certainty: Mapped[float] = mapped_column(Float, nullable=False)
@@ -377,13 +402,19 @@ class AgentMemory(Base):
     ethics: Mapped[float] = mapped_column(Float, nullable=False)
     metadata_json: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     expires_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
+    )
     access_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    last_accessed: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    last_accessed: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
     encrypted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     if PGVECTOR_AVAILABLE:
-        embedding: Mapped[Any] = mapped_column(PGVector(int(os.getenv("EMBEDDING_DIM", "384"))), nullable=False)
+        embedding: Mapped[Any] = mapped_column(
+            PGVector(int(os.getenv("EMBEDDING_DIM", "384"))), nullable=False
+        )
     else:
         embedding: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -391,7 +422,9 @@ class AgentMemory(Base):
     # We skip modeling it directly; use SQL for index.
 
     __table_args__ = (
-        CheckConstraint("importance_score >= 0.0 AND importance_score <= 1.0", name="importance_between_0_and_1"),
+        CheckConstraint(
+            "importance_score >= 0.0 AND importance_score <= 1.0", name="importance_between_0_and_1"
+        ),
         CheckConstraint("certainty >= 0.0 AND certainty <= 1.0", name="certainty_between_0_and_1"),
         CheckConstraint("safety >= 0.0 AND safety <= 1.0", name="safety_between_0_and_1"),
         CheckConstraint("security >= 0.0 AND security <= 1.0", name="security_between_0_and_1"),
@@ -401,17 +434,27 @@ class AgentMemory(Base):
 
 class MemoryAssociation(Base):
     __tablename__ = "memory_associations"
-    source_memory_id: Mapped[int] = mapped_column(ForeignKey("agent_memory.id", ondelete="CASCADE"), primary_key=True)
-    target_memory_id: Mapped[int] = mapped_column(ForeignKey("agent_memory.id", ondelete="CASCADE"), primary_key=True)
+    source_memory_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_memory.id", ondelete="CASCADE"), primary_key=True
+    )
+    target_memory_id: Mapped[int] = mapped_column(
+        ForeignKey("agent_memory.id", ondelete="CASCADE"), primary_key=True
+    )
     association_type: Mapped[AssociationType] = mapped_column(
         PgEnum(AssociationType, name="association_type", create_type=False), primary_key=True
     )
     strength: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
-    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
+    )
 
     __table_args__ = (
-        CheckConstraint("strength >= 0.0 AND strength <= 1.0", name="association_strength_between_0_and_1"),
-        UniqueConstraint("source_memory_id", "target_memory_id", "association_type", name="uq_memory_association"),
+        CheckConstraint(
+            "strength >= 0.0 AND strength <= 1.0", name="association_strength_between_0_and_1"
+        ),
+        UniqueConstraint(
+            "source_memory_id", "target_memory_id", "association_type", name="uq_memory_association"
+        ),
     )
 
 
@@ -421,7 +464,10 @@ class MemoryAssociation(Base):
 PHI_PATTERNS = [
     re.compile(r"\b(?:MRN|Medical\s*Record\s*Number)\s*[:#]?\s*\d{5,}\b", re.IGNORECASE),
     re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),  # SSN-like
-    re.compile(r"\b(?:DOB|Date\s*of\s*Birth)\s*[:#]?\s*(?:\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4})\b", re.IGNORECASE),
+    re.compile(
+        r"\b(?:DOB|Date\s*of\s*Birth)\s*[:#]?\s*(?:\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4})\b",
+        re.IGNORECASE,
+    ),
     re.compile(r"\bPatient\s+(?:Name|ID)\s*[:#]?\s*[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b"),
 ]
 
@@ -482,6 +528,7 @@ class TorchFallbackEmbedder(BaseEmbedder):
         if not TORCH_AVAILABLE:
             raise RuntimeError("PyTorch not available")
         import torch.nn as nn
+
         self.proj = nn.Linear(256, dim, bias=False)
         with torch.no_grad():
             self.proj.weight.copy_(torch.randn(dim, 256))
@@ -489,6 +536,7 @@ class TorchFallbackEmbedder(BaseEmbedder):
 
     def encode(self, text: str) -> np.ndarray:
         import torch
+
         vec = torch.zeros(256)
         raw = [float(ord(c)) for c in text[:256]]
         vec[: len(raw)] = torch.tensor(raw)
@@ -559,7 +607,8 @@ def centralized_memory_filter(
     min_ethics: float,
 ) -> List[Dict[str, Any]]:
     return [
-        m for m in memories
+        m
+        for m in memories
         if m["importance_score"] >= min_importance
         and m["certainty"] >= min_certainty
         and (allowed_types is None or m["memory_type"] in allowed_types)
@@ -582,7 +631,9 @@ def timed(op_name: str):
             finally:
                 elapsed = (time.perf_counter() - start) * 1000.0
                 logger.debug(f"{op_name} took {elapsed:.2f}ms")
+
         return wrapper
+
     return deco
 
 
@@ -625,10 +676,18 @@ class CentralizedAgentMemoryStore:
             max_overflow=self.config.max_overflow,
             future=True,
         )
-        self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False, autoflush=False, future=True)
+        self.SessionLocal = sessionmaker(
+            bind=self.engine, expire_on_commit=False, autoflush=False, future=True
+        )
         self.embedder = build_embedder(self.config.embedding_dim)
-        self.encryptor = Encryptor(self.config.encryption_key if self.config.enable_encryption else None)
-        self.embedding_cache = EmbeddingCache(self.config.max_cached_embeddings) if self.config.cache_embeddings else None
+        self.encryptor = Encryptor(
+            self.config.encryption_key if self.config.enable_encryption else None
+        )
+        self.embedding_cache = (
+            EmbeddingCache(self.config.max_cached_embeddings)
+            if self.config.cache_embeddings
+            else None
+        )
 
         self._ensure_enums()
         self._create_schema()
@@ -644,7 +703,9 @@ class CentralizedAgentMemoryStore:
         # Enum creation is outside ORM create_all if create_type=False
         with self.engine.begin() as conn:
             # memory_type
-            conn.execute(text("""
+            conn.execute(
+                text(
+                    """
                 DO $$
                 BEGIN
                     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'memory_type') THEN
@@ -661,7 +722,9 @@ class CentralizedAgentMemoryStore:
                         );
                     END IF;
                 END$$;
-            """))
+            """
+                )
+            )
 
             if PGVECTOR_AVAILABLE:
                 conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
@@ -672,11 +735,15 @@ class CentralizedAgentMemoryStore:
     def _ensure_keyword_index(self):
         # Create a tsvector index for keyword search if missing
         with self.engine.begin() as conn:
-            conn.execute(text("""
+            conn.execute(
+                text(
+                    """
             CREATE INDEX IF NOT EXISTS agent_memory_content_fts_idx
             ON agent_memory
             USING GIN (to_tsvector('english', content));
-            """))
+            """
+                )
+            )
 
     # ------------------------------------------------------------------
     # Session Context
@@ -719,11 +786,13 @@ class CentralizedAgentMemoryStore:
             raise PolicyViolation("Hallucination memories are not allowed.")
 
         if cfg.enforce_min_thresholds:
-            if (mc.importance < cfg.min_importance or
-                mc.certainty < cfg.min_certainty or
-                mc.safety < cfg.min_safety or
-                mc.security < cfg.min_security or
-                mc.ethics < cfg.min_ethics):
+            if (
+                mc.importance < cfg.min_importance
+                or mc.certainty < cfg.min_certainty
+                or mc.safety < cfg.min_safety
+                or mc.security < cfg.min_security
+                or mc.ethics < cfg.min_ethics
+            ):
                 raise PolicyViolation("Memory does not meet minimum thresholds for storage.")
 
     # ------------------------------------------------------------------
@@ -739,7 +808,11 @@ class CentralizedAgentMemoryStore:
             content, phi_redacted = redact_phi(content, self.config.phi_placeholder)
 
         # DP noise (only on importance)
-        importance = add_laplace_noise(mc.importance, self.config.dp_noise_scale) if self.config.enable_dp_noise else mc.importance
+        importance = (
+            add_laplace_noise(mc.importance, self.config.dp_noise_scale)
+            if self.config.enable_dp_noise
+            else mc.importance
+        )
 
         embedding = self._embed(content)
         expires_at = None
@@ -772,20 +845,25 @@ class CentralizedAgentMemoryStore:
                     ethics=mc.ethics,
                     metadata_json=store_metadata,
                     expires_at=expires_at,
-                    embedding=embedding.tolist() if PGVECTOR_AVAILABLE else json.dumps(embedding.tolist()),
-                    encrypted=encrypted_flag
+                    embedding=(
+                        embedding.tolist() if PGVECTOR_AVAILABLE else json.dumps(embedding.tolist())
+                    ),
+                    encrypted=encrypted_flag,
                 )
                 db.add(mem)
                 db.flush()
                 memory_id = int(mem.id)
-            audit_log("STORE", {
-                "memory_id": memory_id,
-                "session_id": mc.session_id,
-                "type": mc.memory_type.value,
-                "importance": importance,
-                "certainty": mc.certainty,
-                "phi_redacted": phi_redacted
-            })
+            audit_log(
+                "STORE",
+                {
+                    "memory_id": memory_id,
+                    "session_id": mc.session_id,
+                    "type": mc.memory_type.value,
+                    "importance": importance,
+                    "certainty": mc.certainty,
+                    "phi_redacted": phi_redacted,
+                },
+            )
             return memory_id
         except SQLAlchemyError as e:
             audit_log("ERROR", {"action": "store_memory", "error": str(e)})
@@ -824,7 +902,7 @@ class CentralizedAgentMemoryStore:
                     params = {
                         "session_id": rq.session_id,
                         "query_embedding": query_embedding.tolist(),
-                        "limit": candidate_limit
+                        "limit": candidate_limit,
                     }
                     sem_sql = """
                         SELECT id, content, memory_type, importance_score, certainty,
@@ -843,7 +921,7 @@ class CentralizedAgentMemoryStore:
                 kw_params = {
                     "session_id": rq.session_id,
                     "query": rq.query,
-                    "limit": candidate_limit
+                    "limit": candidate_limit,
                 }
                 kw_sql = """
                     SELECT id, content, memory_type, importance_score, certainty,
@@ -867,7 +945,11 @@ class CentralizedAgentMemoryStore:
                     # Merge candidate sets by id
                     row_map = {}
                     for r in semantic_candidates:
-                        row_map[r.id] = {"row": r, "semantic": 1.0 - float(getattr(r, "distance", 0.0)), "keyword": None}
+                        row_map[r.id] = {
+                            "row": r,
+                            "semantic": 1.0 - float(getattr(r, "distance", 0.0)),
+                            "keyword": None,
+                        }
                     for r in keyword_candidates:
                         entry = row_map.get(r.id)
                         kw_score = float(getattr(r, "kw_score", 0.0))
@@ -907,8 +989,14 @@ class CentralizedAgentMemoryStore:
                         memories.append(mem)
                 else:
                     for r in rows:  # type: ignore
-                        similarity = 1.0 - float(getattr(r, "distance", 0.0)) if hasattr(r, "distance") else None
-                        kw_score = float(getattr(r, "kw_score", 0.0)) if hasattr(r, "kw_score") else None
+                        similarity = (
+                            1.0 - float(getattr(r, "distance", 0.0))
+                            if hasattr(r, "distance")
+                            else None
+                        )
+                        kw_score = (
+                            float(getattr(r, "kw_score", 0.0)) if hasattr(r, "kw_score") else None
+                        )
                         mem = {
                             "id": int(r.id),
                             "content": r.content,
@@ -923,7 +1011,7 @@ class CentralizedAgentMemoryStore:
                             "access_count": int(r.access_count),
                             "last_accessed": r.last_accessed,
                             "similarity": similarity,
-                            "keyword_score": kw_score
+                            "keyword_score": kw_score,
                         }
                         memories.append(mem)
 
@@ -951,7 +1039,7 @@ class CentralizedAgentMemoryStore:
                     allowed_types=allowed_types,
                     min_safety=min_safety,
                     min_security=min_security,
-                    min_ethics=min_ethics
+                    min_ethics=min_ethics,
                 )
 
                 # Hybrid scoring
@@ -962,41 +1050,68 @@ class CentralizedAgentMemoryStore:
                         s = m.get("similarity") or 0.0
                         k = m.get("keyword_score") or 0.0
                         m["hybrid_score"] = sem_w * s + kw_w * k
-                    filtered.sort(key=lambda m: (m.get("hybrid_score", 0.0), m["importance_score"]), reverse=True)
+                    filtered.sort(
+                        key=lambda m: (m.get("hybrid_score", 0.0), m["importance_score"]),
+                        reverse=True,
+                    )
                 else:
                     # fallback sort by similarity then importance
-                    filtered.sort(key=lambda m: ((m.get("similarity") or 0.0), m["importance_score"]), reverse=True)
+                    filtered.sort(
+                        key=lambda m: ((m.get("similarity") or 0.0), m["importance_score"]),
+                        reverse=True,
+                    )
 
                 top = filtered[:limit]
 
                 # Optionally incorporate associations (expand results)
                 if rq.include_associations and cfg.association_traversal_depth > 0:
-                    depth = rq.association_depth if rq.association_depth is not None else cfg.association_traversal_depth
-                    assoc_expanded = self._expand_with_associations(db, top, depth, limit, allowed_types,
-                                                                    min_importance, min_certainty,
-                                                                    min_safety, min_security, min_ethics)
+                    depth = (
+                        rq.association_depth
+                        if rq.association_depth is not None
+                        else cfg.association_traversal_depth
+                    )
+                    assoc_expanded = self._expand_with_associations(
+                        db,
+                        top,
+                        depth,
+                        limit,
+                        allowed_types,
+                        min_importance,
+                        min_certainty,
+                        min_safety,
+                        min_security,
+                        min_ethics,
+                    )
                     top_ids = {m["id"] for m in top}
                     for extra in assoc_expanded:
                         if extra["id"] not in top_ids:
                             top.append(extra)
                     # Resort after expansion
                     if hybrid:
-                        top.sort(key=lambda m: (m.get("hybrid_score", 0.0), m["importance_score"]), reverse=True)
+                        top.sort(
+                            key=lambda m: (m.get("hybrid_score", 0.0), m["importance_score"]),
+                            reverse=True,
+                        )
                     else:
-                        top.sort(key=lambda m: ((m.get("similarity") or 0.0), m["importance_score"]), reverse=True)
+                        top.sort(
+                            key=lambda m: ((m.get("similarity") or 0.0), m["importance_score"]),
+                            reverse=True,
+                        )
                     top = top[:limit]
 
                 # Promote retrieval side-effects (access_count / last_accessed)
                 ids = [m["id"] for m in top]
                 if ids:
                     db.execute(
-                        text("""
+                        text(
+                            """
                         UPDATE agent_memory
                         SET access_count = access_count + 1,
                             last_accessed = NOW()
                         WHERE id = ANY(:ids)
-                        """),
-                        {"ids": ids}
+                        """
+                        ),
+                        {"ids": ids},
                     )
 
                 result_models: List[RetrievedMemoryModel] = [
@@ -1016,17 +1131,20 @@ class CentralizedAgentMemoryStore:
                         similarity=m.get("similarity"),
                         keyword_score=m.get("keyword_score"),
                         hybrid_score=m.get("hybrid_score"),
-                        association_path=m.get("association_path")
+                        association_path=m.get("association_path"),
                     )
                     for m in top
                 ]
 
-            audit_log("RETRIEVE", {
-                "session_id": rq.session_id,
-                "query": rq.query,
-                "returned": len(result_models),
-                "hybrid": hybrid
-            })
+            audit_log(
+                "RETRIEVE",
+                {
+                    "session_id": rq.session_id,
+                    "query": rq.query,
+                    "returned": len(result_models),
+                    "hybrid": hybrid,
+                },
+            )
             return result_models
         except SQLAlchemyError as e:
             audit_log("ERROR", {"action": "retrieve_memories", "error": str(e)})
@@ -1037,10 +1155,17 @@ class CentralizedAgentMemoryStore:
     # Association Expansion
     # ------------------------------------------------------------------
     def _expand_with_associations(
-        self, db, base_list: List[Dict[str, Any]], depth: int, limit: int,
+        self,
+        db,
+        base_list: List[Dict[str, Any]],
+        depth: int,
+        limit: int,
         allowed_types: Optional[Iterable[str]],
-        min_importance: float, min_certainty: float,
-        min_safety: float, min_security: float, min_ethics: float
+        min_importance: float,
+        min_certainty: float,
+        min_safety: float,
+        min_security: float,
+        min_ethics: float,
     ) -> List[Dict[str, Any]]:
         if depth <= 0:
             return []
@@ -1052,7 +1177,8 @@ class CentralizedAgentMemoryStore:
             next_frontier = []
             for mem_id, path in frontier:
                 assoc_rows = db.execute(
-                    text("""
+                    text(
+                        """
                         SELECT target_memory_id, strength
                         FROM memory_associations
                         WHERE source_memory_id = :id
@@ -1060,8 +1186,9 @@ class CentralizedAgentMemoryStore:
                         SELECT source_memory_id, strength
                         FROM memory_associations
                         WHERE target_memory_id = :id
-                    """),
-                    {"id": mem_id}
+                    """
+                    ),
+                    {"id": mem_id},
                 ).fetchall()
                 for r in assoc_rows:
                     target_id = int(r.target_memory_id)
@@ -1070,15 +1197,17 @@ class CentralizedAgentMemoryStore:
                     visited.add(target_id)
                     # Fetch memory row
                     row = db.execute(
-                        text("""
+                        text(
+                            """
                         SELECT id, content, memory_type, importance_score, certainty,
                                safety, security, ethics, metadata_json, created_at,
                                access_count, last_accessed
                         FROM agent_memory
                         WHERE id=:id
                           AND (expires_at IS NULL OR expires_at > NOW())
-                        """),
-                        {"id": target_id}
+                        """
+                        ),
+                        {"id": target_id},
                     ).fetchone()
                     if not row:
                         continue
@@ -1098,7 +1227,7 @@ class CentralizedAgentMemoryStore:
                         "similarity": None,
                         "keyword_score": None,
                         "hybrid_score": None,
-                        "association_path": path + [target_id]
+                        "association_path": path + [target_id],
                     }
                     # Decrypt
                     if self.encryptor.enabled:
@@ -1117,7 +1246,7 @@ class CentralizedAgentMemoryStore:
                         allowed_types=allowed_types,
                         min_safety=min_safety,
                         min_security=min_security,
-                        min_ethics=min_ethics
+                        min_ethics=min_ethics,
                     )
                     if allowed:
                         expansions.append(mem)
@@ -1138,18 +1267,30 @@ class CentralizedAgentMemoryStore:
         source_memory_id: int,
         target_memory_id: int,
         association_type: AssociationType,
-        strength: float = 1.0
+        strength: float = 1.0,
     ) -> None:
-        if not (self.config.association_strength_min <= strength <= self.config.association_strength_max):
+        if not (
+            self.config.association_strength_min <= strength <= self.config.association_strength_max
+        ):
             raise AssociationError("Strength out of bounds.")
         try:
             with self.session_scope() as db:
-                s = db.execute(text("""
+                s = db.execute(
+                    text(
+                        """
                     SELECT certainty, safety, security, ethics FROM agent_memory WHERE id=:id
-                """), {"id": source_memory_id}).fetchone()
-                t = db.execute(text("""
+                """
+                    ),
+                    {"id": source_memory_id},
+                ).fetchone()
+                t = db.execute(
+                    text(
+                        """
                     SELECT certainty, safety, security, ethics FROM agent_memory WHERE id=:id
-                """), {"id": target_memory_id}).fetchone()
+                """
+                    ),
+                    {"id": target_memory_id},
+                ).fetchone()
                 if not s or not t:
                     raise AssociationError("Source or target memory not found.")
                 for field, minv in [
@@ -1161,21 +1302,30 @@ class CentralizedAgentMemoryStore:
                     if float(s[field]) < minv or float(t[field]) < minv:
                         raise PolicyViolation(f"Association blocked: {field} below threshold.")
                 db.execute(
-                    text("""
+                    text(
+                        """
                         INSERT INTO memory_associations (source_memory_id, target_memory_id, association_type, strength)
                         VALUES (:source, :target, :type, :strength)
                         ON CONFLICT (source_memory_id, target_memory_id, association_type)
                         DO UPDATE SET strength = EXCLUDED.strength
-                    """),
-                    {"source": source_memory_id, "target": target_memory_id,
-                     "type": association_type.value, "strength": strength}
+                    """
+                    ),
+                    {
+                        "source": source_memory_id,
+                        "target": target_memory_id,
+                        "type": association_type.value,
+                        "strength": strength,
+                    },
                 )
-            audit_log("ASSOCIATE", {
-                "source": source_memory_id,
-                "target": target_memory_id,
-                "type": association_type.value,
-                "strength": strength
-            })
+            audit_log(
+                "ASSOCIATE",
+                {
+                    "source": source_memory_id,
+                    "target": target_memory_id,
+                    "type": association_type.value,
+                    "strength": strength,
+                },
+            )
         except SQLAlchemyError as e:
             audit_log("ERROR", {"action": "create_memory_association", "error": str(e)})
             logger.exception("Failed to create association")
@@ -1184,19 +1334,26 @@ class CentralizedAgentMemoryStore:
     # ------------------------------------------------------------------
     # Utility: Create Session
     # ------------------------------------------------------------------
-    def create_session(self, agent_name: str, agent_version: str = "1.0", metadata: Optional[Dict[str, Any]] = None) -> str:
+    def create_session(
+        self, agent_name: str, agent_version: str = "1.0", metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         session_id = str(uuid.uuid4())
         md = metadata or {}
         try:
             with self.session_scope() as db:
-                db.add(AgentSession(
-                    id=session_id,
-                    agent_name=agent_name,
-                    agent_version=agent_version,
-                    session_metadata=md,
-                    status="active"
-                ))
-            audit_log("SESSION_CREATE", {"session_id": session_id, "agent": agent_name, "version": agent_version})
+                db.add(
+                    AgentSession(
+                        id=session_id,
+                        agent_name=agent_name,
+                        agent_version=agent_version,
+                        session_metadata=md,
+                        status="active",
+                    )
+                )
+            audit_log(
+                "SESSION_CREATE",
+                {"session_id": session_id, "agent": agent_name, "version": agent_version},
+            )
             return session_id
         except SQLAlchemyError as e:
             audit_log("ERROR", {"action": "create_session", "error": str(e)})
@@ -1209,12 +1366,14 @@ class CentralizedAgentMemoryStore:
         try:
             with self.session_scope() as db:
                 res = db.execute(
-                    text("""
+                    text(
+                        """
                     DELETE FROM agent_memory
                     WHERE expires_at IS NOT NULL
                       AND expires_at <= NOW()
                     RETURNING id
-                    """)
+                    """
+                    )
                 )
                 deleted = len(res.fetchall())
             audit_log("PURGE_EXPIRED", {"count": deleted})
@@ -1234,14 +1393,14 @@ class CentralizedAgentMemoryStore:
                 "db": "ok",
                 "pgvector": PGVECTOR_AVAILABLE,
                 "encryption": self.encryptor.enabled,
-                "embedding_backend": self.embedder.__class__.__name__
+                "embedding_backend": self.embedder.__class__.__name__,
             }
         except Exception as e:
             return {
                 "db": "error",
                 "error": str(e),
                 "pgvector": PGVECTOR_AVAILABLE,
-                "encryption": self.encryptor.enabled
+                "encryption": self.encryptor.enabled,
             }
 
 
@@ -1253,47 +1412,54 @@ if __name__ == "__main__":
     config = MemoryConfig()
     store = CentralizedAgentMemoryStore(config=config)
 
-    session_id = store.create_session(agent_name="ClinicalAgent", agent_version="2.0",
-                                      metadata={"role": "research_assistant"})
+    session_id = store.create_session(
+        agent_name="ClinicalAgent", agent_version="2.0", metadata={"role": "research_assistant"}
+    )
 
     # Store safe memory
-    mem_id = store.store_memory(MemoryCreate(
-        session_id=session_id,
-        content="Patient with chronic hypertension treated with ACE inhibitor lisinopril. MRN: 12345678",
-        memory_type=MemoryType.knowledge,
-        importance=0.92,
-        certainty=0.96,
-        safety=0.95,
-        security=0.92,
-        ethics=0.97,
-        metadata={"source": "EHR", "tags": ["hypertension", "lisinopril"]}
-    ))
+    mem_id = store.store_memory(
+        MemoryCreate(
+            session_id=session_id,
+            content="Patient with chronic hypertension treated with ACE inhibitor lisinopril. MRN: 12345678",
+            memory_type=MemoryType.knowledge,
+            importance=0.92,
+            certainty=0.96,
+            safety=0.95,
+            security=0.92,
+            ethics=0.97,
+            metadata={"source": "EHR", "tags": ["hypertension", "lisinopril"]},
+        )
+    )
     logger.info(f"Stored memory id={mem_id}")
 
     # Attempt hallucination (should fail unless allowed)
     try:
-        store.store_memory(MemoryCreate(
-            session_id=session_id,
-            content="Magical cure discovered with 0.1 mg unicorn serum daily.",
-            memory_type=MemoryType.hallucination,
-            importance=0.8,
-            certainty=0.4,
-            safety=0.5,
-            security=0.8,
-            ethics=0.6,
-            metadata={"source": "unverified"}
-        ))
+        store.store_memory(
+            MemoryCreate(
+                session_id=session_id,
+                content="Magical cure discovered with 0.1 mg unicorn serum daily.",
+                memory_type=MemoryType.hallucination,
+                importance=0.8,
+                certainty=0.4,
+                safety=0.5,
+                security=0.8,
+                ethics=0.6,
+                metadata={"source": "unverified"},
+            )
+        )
     except PolicyViolation as e:
         logger.warning(f"Blocked hallucination memory: {e}")
 
     # Retrieval
-    results = store.retrieve_memories(MemoryRetrieveQuery(
-        session_id=session_id,
-        query="hypertension ACE inhibitor",
-        limit=5,
-        allowed_types=[MemoryType.knowledge, MemoryType.reasoning],
-        include_associations=True
-    ))
+    results = store.retrieve_memories(
+        MemoryRetrieveQuery(
+            session_id=session_id,
+            query="hypertension ACE inhibitor",
+            limit=5,
+            allowed_types=[MemoryType.knowledge, MemoryType.reasoning],
+            include_associations=True,
+        )
+    )
     for r in results:
         logger.info(
             f"Retrieved id={r.id} type={r.memory_type.value} imp={r.importance_score:.2f} "
@@ -1301,25 +1467,26 @@ if __name__ == "__main__":
         )
 
     # Create association (self-association example with another memory)
-    mem2_id = store.store_memory(MemoryCreate(
-        session_id=session_id,
-        content="Lisinopril is an ACE inhibitor commonly used for managing hypertension.",
-        memory_type=MemoryType.knowledge,
-        importance=0.85,
-        certainty=0.93,
-        safety=0.95,
-        security=0.9,
-        ethics=0.95,
-        metadata={"source": "drug_database"}
-    ))
+    mem2_id = store.store_memory(
+        MemoryCreate(
+            session_id=session_id,
+            content="Lisinopril is an ACE inhibitor commonly used for managing hypertension.",
+            memory_type=MemoryType.knowledge,
+            importance=0.85,
+            certainty=0.93,
+            safety=0.95,
+            security=0.9,
+            ethics=0.95,
+            metadata={"source": "drug_database"},
+        )
+    )
     store.create_memory_association(mem_id, mem2_id, AssociationType.supports, strength=0.9)
 
-    assoc_results = store.retrieve_memories(MemoryRetrieveQuery(
-        session_id=session_id,
-        query="lisinopril",
-        limit=5,
-        include_associations=True
-    ))
+    assoc_results = store.retrieve_memories(
+        MemoryRetrieveQuery(
+            session_id=session_id, query="lisinopril", limit=5, include_associations=True
+        )
+    )
     for r in assoc_results:
         logger.info(
             f"[Assoc Retrieval] id={r.id} type={r.memory_type.value} path={r.association_path} content={r.content}"

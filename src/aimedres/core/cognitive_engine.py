@@ -12,22 +12,22 @@ Key improvements:
 
 from __future__ import annotations
 
+import logging
 import math
 import random
-import uuid
-import logging
 import threading
-from collections import deque, Counter
+import uuid
+from collections import Counter, deque
 from dataclasses import dataclass
 from typing import (
-    Dict,
     Any,
+    Callable,
+    Dict,
+    Iterable,
     List,
     Optional,
-    Callable,
-    Iterable,
-    Tuple,
     Protocol,
+    Tuple,
 )
 
 import numpy as np
@@ -42,6 +42,7 @@ logger = logging.getLogger("UnifiedLabyrinth")
 # ======================================================================================
 # Configuration Dataclasses
 # ======================================================================================
+
 
 @dataclass
 class MemoryConfig:
@@ -80,6 +81,7 @@ class InterventionPolicy:
 # Memory Model
 # ======================================================================================
 
+
 @dataclass
 class Memory:
     content: Any
@@ -100,12 +102,16 @@ class Memory:
 
         if abs(self.emotional_valence) > config.emotional_decay_bonus_threshold:
             # Increase persistence when strong valence
-            bonus = (abs(self.emotional_valence) - config.emotional_decay_bonus_threshold) * config.emotional_decay_bonus_scale
+            bonus = (
+                abs(self.emotional_valence) - config.emotional_decay_bonus_threshold
+            ) * config.emotional_decay_bonus_scale
             self.decay_rate = min(config.emotional_decay_rate_max, self.decay_rate + bonus)
 
         if config.adaptive_decay_by_access and self.access_count > 5:
             # Mild penalty for very frequently accessed memories to encourage diversity
-            self.decay_rate = max(0.01, self.decay_rate - (self.access_count * config.access_decay_penalty))
+            self.decay_rate = max(
+                0.01, self.decay_rate - (self.access_count * config.access_decay_penalty)
+            )
 
         self.importance *= self.decay_rate
         logger.debug(
@@ -123,6 +129,7 @@ class Memory:
 # ======================================================================================
 # Social Signal
 # ======================================================================================
+
 
 class SocialSignal:
     def __init__(
@@ -147,12 +154,15 @@ class SocialSignal:
 # Capacitor
 # ======================================================================================
 
+
 class CapacitorInSpace:
     """
     A spatial energy storage element.
     """
 
-    def __init__(self, position: Iterable[float], capacity: float = 5.0, initial_energy: float = 0.0):
+    def __init__(
+        self, position: Iterable[float], capacity: float = 5.0, initial_energy: float = 0.0
+    ):
         self.position = np.array(list(position), dtype=float)
         self.capacity = max(0.0, capacity)
         self.energy = min(max(0.0, initial_energy), self.capacity)
@@ -179,10 +189,12 @@ class CapacitorInSpace:
 # Alive Loop Node
 # ======================================================================================
 
+
 class AliveLoopNode:
     """
     Represents a 'living' node with a simple internal reasoning tick.
     """
+
     sleep_stages = ["light", "REM", "deep"]
 
     def __init__(
@@ -205,8 +217,12 @@ class AliveLoopNode:
         self.phase_history: deque[str] = deque(maxlen=24)
 
         # Memory systems
-        self.memory: deque[Memory] = deque(maxlen=(memory_config.max_short_term if memory_config else 1000))
-        self.working_memory: deque[Memory] = deque(maxlen=(memory_config.working_memory_limit if memory_config else 7))
+        self.memory: deque[Memory] = deque(
+            maxlen=(memory_config.max_short_term if memory_config else 1000)
+        )
+        self.working_memory: deque[Memory] = deque(
+            maxlen=(memory_config.working_memory_limit if memory_config else 7)
+        )
         self.long_term_memory: Dict[str, List[Memory]] = {}
 
         self.communication_queue: deque[SocialSignal] = deque(maxlen=20)
@@ -315,6 +331,7 @@ class AliveLoopNode:
 # Shared Resource Room
 # ======================================================================================
 
+
 class ResourceRoom:
     def __init__(self):
         self.resources: Dict[str, Dict[str, Any]] = {}
@@ -329,6 +346,7 @@ class ResourceRoom:
 # ======================================================================================
 # Network Metrics & Analytics
 # ======================================================================================
+
 
 class NetworkMetrics:
     """
@@ -378,14 +396,15 @@ class NetworkMetrics:
 # MazeMaster Intervention Plugins
 # ======================================================================================
 
+
 class InterventionPlugin(Protocol):
     """
     Protocol for dynamic intervention strategies.
     """
+
     name: str
 
-    def evaluate(self, agent: "UnifiedAdaptiveAgent") -> Optional[Dict[str, Any]]:
-        ...
+    def evaluate(self, agent: "UnifiedAdaptiveAgent") -> Optional[Dict[str, Any]]: ...
 
 
 @dataclass
@@ -406,6 +425,7 @@ class DefaultAdvicePlugin:
 # ======================================================================================
 # MazeMaster
 # ======================================================================================
+
 
 class MazeMaster:
     """
@@ -457,7 +477,10 @@ class MazeMaster:
             for plugin in self.plugins.values():
                 out = plugin.evaluate(agent)
                 if out:
-                    agent.log_event(f"MazeMaster plugin {plugin.name}: {out['message']}", category="intervention")
+                    agent.log_event(
+                        f"MazeMaster plugin {plugin.name}: {out['message']}",
+                        category="intervention",
+                    )
                     return out
             return self._fallback_advice(agent)
         return {"action": "none"}
@@ -466,12 +489,15 @@ class MazeMaster:
         for agent in agents:
             action = self.intervene(agent)
             if action["action"] != "none":
-                agent.log_event(f"MazeMaster intervention: {action['message']}", category="intervention")
+                agent.log_event(
+                    f"MazeMaster intervention: {action['message']}", category="intervention"
+                )
 
 
 # ======================================================================================
 # Unified Adaptive Agent
 # ======================================================================================
+
 
 class UnifiedAdaptiveAgent:
     """
@@ -523,7 +549,9 @@ class UnifiedAdaptiveAgent:
                 return self._reason_impl(task, temperature, max_tokens, trace_id)
         return self._reason_impl(task, temperature, max_tokens, trace_id)
 
-    def _reason_impl(self, task: str, temperature: float, max_tokens: int, trace_id: Optional[str]) -> Dict[str, Any]:
+    def _reason_impl(
+        self, task: str, temperature: float, max_tokens: int, trace_id: Optional[str]
+    ) -> Dict[str, Any]:
         if self._cfg.enable_tracing and trace_id is None:
             trace_id = str(uuid.uuid4())
         result = self.alive_node.safe_think(
@@ -549,9 +577,13 @@ class UnifiedAdaptiveAgent:
     def _update_confusion_and_entropy(self, result: Dict[str, Any]):
         conf = result.get("confidence", 0.5)
         if conf < self._cfg.low_confidence_threshold:
-            self.confusion_level = min(1.0, self.confusion_level + self._cfg.confusion_increase_step)
+            self.confusion_level = min(
+                1.0, self.confusion_level + self._cfg.confusion_increase_step
+            )
         elif conf > self._cfg.high_confidence_threshold:
-            self.confusion_level = max(0.0, self.confusion_level - self._cfg.confusion_decrease_step)
+            self.confusion_level = max(
+                0.0, self.confusion_level - self._cfg.confusion_decrease_step
+            )
 
         # Update entropy based on style usage distribution (incremental)
         self.style_cache.extend(result.get("style_insights", []))
@@ -561,7 +593,9 @@ class UnifiedAdaptiveAgent:
             probs = [c / total for c in counts.values()]
             new_entropy = -sum(p * math.log2(p) for p in probs if p > 0)
             # Simple smoothing
-            self.entropy = (1 - self._cfg.entropy_smoothing) * self.entropy + self._cfg.entropy_smoothing * new_entropy
+            self.entropy = (
+                1 - self._cfg.entropy_smoothing
+            ) * self.entropy + self._cfg.entropy_smoothing * new_entropy
 
     # ---------------- Resource Room ----------------
 
@@ -634,6 +668,7 @@ class UnifiedAdaptiveAgent:
 # Utilities
 # ======================================================================================
 
+
 def set_global_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed % (2**32 - 1))
@@ -665,4 +700,5 @@ __all__ = [
 # NOTE: run_labyrinth_simulation function still lives in labyrinth_simulation.py
 if __name__ == "__main__":
     from labyrinth_simulation import run_labyrinth_simulation  # noqa: E402
+
     run_labyrinth_simulation()

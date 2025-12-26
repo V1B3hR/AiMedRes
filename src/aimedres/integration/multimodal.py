@@ -4,30 +4,36 @@ Multi-modal Data Integration System for Advanced Medical Data Processing
 Supports imaging, genetic, longitudinal data and privacy-preserving federated learning
 """
 
-import numpy as np
-import pandas as pd
+import hashlib
+import json
 import logging
-from typing import Dict, List, Any, Optional, Union, Tuple
+import pickle
+from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-import pickle
-import json
-import hashlib
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-import kagglehub
-from contextlib import contextmanager
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-# Machine learning imports
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.decomposition import PCA
+import kagglehub
+import numpy as np
+import pandas as pd
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # Import base components
 from data_loaders import DataLoader
+
+try:
+    import mlflow
+    HAS_MLFLOW = True
+except ImportError:
+    HAS_MLFLOW = False
+    mlflow = None  # type: ignore
 
 logger = logging.getLogger("MultimodalDataIntegration")
 
@@ -320,11 +326,11 @@ class DataFusionProcessor:
         if use_mlflow:
             import mlflow
             import mlflow.sklearn
-            mlflow.set_experiment(mlflow_experiment)
+            mlflow.set_experiment(mlflow_experiment)  # noqa: F821
         
         # Use MLflow context if enabled
         if use_mlflow:
-            with mlflow.start_run():
+            with mlflow.start_run():  # noqa: F821
                 return self._perform_late_fusion_with_mlflow(data_dict, target_column, True)
         else:
             return self._perform_late_fusion_with_mlflow(data_dict, target_column, False)
@@ -335,9 +341,9 @@ class DataFusionProcessor:
         """Internal method to perform late fusion with optional MLflow logging."""
         
         if use_mlflow:
-            mlflow.log_param("fusion_type", "late_fusion")
-            mlflow.log_param("num_modalities", len(data_dict))
-            mlflow.log_param("modalities", list(data_dict.keys()))
+            mlflow.log_param("fusion_type", "late_fusion")  # noqa: F821
+            mlflow.log_param("num_modalities", len(data_dict))  # noqa: F821
+            mlflow.log_param("modalities", list(data_dict.keys()))  # noqa: F821
         
         modality_models = {}
         modality_predictions = {}
@@ -355,8 +361,8 @@ class DataFusionProcessor:
             y = data[target_column]
             
             if use_mlflow:
-                mlflow.log_param(f"{modality_name}_features", X.shape[1])
-                mlflow.log_param(f"{modality_name}_samples", X.shape[0])
+                mlflow.log_param(f"{modality_name}_features", X.shape[1])  # noqa: F821
+                mlflow.log_param(f"{modality_name}_samples", X.shape[0])  # noqa: F821
             
             # Handle categorical variables
             categorical_columns = X.select_dtypes(include=['object']).columns
@@ -388,10 +394,10 @@ class DataFusionProcessor:
             }
             
             if use_mlflow:
-                mlflow.log_metric(f"{modality_name}_accuracy", accuracy)
-                mlflow.log_metric(f"{modality_name}_precision", report['weighted avg']['precision'])
-                mlflow.log_metric(f"{modality_name}_recall", report['weighted avg']['recall'])
-                mlflow.log_metric(f"{modality_name}_f1", report['weighted avg']['f1-score'])
+                mlflow.log_metric(f"{modality_name}_accuracy", accuracy)  # noqa: F821
+                mlflow.log_metric(f"{modality_name}_precision", report['weighted avg']['precision'])  # noqa: F821
+                mlflow.log_metric(f"{modality_name}_recall", report['weighted avg']['recall'])  # noqa: F821
+                mlflow.log_metric(f"{modality_name}_f1", report['weighted avg']['f1-score'])  # noqa: F821
             
             modality_models[modality_name] = model
             modality_predictions[modality_name] = y_pred_proba
@@ -418,16 +424,16 @@ class DataFusionProcessor:
                 }
                 
                 if use_mlflow:
-                    mlflow.log_metric("ensemble_accuracy", ensemble_accuracy)
-                    mlflow.log_metric("ensemble_precision", ensemble_report['weighted avg']['precision'])
-                    mlflow.log_metric("ensemble_recall", ensemble_report['weighted avg']['recall'])
-                    mlflow.log_metric("ensemble_f1", ensemble_report['weighted avg']['f1-score'])
+                    mlflow.log_metric("ensemble_accuracy", ensemble_accuracy)  # noqa: F821
+                    mlflow.log_metric("ensemble_precision", ensemble_report['weighted avg']['precision'])  # noqa: F821
+                    mlflow.log_metric("ensemble_recall", ensemble_report['weighted avg']['recall'])  # noqa: F821
+                    mlflow.log_metric("ensemble_f1", ensemble_report['weighted avg']['f1-score'])  # noqa: F821
                     
                     # Log the ensemble as an artifact
                     import joblib
                     ensemble_path = "ensemble_models.pkl"
                     joblib.dump(modality_models, ensemble_path)
-                    mlflow.log_artifact(ensemble_path)
+                    mlflow.log_artifact(ensemble_path)  # noqa: F821
                 
                 logger.info(f"Ensemble - Accuracy: {ensemble_accuracy:.4f}")
             

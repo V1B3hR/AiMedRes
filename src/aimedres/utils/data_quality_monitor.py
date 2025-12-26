@@ -4,11 +4,12 @@ Data Validation and Quality Monitoring for aimedres
 Comprehensive data quality checks and monitoring for training and simulation
 """
 
-import pandas as pd
-import numpy as np
 import logging
-from typing import Dict, List, Any
 from datetime import datetime
+from typing import Any, Dict, List
+
+import numpy as np
+import pandas as pd
 
 # Optional visualization imports
 try:
@@ -66,7 +67,9 @@ class DataQualityMonitor:
         report["recommendations"] = self._generate_recommendations(report)
 
         self.quality_report = report
-        logger.info(f"Data quality validation complete. Overall score: {report['overall_score']:.3f}")
+        logger.info(
+            f"Data quality validation complete. Overall score: {report['overall_score']:.3f}"
+        )
 
         return report
 
@@ -132,7 +135,9 @@ class DataQualityMonitor:
         if "EDUC" in df.columns:
             invalid_education = df[(df["EDUC"] < 0) | (df["EDUC"] > 25)]
             if len(invalid_education) > 0:
-                consistency_issues.append(f"Invalid education values: {len(invalid_education)} records")
+                consistency_issues.append(
+                    f"Invalid education values: {len(invalid_education)} records"
+                )
 
         score = max(0, 1 - (len(consistency_issues) / 10))  # Normalize to 0-1
 
@@ -193,7 +198,10 @@ class DataQualityMonitor:
             if df[col].dtype == "object" and col not in ["Group", "M/F"]:
                 unique_count = df[col].nunique()
                 unique_percentage = (unique_count / len(df)) * 100
-                unique_analysis[col] = {"unique_count": unique_count, "unique_percentage": unique_percentage}
+                unique_analysis[col] = {
+                    "unique_count": unique_count,
+                    "unique_percentage": unique_percentage,
+                }
 
         score = max(0, 1 - (duplicate_percentage / 100))
 
@@ -222,7 +230,9 @@ class DataQualityMonitor:
             # Nondemented patients should generally have CDR <= 0.5
             nondemented_high_cdr = df[(df["Group"] == "Nondemented") & (df["CDR"] > 0.5)]
             if len(nondemented_high_cdr) > 0:
-                medical_issues.append(f"Nondemented with high CDR: {len(nondemented_high_cdr)} cases")
+                medical_issues.append(
+                    f"Nondemented with high CDR: {len(nondemented_high_cdr)} cases"
+                )
 
             # Demented patients should generally have CDR >= 0.5
             demented_low_cdr = df[(df["Group"] == "Demented") & (df["CDR"] < 0.5)]
@@ -280,7 +290,9 @@ class DataQualityMonitor:
         if report["completeness"]["score"] < 0.8:
             recommendations.append("Consider imputation strategies for missing values")
             if report["completeness"]["critical_completeness"] < 90:
-                recommendations.append("Critical columns have missing values - investigate data collection")
+                recommendations.append(
+                    "Critical columns have missing values - investigate data collection"
+                )
 
         # Consistency recommendations
         if report["consistency"]["score"] < 0.9:
@@ -370,9 +382,7 @@ Medical Issues: {report['medical_validity']['issue_count']}"""
 Columns with Outliers: {report['anomalies']['total_outlier_columns']}"""
 
         for anomaly in report["anomalies"]["statistical_outliers"]:
-            text_report += (
-                f"\n- {anomaly['column']}: {anomaly['outlier_count']} outliers ({anomaly['outlier_percentage']:.1f}%)"
-            )
+            text_report += f"\n- {anomaly['column']}: {anomaly['outlier_count']} outliers ({anomaly['outlier_percentage']:.1f}%)"
 
         text_report += """
 
@@ -384,7 +394,11 @@ Columns with Outliers: {report['anomalies']['total_outlier_columns']}"""
         quality_level = (
             "Excellent"
             if report["overall_score"] >= 0.9
-            else "Good" if report["overall_score"] >= 0.8 else "Fair" if report["overall_score"] >= 0.7 else "Poor"
+            else (
+                "Good"
+                if report["overall_score"] >= 0.8
+                else "Fair" if report["overall_score"] >= 0.7 else "Poor"
+            )
         )
         ready_for_training = "Yes" if report["overall_score"] >= 0.7 else "No - cleaning required"
 
