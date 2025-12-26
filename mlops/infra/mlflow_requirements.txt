@@ -1,3 +1,6 @@
+# WARNING: MLflow versions before 2.9.2 may be vulnerable to arbitrary code execution
+# via deserialization of malicious PyTorch models. See CVE-2023-5345.
+# Always ensure models come from trusted sources.
 mlflow==3.3.2
 psycopg2-binary==2.9.10
 boto3==1.35.46
