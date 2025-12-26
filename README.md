@@ -5,7 +5,7 @@
 > **Safety‑aware, explainable AI for neurological and mental health research**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/V1B3hR/AiMedRes)
 [![Status](https://img.shields.io/badge/status-production%20ready-green.svg)](https://github.com/V1B3hR/AiMedRes)
 
