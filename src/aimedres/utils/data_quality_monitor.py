@@ -414,7 +414,12 @@ Ready for Training: {ready_for_training}
 
 def validate_training_data():
     """Standalone function to validate training data"""
-    from aimedres.training.alzheimer_training_system import load_alzheimer_data
+    # Import inside function to avoid circular import
+    try:
+        from aimedres.training.alzheimer_training_system import load_alzheimer_data
+    except ImportError:
+        logger.error("Could not import load_alzheimer_data")
+        return
 
     logger.info("Loading dataset for quality validation...")
     df = load_alzheimer_data(file_path="alzheimer.csv")

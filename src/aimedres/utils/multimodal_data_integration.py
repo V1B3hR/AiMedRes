@@ -27,7 +27,7 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 
 # Import base components
-from data_loaders import DataLoader
+from aimedres.utils.data_loaders import DataLoader
 
 logger = logging.getLogger("MultimodalDataIntegration")
 

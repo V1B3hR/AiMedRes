@@ -26,7 +26,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # Import base components
-from data_loaders import DataLoader
+from aimedres.utils.data_loaders import DataLoader
 
 try:
     import mlflow
