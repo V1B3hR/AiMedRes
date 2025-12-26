@@ -28,12 +28,15 @@ venv/
 env/
 ENV/
 .env
+.venv
 
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+.DS_Store
+Thumbs.db
 
 # OS files
 .DS_Store
@@ -57,6 +60,7 @@ privacy_audit.db
 .pytest_cache/
 htmlcov/
 coverage.xml
+.tox/
 
 # Logs
 *.log

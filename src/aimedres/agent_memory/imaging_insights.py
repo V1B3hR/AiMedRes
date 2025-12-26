@@ -68,9 +68,9 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import hashlib
 import io
 import json
-import hashlib
 import logging
 import math
 import os
@@ -81,11 +81,11 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from functools import lru_cache, wraps
-from typing import Dict, List, Any, Optional, Tuple, Callable, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel, Field, field_validator, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 # ==============================================================================
 # 0. MODULE VERSION
@@ -97,23 +97,26 @@ MODULE_VERSION = "2.1.0"
 # 1. LOGGING SETUP
 # ==============================================================================
 
+
 def _init_logger() -> logging.Logger:
     logger = logging.getLogger("AiMedRes.ImagingInsights")
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter(
-            fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-            datefmt="%Y-%m-%dT%H:%M:%S"
+            fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
         logger.setLevel(os.environ.get("IMAGING_INSIGHTS_LOG_LEVEL", "INFO").upper())
     return logger
 
+
 LOGGER = _init_logger()
+
 
 def timed(fn: Callable):
     """Decorator to measure execution time of key functions."""
+
     @wraps(fn)
     def wrapper(*args, **kwargs):
         start = time.perf_counter()
@@ -122,27 +125,35 @@ def timed(fn: Callable):
         finally:
             elapsed_ms = (time.perf_counter() - start) * 1000
             LOGGER.debug(f"{fn.__name__} executed in {elapsed_ms:.2f} ms")
+
     return wrapper
+
 
 # ==============================================================================
 # 2. EXCEPTIONS
 # ==============================================================================
 
+
 class InsightError(Exception):
     """Base exception for imaging insights."""
+
 
 class ConfigError(InsightError):
     """Configuration-related problems."""
 
+
 class StrategyNotFoundError(InsightError):
     """Raised when a requested strategy is not registered."""
+
 
 class NormativeDataError(InsightError):
     """Issues with normative dataset access."""
 
+
 # ==============================================================================
 # 3. CONFIGURATION MODEL
 # ==============================================================================
+
 
 class QualityControlConfig(BaseModel):
     min_snr_for_high_confidence: float = 15.0
@@ -151,17 +162,27 @@ class QualityControlConfig(BaseModel):
     confidence_penalty_high_motion: float = 0.30
     min_confidence_floor: float = 0.1
 
+
 class ImportanceBoostersConfig(BaseModel):
-    critical_keywords: List[str] = ["atrophy", "severe", "significant", "abnormal", "mass", "lesion"]
+    critical_keywords: List[str] = [
+        "atrophy",
+        "severe",
+        "significant",
+        "abnormal",
+        "mass",
+        "lesion",
+    ]
     keyword_boost_value: float = 0.2
     max_total_boost: float = 0.5
     anomaly_weight: float = 0.15
+
 
 class ZScoreThresholds(BaseModel):
     significant_atrophy: float = -2.5
     mild_atrophy: float = -1.75
     borderline_high: float = 1.75
     high_volume_anomaly: float = 2.5
+
 
 class RadiologyInsightConfig(BaseModel):
     strategy_name: str = "BrainMRIVolumetry_v1.3_ZScorePlus"
@@ -201,6 +222,7 @@ class RadiologyInsightConfig(BaseModel):
             raw = yaml.safe_load(f) or {}
         return cls(**raw)
 
+
 # Default baseline config (can be overridden from outside)
 DEFAULT_CONFIG = RadiologyInsightConfig()
 
@@ -208,16 +230,19 @@ DEFAULT_CONFIG = RadiologyInsightConfig()
 # 4. DATA MODELS (Input & Output)
 # ==============================================================================
 
+
 class RiskLevel(str, Enum):
     NORMAL = "normal"
     MILD = "mild"
     MODERATE = "moderate"
     HIGH = "high"
 
+
 class ImagingInsight(BaseModel):
     """
     Structured, clinically relevant insight derived from imaging data.
     """
+
     insight_id: str = Field(default_factory=lambda: f"insight_{uuid.uuid4().hex}")
     patient_id: Optional[str] = None
     modality: str
@@ -240,18 +265,22 @@ class ImagingInsight(BaseModel):
     module_version: str = MODULE_VERSION
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    def to_memory_dict(self, importance_config: ImportanceBoostersConfig | None = None) -> Dict[str, Any]:
-        importance = self._calculate_importance(importance_config or DEFAULT_CONFIG.importance_boosters)
+    def to_memory_dict(
+        self, importance_config: ImportanceBoostersConfig | None = None
+    ) -> Dict[str, Any]:
+        importance = self._calculate_importance(
+            importance_config or DEFAULT_CONFIG.importance_boosters
+        )
         return {
             "content": self.summarize_for_memory(),
             "type": "imaging_insight",
             "importance": importance,
-            "metadata": self.model_dump(mode='json'),
-            "created_at": self.generated_at.isoformat()
+            "metadata": self.model_dump(mode="json"),
+            "created_at": self.generated_at.isoformat(),
         }
 
     def summarize_for_memory(self) -> str:
-        date_str = self.acquisition_date.strftime('%Y-%m-%d') if self.acquisition_date else "N/A"
+        date_str = self.acquisition_date.strftime("%Y-%m-%d") if self.acquisition_date else "N/A"
         summary = (
             f"Imaging Analysis ({self.modality}, {date_str}): {self.clinical_significance} "
             f"Risk: {self.risk_level}. Findings: "
@@ -271,10 +300,12 @@ class ImagingInsight(BaseModel):
         base += min(boost, cfg.max_total_boost)
         return min(base, 1.0)
 
+
 class FeatureSet(BaseModel):
     """
     Input features for analysis, with validation.
     """
+
     patient_id: Optional[str] = None
     age: int = Field(..., gt=0)
     sex: str = Field(..., pattern="^(M|F|O)$")
@@ -294,9 +325,11 @@ class FeatureSet(BaseModel):
                 raise ValueError(f"Measurement {k} must be non-negative.")
         return v
 
+
 # ==============================================================================
 # 5. NORMATIVE DATA MANAGER
 # ==============================================================================
+
 
 class NormativeDataManager:
     """
@@ -310,22 +343,22 @@ class NormativeDataManager:
     def load_dataset_from_string(self, cohort_id: str, csv_data: str):
         self._datasets[cohort_id] = pd.read_csv(io.StringIO(csv_data))
         self._dataset_raw_hash[cohort_id] = hashlib.sha256(csv_data.encode()).hexdigest()
-        LOGGER.info(f"Loaded normative dataset for cohort={cohort_id} rows={len(self._datasets[cohort_id])}")
+        LOGGER.info(
+            f"Loaded normative dataset for cohort={cohort_id} rows={len(self._datasets[cohort_id])}"
+        )
 
     def dataset_hash(self, cohort_id: str) -> Optional[str]:
         return self._dataset_raw_hash.get(cohort_id)
 
     @lru_cache(maxsize=256)
-    def get_stats(self, cohort_id: str, age: int, sex: str, measure: str) -> Optional[Tuple[float, float]]:
+    def get_stats(
+        self, cohort_id: str, age: int, sex: str, measure: str
+    ) -> Optional[Tuple[float, float]]:
         if cohort_id not in self._datasets:
             raise NormativeDataError(f"Normative cohort '{cohort_id}' not loaded.")
         df = self._datasets[cohort_id]
 
-        row = df[
-            (df['age_start'] <= age) &
-            (df['age_end'] >= age) &
-            (df['sex'] == sex)
-        ]
+        row = df[(df["age_start"] <= age) & (df["age_end"] >= age) & (df["sex"] == sex)]
         if row.empty:
             return None
         mean_col, std_col = f"{measure}_mean", f"{measure}_std"
@@ -335,21 +368,26 @@ class NormativeDataManager:
         std = float(row.iloc[0][std_col])
         return mean, std
 
+
 # ==============================================================================
 # 6. STRATEGY REGISTRY
 # ==============================================================================
 
 _STRATEGY_REGISTRY: Dict[str, Type["BaseAnalysisStrategy"]] = {}
 
+
 def register_strategy(key: str):
     def decorator(cls: Type["BaseAnalysisStrategy"]):
         _STRATEGY_REGISTRY[key] = cls
         return cls
+
     return decorator
+
 
 # ==============================================================================
 # 7. BASE STRATEGY
 # ==============================================================================
+
 
 class BaseAnalysisStrategy(ABC):
     def __init__(self, config: RadiologyInsightConfig, normative_manager: NormativeDataManager):
@@ -360,12 +398,13 @@ class BaseAnalysisStrategy(ABC):
         self.config_hash = hashlib.sha256(config_str.encode()).hexdigest()
 
     @abstractmethod
-    def analyze(self, features: FeatureSet) -> ImagingInsight:
-        ...
+    def analyze(self, features: FeatureSet) -> ImagingInsight: ...
+
 
 # ==============================================================================
 # 8. BRAIN MRI VOLUMETRY STRATEGY
 # ==============================================================================
+
 
 @register_strategy("mri_volumetry")
 class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
@@ -394,10 +433,7 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
         for raw_name, value in features.measurements.items():
             measure = self.config.measure_aliases.get(raw_name, raw_name)
             stats = self.normative_manager.get_stats(
-                self.config.normative_data_cohort,
-                features.age,
-                features.sex,
-                measure
+                self.config.normative_data_cohort, features.age, features.sex, measure
             )
 
             if not stats:
@@ -438,8 +474,10 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
         composite_anomaly = None
         if anomaly_components and self.config.enable_composite_anomaly_score:
             # Weighted by squared magnitude for outlier emphasis
-            squared = [c ** 2 for c in anomaly_components]
-            composite_anomaly = float(min(1.0, sum(squared) / (sum(squared) + 5)))  # bounded transform
+            squared = [c**2 for c in anomaly_components]
+            composite_anomaly = float(
+                min(1.0, sum(squared) / (sum(squared) + 5))
+            )  # bounded transform
             quantitative["composite_anomaly_score"] = composite_anomaly
 
         clinical_summary = self._summarize_clinical(findings)
@@ -460,7 +498,9 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
             analysis_strategy=self.strategy_name,
             strategy_config_hash=self.config_hash,
             normative_data_cohort=self.config.normative_data_cohort,
-            normative_dataset_hash=self.normative_manager.dataset_hash(self.config.normative_data_cohort),
+            normative_dataset_hash=self.normative_manager.dataset_hash(
+                self.config.normative_data_cohort
+            ),
             source_data_references={"dicom_uids": features.source_dicom_uids},
         )
 
@@ -479,7 +519,9 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
         if "severe" in joined:
             return "Findings strongly suggest clinically significant structural atrophy; urgent evaluation advised."
         if "mild atrophy" in joined or "reduced volume" in joined:
-            return "Findings suggest early or mild volumetric loss; clinical correlation recommended."
+            return (
+                "Findings suggest early or mild volumetric loss; clinical correlation recommended."
+            )
         if "elevated" in joined:
             return "Unusually high regional volume observed; consider differential etiologies."
         return "Volumetric profile is within normal limits for age and sex."
@@ -506,9 +548,11 @@ class BrainMRIVolumetryStrategy(BaseAnalysisStrategy):
             return RiskLevel.MILD
         return RiskLevel.NORMAL
 
+
 # ==============================================================================
 # 9. MODULE FACADE
 # ==============================================================================
+
 
 class RadiologyInsightModule:
     """
@@ -541,12 +585,16 @@ class RadiologyInsightModule:
 50,59,M,1390000,55000,3100,330
 50,59,F,1290000,50000,3000,310
 """
-        self.normative_manager.load_dataset_from_string(self.config.normative_data_cohort, normative_csv_data)
+        self.normative_manager.load_dataset_from_string(
+            self.config.normative_data_cohort, normative_csv_data
+        )
 
     @timed
     def generate_insight(self, strategy_key: str, features: FeatureSet) -> ImagingInsight:
         if strategy_key not in self.strategies:
-            raise StrategyNotFoundError(f"Strategy '{strategy_key}' not registered. Available: {self.list_strategies()}")
+            raise StrategyNotFoundError(
+                f"Strategy '{strategy_key}' not registered. Available: {self.list_strategies()}"
+            )
         strategy = self.strategies[strategy_key]
         try:
             return strategy.analyze(features)
@@ -557,16 +605,22 @@ class RadiologyInsightModule:
             LOGGER.exception("Unexpected error during analysis.")
             raise InsightError(str(e)) from e
 
+
 # ==============================================================================
 # 10. CLI SUPPORT
 # ==============================================================================
 
+
 def _cli():
     parser = argparse.ArgumentParser(description="Run AiMedRes Imaging Insight Module (Advanced).")
-    parser.add_argument("--strategy", default="mri_volumetry", help="Strategy key (default: mri_volumetry)")
+    parser.add_argument(
+        "--strategy", default="mri_volumetry", help="Strategy key (default: mri_volumetry)"
+    )
     parser.add_argument("--input-json", help="Path to JSON file with FeatureSet payload")
     parser.add_argument("--output-json", help="Path to write result Insight JSON")
-    parser.add_argument("--print-memory", action="store_true", help="Print memory dict representation")
+    parser.add_argument(
+        "--print-memory", action="store_true", help="Print memory dict representation"
+    )
     parser.add_argument("--yaml-config", help="Optional path to YAML config override")
     args = parser.parse_args()
 
@@ -594,11 +648,11 @@ def _cli():
                 "hippocampal_volume_mm3": 2200,
             },
             quality_metrics={"snr": 22.5, "motion_score": 0.15},
-            source_dicom_uids=["1.2.3.4.5.6.7.8.9"]
+            source_dicom_uids=["1.2.3.4.5.6.7.8.9"],
         )
 
     insight = module.generate_insight(args.strategy, features)
-    output_data = insight.model_dump(mode='json')
+    output_data = insight.model_dump(mode="json")
 
     if args.output_json:
         with open(args.output_json, "w", encoding="utf-8") as f:
@@ -611,9 +665,11 @@ def _cli():
         print("\n--- Memory Dict ---")
         print(json.dumps(insight.to_memory_dict(), indent=2))
 
+
 # ==============================================================================
 # 11. EXAMPLE (Programmatic)
 # ==============================================================================
+
 
 def _example_usage():
     LOGGER.info("--- Initializing Radiology Insight Module (Advanced) ---")
@@ -630,7 +686,7 @@ def _example_usage():
             "hippocampal_volume_mm3": 2200,
         },
         quality_metrics={"snr": 22.5, "motion_score": 0.15},
-        source_dicom_uids=["1.2.840.113619.2.55.3.2831183550.412.1384892445.651"]
+        source_dicom_uids=["1.2.840.113619.2.55.3.2831183550.412.1384892445.651"],
     )
 
     insight = module.generate_insight("mri_volumetry", patient_features)
@@ -639,6 +695,7 @@ def _example_usage():
 
     print("\n--- Agent Memory Payload ---")
     print(json.dumps(insight.to_memory_dict(), indent=2))
+
 
 # ==============================================================================
 # 12. MAIN ENTRY

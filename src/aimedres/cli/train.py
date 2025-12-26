@@ -77,10 +77,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Optional, Any, Iterable
-
+from typing import Any, Dict, Iterable, List, Optional
 
 # --------------- Data Structures -----------------
+
 
 @dataclass
 class TrainingJob:
@@ -178,6 +178,7 @@ signal.signal(signal.SIGTERM, handle_interrupt)
 
 # --------------- Logging Setup -----------------
 
+
 def setup_logging(log_root: Path, verbose: bool = False) -> logging.Logger:
     log_root.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger("trainer")
@@ -213,17 +214,18 @@ def get_job_logger(job: TrainingJob, log_root: Path) -> logging.Logger:
     job_dir = log_root / job.id
     job_dir.mkdir(parents=True, exist_ok=True)
     fh = logging.FileHandler(
-        job_dir / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
-        mode="w",
-        encoding="utf-8"
+        job_dir / f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log", mode="w", encoding="utf-8"
     )
-    fmt = logging.Formatter("%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+    fmt = logging.Formatter(
+        "%(asctime)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+    )
     fh.setFormatter(fmt)
     logger.addHandler(fh)
     return logger
 
 
 # --------------- Utility Functions -----------------
+
 
 def detect_git_commit(repo_root: Path) -> Optional[str]:
     try:
@@ -245,6 +247,7 @@ def detect_gpu() -> Dict[str, Any]:
     try:
         import torch  # noqa: F401
         import torch.cuda as cuda
+
         info["framework"] = "torch"
         info["cuda_available"] = cuda.is_available()
         if info["cuda_available"]:
@@ -274,6 +277,7 @@ def detect_gpu() -> Dict[str, Any]:
 
 def load_config_yaml(path: Path) -> List[TrainingJob]:
     import yaml  # Lazy import
+
     with path.open("r", encoding="utf-8") as f:
         raw = yaml.safe_load(f)
     jobs = []
@@ -390,15 +394,25 @@ def default_jobs() -> List[TrainingJob]:
 # --------------- Auto-Discovery Logic -----------------
 
 SKIP_DIR_NAMES = {
-    ".git", "__pycache__", "venv", "env", ".venv", "build", "dist",
-    ".mypy_cache", ".pytest_cache", ".idea", ".vscode", "node_modules"
+    ".git",
+    "__pycache__",
+    "venv",
+    "env",
+    ".venv",
+    "build",
+    "dist",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".idea",
+    ".vscode",
+    "node_modules",
 }
 
 # Directories to skip from the repository root to avoid discovering duplicate training scripts
 # These contain legacy or duplicate versions of training scripts
 SKIP_PATHS_FROM_ROOT = {
     "files/training",  # Duplicate of src/aimedres/training
-    "training",        # Legacy location, use src/aimedres/training instead
+    "training",  # Legacy location, use src/aimedres/training instead
 }
 
 DEFAULT_INCLUDE_PATTERNS = ["train_*.py"]
@@ -442,7 +456,7 @@ def discover_training_scripts(
         for dirpath, dirnames, filenames in os.walk(root):
             # Prune skip directories in-place
             dirnames[:] = [d for d in dirnames if d not in SKIP_DIR_NAMES]
-            
+
             # Also skip specific paths from root (to avoid duplicates)
             current_path = Path(dirpath)
             try:
@@ -454,7 +468,7 @@ def discover_training_scripts(
                     continue
             except ValueError:
                 pass  # Not relative to root, continue normally
-            
+
             for filename in filenames:
                 if not filename.endswith(".py"):
                     continue
@@ -492,7 +506,9 @@ def build_jobs_from_discovery(
             output_base = sp.stem
         output_dir = f"{output_base}{base_output_suffix}"
         # Heuristic: mark optional for scripts outside 'training/' or that lack output-dir support
-        optional = mark_optional_unknown and (not flags["use_output_dir"] or "mlops" in rel_script or "scripts/" in rel_script)
+        optional = mark_optional_unknown and (
+            not flags["use_output_dir"] or "mlops" in rel_script or "scripts/" in rel_script
+        )
         job = TrainingJob(
             name=name,
             script=rel_script,
@@ -532,6 +548,7 @@ def merge_jobs(
 
 
 # --------------- Filtering & Execution -----------------
+
 
 def filter_jobs(
     jobs: List[TrainingJob],
@@ -574,7 +591,15 @@ def run_job(
         orchestrator_logger.error(f"[{job.id}] ❌ Script missing: {script_path}")
         return job
 
-    job.build_command(python_exec, global_epochs, global_folds, global_sample, global_batch, extra_args, base_output_dir)
+    job.build_command(
+        python_exec,
+        global_epochs,
+        global_folds,
+        global_sample,
+        global_batch,
+        extra_args,
+        base_output_dir,
+    )
 
     if dry_run:
         orchestrator_logger.info(f"[{job.id}] (dry-run) Command: {' '.join(job.command)}")
@@ -585,7 +610,9 @@ def run_job(
     for attempt in range(1, attempts_allowed + 1):
         if INTERRUPTED:
             job.status = "INTERRUPTED"
-            orchestrator_logger.warning(f"[{job.id}] ⏹ Interrupted before start (attempt {attempt}).")
+            orchestrator_logger.warning(
+                f"[{job.id}] ⏹ Interrupted before start (attempt {attempt})."
+            )
             return job
 
         job.attempts = attempt
@@ -634,6 +661,7 @@ def run_job(
 
 # --------------- Summary & Reporting -----------------
 
+
 def summarize(
     jobs: List[TrainingJob],
     start_time: str,
@@ -650,7 +678,9 @@ def summarize(
         "pipeline": "AiMedRes Medical AI Training",
         "start_time_utc": start_time,
         "end_time_utc": end_time,
-        "duration_sec": (datetime.fromisoformat(end_time) - datetime.fromisoformat(start_time)).total_seconds(),
+        "duration_sec": (
+            datetime.fromisoformat(end_time) - datetime.fromisoformat(start_time)
+        ).total_seconds(),
         "git_commit": git_commit,
         "python": sys.version.replace("\n", " "),
         "working_directory": str(repo_root),
@@ -713,6 +743,7 @@ def print_console_summary(jobs: List[TrainingJob], logger: logging.Logger):
 
 # --------------- Argument Parsing -----------------
 
+
 def parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Unified orchestrator for medical AI training jobs.",
@@ -731,36 +762,77 @@ def parse_args(argv=None) -> argparse.Namespace:
     parser.add_argument("--parallel", action="store_true", help="Enable parallel execution.")
     parser.add_argument("--max-workers", type=int, default=4, help="Workers for parallel mode.")
     parser.add_argument("--retries", type=int, default=0, help="Retry attempts per job.")
-    parser.add_argument("--extra-arg", action="append", default=[], help="Extra raw args appended to all job commands (repeatable).")
-    parser.add_argument("--base-output-dir", type=str, default="results", help="Base directory for training outputs.")
+    parser.add_argument(
+        "--extra-arg",
+        action="append",
+        default=[],
+        help="Extra raw args appended to all job commands (repeatable).",
+    )
+    parser.add_argument(
+        "--base-output-dir",
+        type=str,
+        default="results",
+        help="Base directory for training outputs.",
+    )
     parser.add_argument("--logs-dir", type=str, default="logs", help="Directory for logs.")
-    parser.add_argument("--summary-dir", type=str, default="summaries", help="Directory for summaries.")
+    parser.add_argument(
+        "--summary-dir", type=str, default="summaries", help="Directory for summaries."
+    )
     parser.add_argument("--verbose", action="store_true", help="Verbose console logging.")
-    parser.add_argument("--allow-partial-success", action="store_true",
-                        help="Exit 0 even if some non-optional jobs fail.")
+    parser.add_argument(
+        "--allow-partial-success",
+        action="store_true",
+        help="Exit 0 even if some non-optional jobs fail.",
+    )
 
     # Auto-discovery controls
-    parser.add_argument("--no-auto-discover", action="store_true", help="Disable auto-discovery entirely.")
-    parser.add_argument("--discover-root", nargs="*", default=[],
-                        help="Root directories to search (default: repo root). Can pass multiple.")
-    parser.add_argument("--include-pattern", action="append", default=[],
-                        help="Additional filename patterns to include (e.g., *trainer.py).")
-    parser.add_argument("--exclude-regex", type=str,
-                        help="Regex to exclude discovered script paths.")
-    parser.add_argument("--discovery-limit", type=int, help="Max number of scripts to discover (debug/testing).")
-    parser.add_argument("--allow-discovery-overrides", action="store_true",
-                        help="Allow auto-discovered jobs to override existing job IDs from config/default.")
-    parser.add_argument("--no-default-jobs", action="store_true",
-                        help="Do not load built-in default jobs (use only config + discovery).")
-    parser.add_argument("--mark-discovered-optional", action="store_true",
-                        help="Force all discovered jobs to be optional.")
-    parser.add_argument("--strict-discovery", action="store_true",
-                        help="If set, and no jobs discovered (and no config), exit with non-zero instead of using defaults.")
+    parser.add_argument(
+        "--no-auto-discover", action="store_true", help="Disable auto-discovery entirely."
+    )
+    parser.add_argument(
+        "--discover-root",
+        nargs="*",
+        default=[],
+        help="Root directories to search (default: repo root). Can pass multiple.",
+    )
+    parser.add_argument(
+        "--include-pattern",
+        action="append",
+        default=[],
+        help="Additional filename patterns to include (e.g., *trainer.py).",
+    )
+    parser.add_argument(
+        "--exclude-regex", type=str, help="Regex to exclude discovered script paths."
+    )
+    parser.add_argument(
+        "--discovery-limit", type=int, help="Max number of scripts to discover (debug/testing)."
+    )
+    parser.add_argument(
+        "--allow-discovery-overrides",
+        action="store_true",
+        help="Allow auto-discovered jobs to override existing job IDs from config/default.",
+    )
+    parser.add_argument(
+        "--no-default-jobs",
+        action="store_true",
+        help="Do not load built-in default jobs (use only config + discovery).",
+    )
+    parser.add_argument(
+        "--mark-discovered-optional",
+        action="store_true",
+        help="Force all discovered jobs to be optional.",
+    )
+    parser.add_argument(
+        "--strict-discovery",
+        action="store_true",
+        help="If set, and no jobs discovered (and no config), exit with non-zero instead of using defaults.",
+    )
 
     return parser.parse_args(argv)
 
 
 # --------------- Main Orchestration -----------------
+
 
 def main(argv=None):
     args = parse_args(argv)
@@ -820,7 +892,10 @@ def main(argv=None):
 
         discovery_roots: List[Path] = [repo_root]
         if args.discover_root:
-            discovery_roots = [Path(r).resolve() if not Path(r).is_absolute() else Path(r) for r in args.discover_root]
+            discovery_roots = [
+                Path(r).resolve() if not Path(r).is_absolute() else Path(r)
+                for r in args.discover_root
+            ]
 
         exclude_regex = re.compile(args.exclude_regex) if args.exclude_regex else None
 
@@ -842,7 +917,7 @@ def main(argv=None):
             script_paths,
             repo_root=repo_root,
             logger=logger,
-            mark_optional_unknown=args.mark_discovered_optional
+            mark_optional_unknown=args.mark_discovered_optional,
         )
 
         jobs = merge_jobs(

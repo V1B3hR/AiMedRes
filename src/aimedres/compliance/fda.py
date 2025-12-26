@@ -16,23 +16,24 @@ Critical Features:
 - Post-market surveillance planning
 """
 
-import os
 import json
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
-from enum import Enum
+import os
 import uuid
+from dataclasses import asdict, dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 from .regulatory import FDAValidationManager
 
 # Configure FDA-specific logging
-fda_logger = logging.getLogger('duetmind.fda')
+fda_logger = logging.getLogger("duetmind.fda")
 
 
 class RegulatoryPathway(Enum):
     """FDA regulatory pathways for medical devices"""
+
     FIVE_TEN_K = "510k"
     DE_NOVO = "de_novo"
     PMA = "pma"
@@ -42,6 +43,7 @@ class RegulatoryPathway(Enum):
 
 class DeviceClassification(Enum):
     """FDA device classification"""
+
     CLASS_I = "class_i"
     CLASS_II = "class_ii"
     CLASS_III = "class_iii"
@@ -49,15 +51,17 @@ class DeviceClassification(Enum):
 
 class SoftwareType(Enum):
     """FDA Software as Medical Device categories"""
+
     SAMD_CRITICAL = "critical"  # Life-threatening decisions
-    SAMD_SERIOUS = "serious"    # Serious medical decisions
+    SAMD_SERIOUS = "serious"  # Serious medical decisions
     SAMD_NON_SERIOUS = "non_serious"  # Non-serious medical decisions
-    SAMD_INFORM = "inform"      # Informative only
+    SAMD_INFORM = "inform"  # Informative only
 
 
 @dataclass
 class DeviceInformation:
     """Comprehensive FDA device information"""
+
     device_name: str
     manufacturer: str = "DuetMind Adaptive Systems"
     device_classification: DeviceClassification = DeviceClassification.CLASS_II
@@ -70,7 +74,7 @@ class DeviceInformation:
     intended_user: str = "Licensed healthcare professionals"
     intended_environment: str = "Healthcare facilities"
     version: str = "1.0"
-    
+
     def __post_init__(self):
         if self.contraindications is None:
             self.contraindications = []
@@ -78,13 +82,14 @@ class DeviceInformation:
             self.warnings_precautions = [
                 "Not for use as sole diagnostic tool",
                 "Clinical judgment required for all decisions",
-                "Regular validation monitoring required"
+                "Regular validation monitoring required",
             ]
 
 
-@dataclass 
+@dataclass
 class ClinicalEvidence:
     """Clinical evidence for FDA submission"""
+
     study_type: str  # "clinical_trial", "retrospective", "registry"
     study_name: str
     patient_population: str
@@ -95,15 +100,16 @@ class ClinicalEvidence:
     clinical_significance: bool
     study_limitations: List[str]
     publication_status: str = "unpublished"
-    
+
     def __post_init__(self):
-        if not hasattr(self, 'study_limitations'):
+        if not hasattr(self, "study_limitations"):
             self.study_limitations = []
 
 
 @dataclass
 class RiskAnalysis:
     """FDA Risk Analysis Documentation"""
+
     hazard_id: str
     hazard_description: str
     severity: str  # "catastrophic", "critical", "serious", "minor", "negligible"
@@ -112,42 +118,42 @@ class RiskAnalysis:
     risk_controls: List[str]
     residual_risk: str
     verification_activities: List[str]
-    
+
     def __post_init__(self):
-        if not hasattr(self, 'risk_controls'):
+        if not hasattr(self, "risk_controls"):
             self.risk_controls = []
-        if not hasattr(self, 'verification_activities'):
+        if not hasattr(self, "verification_activities"):
             self.verification_activities = []
 
 
 class FDADocumentationGenerator:
     """
     Comprehensive FDA Documentation Generator for Medical AI Systems.
-    
+
     Generates all required documentation for FDA submissions including
     510(k), De Novo, and PMA pathways with specific focus on AI/ML devices.
     """
-    
+
     def __init__(self, device_info: DeviceInformation, config: Dict[str, Any] = None):
         self.device_info = device_info
         self.config = config or {}
         self.validation_manager = FDAValidationManager(self.config)
-        
+
         # Initialize risk analysis
         self.risk_analyses: List[RiskAnalysis] = []
         self.clinical_evidence: List[ClinicalEvidence] = []
-        
+
         # FDA guidance references
         self.guidance_documents = {
             "software_samd": "Software as a Medical Device (SAMD): Clinical Evaluation",
             "ai_ml_guidance": "Machine Learning-Enabled Medical Devices",
             "cybersecurity": "Content of Premarket Submissions for Management of Cybersecurity",
             "human_factors": "Applying Human Factors and Usability Engineering",
-            "clinical_evaluation": "Clinical Evaluation of Software Functions"
+            "clinical_evaluation": "Clinical Evaluation of Software Functions",
         }
-        
+
         fda_logger.info(f"FDA Documentation Generator initialized for {device_info.device_name}")
-    
+
     def generate_510k_submission(self) -> Dict[str, Any]:
         """Generate complete 510(k) premarket submission package."""
         submission = {
@@ -166,12 +172,12 @@ class FDADocumentationGenerator:
             "quality_system": self._generate_quality_system_info(),
             "risk_analysis": self._generate_risk_analysis(),
             "conclusion": self._generate_conclusion(),
-            "appendices": self._generate_appendices()
+            "appendices": self._generate_appendices(),
         }
-        
+
         fda_logger.info("510(k) submission package generated")
         return submission
-    
+
     def generate_de_novo_submission(self) -> Dict[str, Any]:
         """Generate De Novo pathway submission for novel medical devices."""
         submission = {
@@ -187,12 +193,12 @@ class FDADocumentationGenerator:
             "cybersecurity": self._generate_cybersecurity_documentation(),
             "risk_analysis": self._generate_risk_analysis(),
             "post_market_studies": self._generate_post_market_studies(),
-            "labeling": self._generate_labeling()
+            "labeling": self._generate_labeling(),
         }
-        
+
         fda_logger.info("De Novo submission package generated")
         return submission
-    
+
     def _generate_device_description(self) -> Dict[str, Any]:
         """Generate comprehensive device description."""
         return {
@@ -210,40 +216,41 @@ class FDADocumentationGenerator:
                     "Deep neural networks for medical image analysis",
                     "Natural language processing for clinical text",
                     "Ensemble methods for risk prediction",
-                    "Reinforcement learning for treatment optimization"
+                    "Reinforcement learning for treatment optimization",
                 ],
                 "data_inputs": [
                     "Medical imaging (DICOM format)",
                     "Electronic health records",
                     "Laboratory results",
-                    "Vital signs monitoring data"
+                    "Vital signs monitoring data",
                 ],
                 "outputs": [
                     "Risk stratification scores",
                     "Clinical decision recommendations",
                     "Diagnostic assistance",
-                    "Treatment suggestions"
+                    "Treatment suggestions",
                 ],
                 "hardware_requirements": {
                     "minimum_cpu": "Intel i5 or equivalent",
                     "minimum_ram": "8GB",
                     "gpu_recommended": "NVIDIA GTX 1060 or better",
                     "storage": "10GB available space",
-                    "network": "HTTPS connectivity required"
+                    "network": "HTTPS connectivity required",
                 },
                 "interoperability": [
                     "HL7 FHIR R4 compliance",
                     "DICOM 3.0 support",
                     "Epic MyChart integration",
-                    "Cerner PowerChart integration"
-                ]
-            }
+                    "Cerner PowerChart integration",
+                ],
+            },
         }
-    
+
     def _generate_indications_statement(self) -> Dict[str, Any]:
         """Generate FDA-compliant indications for use statement."""
         return {
-            "indication_for_use": self.device_info.indication_for_use or (
+            "indication_for_use": self.device_info.indication_for_use
+            or (
                 f"The {self.device_info.device_name} is intended to assist licensed "
                 "healthcare professionals in clinical decision-making by providing "
                 "AI-powered analysis of patient data including medical images, "
@@ -252,25 +259,27 @@ class FDADocumentationGenerator:
                 "of qualified medical professionals."
             ),
             "intended_patient_population": "Adult patients (18+ years) requiring clinical assessment",
-            "contraindications": self.device_info.contraindications + [
+            "contraindications": self.device_info.contraindications
+            + [
                 "Pediatric patients (under 18 years)",
                 "Emergency situations requiring immediate intervention",
-                "Patients with incomplete or corrupted medical data"
+                "Patients with incomplete or corrupted medical data",
             ],
-            "warnings": self.device_info.warnings_precautions + [
+            "warnings": self.device_info.warnings_precautions
+            + [
                 "Device output should not be used as the sole basis for clinical decisions",
                 "Healthcare professional judgment is required for all patient care decisions",
                 "Regular validation of device performance is recommended",
-                "Device is not intended for life-threatening emergency situations"
+                "Device is not intended for life-threatening emergency situations",
             ],
             "precautions": [
                 "Ensure data quality before analysis",
                 "Consider patient-specific factors not captured by the device",
                 "Monitor device performance metrics regularly",
-                "Maintain appropriate clinical documentation"
-            ]
+                "Maintain appropriate clinical documentation",
+            ],
         }
-    
+
     def _generate_predicate_comparison(self) -> Dict[str, Any]:
         """Generate predicate device comparison for substantial equivalence."""
         return {
@@ -278,43 +287,43 @@ class FDADocumentationGenerator:
                 "name": "Generic AI Clinical Decision Support System",
                 "k_number": "K123456789",  # Example predicate
                 "manufacturer": "Example Medical AI Inc.",
-                "clearance_date": "2023-01-15"
+                "clearance_date": "2023-01-15",
             },
             "comparison_table": {
                 "intended_use": {
                     "predicate": "Clinical decision support for healthcare professionals",
                     "subject_device": "AI-powered clinical decision support and analysis",
-                    "substantially_equivalent": True
+                    "substantially_equivalent": True,
                 },
                 "technology": {
                     "predicate": "Machine learning algorithms",
                     "subject_device": "Advanced neural networks and ML ensemble methods",
-                    "substantially_equivalent": True
+                    "substantially_equivalent": True,
                 },
                 "inputs": {
                     "predicate": "Patient data and medical records",
                     "subject_device": "EHR data, medical imaging, vital signs, lab results",
-                    "substantially_equivalent": True
+                    "substantially_equivalent": True,
                 },
                 "outputs": {
                     "predicate": "Risk scores and clinical recommendations",
                     "subject_device": "Risk stratification, diagnostic assistance, treatment suggestions",
-                    "substantially_equivalent": True
+                    "substantially_equivalent": True,
                 },
                 "safety_effectiveness": {
                     "predicate": "Validated performance on clinical datasets",
                     "subject_device": "Enhanced validation with larger datasets and clinical studies",
-                    "substantially_equivalent": True
-                }
+                    "substantially_equivalent": True,
+                },
             },
             "substantial_equivalence_conclusion": (
                 "The subject device is substantially equivalent to the predicate device "
                 "in terms of intended use, technology, and safety/effectiveness profile. "
                 "Both devices provide AI-powered clinical decision support to healthcare "
                 "professionals using similar machine learning approaches."
-            )
+            ),
         }
-    
+
     def _generate_substantial_equivalence(self) -> Dict[str, Any]:
         """Generate substantial equivalence discussion."""
         return {
@@ -322,7 +331,7 @@ class FDADocumentationGenerator:
                 "same_intended_use": True,
                 "same_technological_characteristics": True,
                 "safety_effectiveness_questions": False,
-                "new_issues_safety_effectiveness": False
+                "new_issues_safety_effectiveness": False,
             },
             "detailed_comparison": {
                 "intended_use_comparison": (
@@ -337,14 +346,14 @@ class FDADocumentationGenerator:
                 "performance_comparison": (
                     "The subject device demonstrates equivalent or superior performance "
                     "compared to the predicate device across key clinical metrics."
-                )
+                ),
             },
             "conclusion": (
                 "The subject device is substantially equivalent to the predicate device "
                 "and raises no new questions of safety and effectiveness."
-            )
+            ),
         }
-    
+
     def _generate_performance_testing(self) -> Dict[str, Any]:
         """Generate performance testing documentation."""
         return {
@@ -354,45 +363,45 @@ class FDADocumentationGenerator:
                     "specificity": 0.89,
                     "positive_predictive_value": 0.87,
                     "negative_predictive_value": 0.94,
-                    "auc_roc": 0.93
+                    "auc_roc": 0.93,
                 },
                 "precision_recall": {
                     "precision": 0.87,
                     "recall": 0.92,
                     "f1_score": 0.89,
-                    "average_precision": 0.90
+                    "average_precision": 0.90,
                 },
                 "calibration_metrics": {
                     "brier_score": 0.08,
                     "calibration_slope": 0.95,
-                    "calibration_intercept": 0.02
+                    "calibration_intercept": 0.02,
                 },
                 "robustness_testing": {
                     "noise_tolerance": "Maintains >85% accuracy with 10% input noise",
                     "missing_data_handling": "Graceful degradation with <20% missing data",
-                    "adversarial_resistance": "No significant performance degradation detected"
-                }
+                    "adversarial_resistance": "No significant performance degradation detected",
+                },
             },
             "clinical_performance": {
                 "validation_studies": len(self.clinical_evidence),
                 "total_patients": sum(ce.sample_size for ce in self.clinical_evidence),
                 "primary_endpoint_met": True,
-                "clinical_utility_demonstrated": True
+                "clinical_utility_demonstrated": True,
             },
             "usability_testing": {
                 "user_interface_testing": "Completed with 20 healthcare professionals",
                 "workflow_integration": "Successfully integrated into clinical workflows",
                 "error_prevention": "Use error rates <2% in simulated clinical scenarios",
-                "training_requirements": "2-hour training program for clinical users"
+                "training_requirements": "2-hour training program for clinical users",
             },
             "cybersecurity_testing": {
                 "penetration_testing": "Completed by third-party security firm",
                 "vulnerability_assessment": "No critical vulnerabilities identified",
                 "data_encryption": "AES-256 encryption for all patient data",
-                "access_controls": "Role-based access with multi-factor authentication"
-            }
+                "access_controls": "Role-based access with multi-factor authentication",
+            },
         }
-    
+
     def _generate_software_documentation(self) -> Dict[str, Any]:
         """Generate comprehensive software documentation per FDA guidance."""
         return {
@@ -401,34 +410,34 @@ class FDADocumentationGenerator:
                 "planning": {
                     "software_plan": "Comprehensive software development plan established",
                     "development_standards": "ISO 13485, ISO 14971, IEC 62304 compliance",
-                    "risk_management": "ISO 14971 risk management process implemented"
+                    "risk_management": "ISO 14971 risk management process implemented",
                 },
                 "requirements_analysis": {
                     "software_requirements": "Detailed software requirements specification",
                     "safety_requirements": "Safety-critical requirements identified and verified",
-                    "performance_requirements": "Performance benchmarks and acceptance criteria"
+                    "performance_requirements": "Performance benchmarks and acceptance criteria",
                 },
                 "architectural_design": {
                     "system_architecture": "Modular, scalable AI/ML system architecture",
                     "security_architecture": "Defense-in-depth security implementation",
-                    "data_flow": "Comprehensive data flow and processing documentation"
+                    "data_flow": "Comprehensive data flow and processing documentation",
                 },
                 "implementation": {
                     "coding_standards": "Medical device software coding standards",
                     "version_control": "Git-based version control with audit trails",
-                    "code_review": "Mandatory peer review for all code changes"
+                    "code_review": "Mandatory peer review for all code changes",
                 },
                 "testing": {
                     "unit_testing": ">95% code coverage with automated unit tests",
                     "integration_testing": "Comprehensive system integration testing",
                     "validation_testing": "Clinical validation with real-world data",
-                    "regression_testing": "Automated regression testing for all releases"
+                    "regression_testing": "Automated regression testing for all releases",
                 },
                 "maintenance": {
                     "post_market_monitoring": "Continuous performance monitoring implemented",
                     "software_updates": "Controlled software update and patch management",
-                    "change_control": "Formal change control process for modifications"
-                }
+                    "change_control": "Formal change control process for modifications",
+                },
             },
             "algorithm_documentation": {
                 "training_data": {
@@ -436,49 +445,49 @@ class FDADocumentationGenerator:
                     "data_sources": "De-identified EHR and imaging data",
                     "dataset_size": "1.2M patient records, 500K medical images",
                     "data_quality": "Comprehensive data quality validation performed",
-                    "bias_assessment": "Bias analysis across demographic groups completed"
+                    "bias_assessment": "Bias analysis across demographic groups completed",
                 },
                 "model_architecture": {
                     "algorithm_type": "Ensemble of neural networks and tree-based models",
                     "model_components": "CNN for imaging, LSTM for time series, XGBoost for tabular",
                     "feature_engineering": "Automated feature extraction and selection",
-                    "hyperparameter_optimization": "Bayesian optimization for model tuning"
+                    "hyperparameter_optimization": "Bayesian optimization for model tuning",
                 },
                 "validation_methodology": {
                     "cross_validation": "5-fold stratified cross-validation",
                     "holdout_testing": "20% holdout set for final performance evaluation",
                     "temporal_validation": "Temporal split validation for robustness",
-                    "external_validation": "Multi-site external validation completed"
-                }
+                    "external_validation": "Multi-site external validation completed",
+                },
             },
             "verification_validation": {
                 "verification_activities": [
                     "Requirements traceability verification",
                     "Code review and static analysis",
                     "Unit and integration test execution",
-                    "Performance benchmark verification"
+                    "Performance benchmark verification",
                 ],
                 "validation_activities": [
                     "Clinical validation studies",
                     "User acceptance testing",
                     "Real-world performance validation",
-                    "Safety and effectiveness validation"
+                    "Safety and effectiveness validation",
                 ],
                 "test_coverage": {
                     "code_coverage": "97%",
                     "requirements_coverage": "100%",
-                    "risk_based_testing": "All high-risk scenarios tested"
-                }
-            }
+                    "risk_based_testing": "All high-risk scenarios tested",
+                },
+            },
         }
-    
+
     def _generate_cybersecurity_documentation(self) -> Dict[str, Any]:
         """Generate cybersecurity documentation per FDA guidance."""
         return {
             "cybersecurity_risk_assessment": {
                 "threat_modeling": "STRIDE methodology applied",
                 "vulnerability_assessment": "Regular automated and manual assessments",
-                "risk_categorization": "High-risk components identified and secured"
+                "risk_categorization": "High-risk components identified and secured",
             },
             "security_controls": {
                 "authentication": "Multi-factor authentication for all users",
@@ -486,40 +495,42 @@ class FDADocumentationGenerator:
                 "data_encryption": {
                     "at_rest": "AES-256 encryption for stored data",
                     "in_transit": "TLS 1.3 for all communications",
-                    "key_management": "Hardware security module (HSM) for key management"
+                    "key_management": "Hardware security module (HSM) for key management",
                 },
                 "audit_logging": "Comprehensive audit trail for all system activities",
-                "network_security": "Network segmentation and intrusion detection"
+                "network_security": "Network segmentation and intrusion detection",
             },
             "security_testing": {
                 "penetration_testing": "Annual third-party penetration testing",
                 "vulnerability_scanning": "Continuous automated vulnerability scanning",
-                "code_security_analysis": "Static and dynamic code security analysis"
+                "code_security_analysis": "Static and dynamic code security analysis",
             },
             "incident_response": {
                 "response_plan": "Comprehensive cybersecurity incident response plan",
                 "notification_procedures": "FDA and stakeholder notification procedures",
-                "recovery_procedures": "Business continuity and disaster recovery plans"
+                "recovery_procedures": "Business continuity and disaster recovery plans",
             },
             "maintenance": {
                 "security_updates": "Regular security patch management",
                 "threat_intelligence": "Continuous threat intelligence monitoring",
-                "security_training": "Regular cybersecurity training for personnel"
-            }
+                "security_training": "Regular cybersecurity training for personnel",
+            },
         }
-    
+
     def _generate_clinical_data_summary(self) -> Dict[str, Any]:
         """Generate clinical data summary for FDA submission."""
         if not self.clinical_evidence:
             # Generate example clinical evidence for demonstration
             self._add_example_clinical_evidence()
-        
+
         return {
             "clinical_evidence_summary": {
                 "number_of_studies": len(self.clinical_evidence),
                 "total_patients": sum(ce.sample_size for ce in self.clinical_evidence),
                 "study_types": list(set(ce.study_type for ce in self.clinical_evidence)),
-                "primary_endpoints_met": all(ce.clinical_significance for ce in self.clinical_evidence)
+                "primary_endpoints_met": all(
+                    ce.clinical_significance for ce in self.clinical_evidence
+                ),
             },
             "key_studies": [
                 {
@@ -530,22 +541,22 @@ class FDADocumentationGenerator:
                     "key_results": ce.results_summary,
                     "statistical_significance": ce.statistical_significance,
                     "clinical_significance": ce.clinical_significance,
-                    "limitations": ce.study_limitations
+                    "limitations": ce.study_limitations,
                 }
                 for ce in self.clinical_evidence
             ],
             "safety_profile": {
                 "adverse_events": "No device-related adverse events reported",
                 "safety_monitoring": "Continuous safety monitoring implemented",
-                "risk_mitigation": "Comprehensive risk mitigation strategies"
+                "risk_mitigation": "Comprehensive risk mitigation strategies",
             },
             "effectiveness_evidence": {
                 "clinical_utility": "Demonstrated improvement in clinical outcomes",
                 "diagnostic_accuracy": "Superior diagnostic accuracy compared to standard care",
-                "workflow_efficiency": "Reduced time to diagnosis and treatment decisions"
-            }
+                "workflow_efficiency": "Reduced time to diagnosis and treatment decisions",
+            },
         }
-    
+
     def _add_example_clinical_evidence(self):
         """Add example clinical evidence for demonstration."""
         example_studies = [
@@ -559,12 +570,12 @@ class FDADocumentationGenerator:
                     "sensitivity": 0.92,
                     "specificity": 0.89,
                     "diagnostic_accuracy": 0.91,
-                    "clinical_utility_score": 0.85
+                    "clinical_utility_score": 0.85,
                 },
                 statistical_significance=True,
                 clinical_significance=True,
                 study_limitations=["Retrospective design", "Single institution bias"],
-                publication_status="submitted"
+                publication_status="submitted",
             ),
             ClinicalEvidence(
                 study_type="prospective",
@@ -575,17 +586,17 @@ class FDADocumentationGenerator:
                 results_summary={
                     "time_reduction": "30% faster diagnosis",
                     "treatment_accuracy": 0.94,
-                    "clinical_outcomes": "Improved patient outcomes"
+                    "clinical_outcomes": "Improved patient outcomes",
                 },
                 statistical_significance=True,
                 clinical_significance=True,
                 study_limitations=["Single center study"],
-                publication_status="published"
-            )
+                publication_status="published",
+            ),
         ]
-        
+
         self.clinical_evidence.extend(example_studies)
-    
+
     def _generate_labeling(self) -> Dict[str, Any]:
         """Generate FDA-compliant device labeling."""
         return {
@@ -595,35 +606,35 @@ class FDADocumentationGenerator:
                 "model_number": f"{self.device_info.device_name.replace(' ', '_')}_v{self.device_info.version}",
                 "classification": self.device_info.device_classification.value,
                 "fda_clearance": "FDA 510(k) Cleared",
-                "rx_only": True
+                "rx_only": True,
             },
             "indications_for_use": self._generate_indications_statement(),
             "user_interface_labeling": {
                 "display_requirements": "High-resolution display (1920x1080 minimum)",
                 "user_guidance": "Comprehensive user manual and training materials",
                 "error_messages": "Clear, actionable error messages and guidance",
-                "output_interpretation": "Detailed guidance for interpreting device outputs"
+                "output_interpretation": "Detailed guidance for interpreting device outputs",
             },
             "technical_specifications": {
                 "software_version": self.device_info.version,
                 "compatibility": "Windows 10/11, Linux Ubuntu 18+, macOS 10.15+",
                 "network_requirements": "HTTPS connectivity, minimum 10 Mbps",
-                "data_formats": "DICOM, HL7 FHIR, JSON, CSV"
-            }
+                "data_formats": "DICOM, HL7 FHIR, JSON, CSV",
+            },
         }
-    
+
     def _generate_risk_analysis(self) -> Dict[str, Any]:
         """Generate comprehensive risk analysis documentation."""
         if not self.risk_analyses:
             self._add_example_risk_analyses()
-        
+
         return {
             "risk_management_approach": "ISO 14971 risk management standard",
             "risk_analysis_methodology": {
                 "hazard_identification": "Systematic hazard identification process",
                 "risk_assessment": "Severity and probability-based risk assessment",
                 "risk_controls": "Technical and procedural risk control measures",
-                "residual_risk_evaluation": "Comprehensive residual risk evaluation"
+                "residual_risk_evaluation": "Comprehensive residual risk evaluation",
             },
             "identified_hazards": [
                 {
@@ -634,18 +645,24 @@ class FDADocumentationGenerator:
                     "risk_level": ra.risk_level,
                     "controls": ra.risk_controls,
                     "residual_risk": ra.residual_risk,
-                    "verification": ra.verification_activities
+                    "verification": ra.verification_activities,
                 }
                 for ra in self.risk_analyses
             ],
             "risk_acceptability": {
-                "acceptable_risks": [ra for ra in self.risk_analyses if ra.risk_level == "acceptable"],
-                "undesirable_risks": [ra for ra in self.risk_analyses if ra.risk_level == "undesirable"],
-                "unacceptable_risks": [ra for ra in self.risk_analyses if ra.risk_level == "unacceptable"]
+                "acceptable_risks": [
+                    ra for ra in self.risk_analyses if ra.risk_level == "acceptable"
+                ],
+                "undesirable_risks": [
+                    ra for ra in self.risk_analyses if ra.risk_level == "undesirable"
+                ],
+                "unacceptable_risks": [
+                    ra for ra in self.risk_analyses if ra.risk_level == "unacceptable"
+                ],
             },
-            "overall_risk_conclusion": "All identified risks have been reduced to acceptable levels through appropriate risk controls"
+            "overall_risk_conclusion": "All identified risks have been reduced to acceptable levels through appropriate risk controls",
         }
-    
+
     def _add_example_risk_analyses(self):
         """Add example risk analyses for demonstration."""
         example_risks = [
@@ -659,17 +676,17 @@ class FDADocumentationGenerator:
                     "Human physician oversight required",
                     "Algorithm validation and testing",
                     "Performance monitoring",
-                    "Clear uncertainty indicators"
+                    "Clear uncertainty indicators",
                 ],
                 residual_risk="acceptable",
                 verification_activities=[
                     "Clinical validation studies",
                     "Algorithm testing",
-                    "User training verification"
-                ]
+                    "User training verification",
+                ],
             ),
             RiskAnalysis(
-                hazard_id="RISK_002", 
+                hazard_id="RISK_002",
                 hazard_description="Patient data breach due to cybersecurity vulnerability",
                 severity="critical",
                 probability="remote",
@@ -678,38 +695,38 @@ class FDADocumentationGenerator:
                     "AES-256 encryption",
                     "Multi-factor authentication",
                     "Regular security assessments",
-                    "Audit logging"
+                    "Audit logging",
                 ],
                 residual_risk="acceptable",
                 verification_activities=[
                     "Penetration testing",
                     "Security audits",
-                    "Encryption verification"
-                ]
+                    "Encryption verification",
+                ],
             ),
             RiskAnalysis(
                 hazard_id="RISK_003",
                 hazard_description="System downtime affecting patient care",
                 severity="serious",
                 probability="occasional",
-                risk_level="undesirable", 
+                risk_level="undesirable",
                 risk_controls=[
                     "Redundant system architecture",
                     "Backup and recovery procedures",
                     "Maintenance scheduling",
-                    "Alternative workflow procedures"
+                    "Alternative workflow procedures",
                 ],
                 residual_risk="acceptable",
                 verification_activities=[
                     "Reliability testing",
                     "Backup testing",
-                    "Failover testing"
-                ]
-            )
+                    "Failover testing",
+                ],
+            ),
         ]
-        
+
         self.risk_analyses.extend(example_risks)
-    
+
     def _generate_human_factors_validation(self) -> Dict[str, Any]:
         """Generate human factors and usability validation."""
         return {
@@ -717,55 +734,55 @@ class FDADocumentationGenerator:
             "user_analysis": {
                 "intended_users": [
                     "Physicians (primary care and specialists)",
-                    "Nurses and physician assistants", 
+                    "Nurses and physician assistants",
                     "Radiologists and pathologists",
-                    "Healthcare administrators"
+                    "Healthcare administrators",
                 ],
                 "user_characteristics": {
                     "training_level": "Licensed healthcare professionals",
                     "technology_experience": "Moderate to advanced",
-                    "clinical_experience": "Variable (resident to expert)"
+                    "clinical_experience": "Variable (resident to expert)",
                 },
                 "use_environment": {
                     "location": "Hospitals, clinics, and healthcare facilities",
                     "conditions": "Normal clinical workflow conditions",
-                    "distractions": "High-distraction clinical environment"
-                }
+                    "distractions": "High-distraction clinical environment",
+                },
             },
             "usability_testing": {
                 "formative_testing": {
                     "participants": 15,
                     "tasks_tested": 25,
                     "issues_identified": 8,
-                    "issues_resolved": 8
+                    "issues_resolved": 8,
                 },
                 "summative_testing": {
                     "participants": 20,
                     "critical_tasks": 12,
                     "success_rate": "98.5%",
                     "use_errors": 2,
-                    "close_calls": 1
-                }
+                    "close_calls": 1,
+                },
             },
             "use_error_analysis": {
                 "critical_use_errors": 0,
                 "use_errors_identified": [
                     "Misinterpretation of uncertainty indicators",
-                    "Incomplete data entry in edge cases"
+                    "Incomplete data entry in edge cases",
                 ],
                 "mitigation_strategies": [
                     "Enhanced user training materials",
                     "Improved user interface design",
-                    "Additional confirmation dialogs"
-                ]
+                    "Additional confirmation dialogs",
+                ],
             },
             "training_requirements": {
                 "initial_training": "2-hour comprehensive training program",
                 "ongoing_training": "Annual refresher training",
-                "training_materials": "Interactive e-learning modules and user manual"
-            }
+                "training_materials": "Interactive e-learning modules and user manual",
+            },
         }
-    
+
     def _generate_quality_system_info(self) -> Dict[str, Any]:
         """Generate quality system information."""
         return {
@@ -777,22 +794,22 @@ class FDADocumentationGenerator:
                 "design_review": "Regular design review meetings",
                 "design_verification": "Verification against design inputs",
                 "design_validation": "Clinical validation studies",
-                "design_controls_procedures": "Documented design control procedures"
+                "design_controls_procedures": "Documented design control procedures",
             },
             "manufacturing_information": {
                 "manufacturing_site": "DuetMind Adaptive Systems, Primary Facility",
                 "quality_assurance": "Comprehensive QA program",
                 "software_configuration": "Controlled software configuration management",
-                "change_control": "Formal change control procedures"
+                "change_control": "Formal change control procedures",
             },
             "post_market_surveillance": {
                 "adverse_event_reporting": "FDA MedWatch reporting procedures",
                 "performance_monitoring": "Continuous post-market performance monitoring",
                 "corrective_actions": "CAPA (Corrective and Preventive Action) system",
-                "post_market_studies": "Planned post-market surveillance studies"
-            }
+                "post_market_studies": "Planned post-market surveillance studies",
+            },
         }
-    
+
     def _generate_conclusion(self) -> Dict[str, Any]:
         """Generate submission conclusion."""
         return {
@@ -817,33 +834,33 @@ class FDADocumentationGenerator:
                 "Continued post-market surveillance",
                 "Annual performance monitoring reports",
                 "Adverse event reporting per FDA requirements",
-                "Software update notifications and validations"
-            ]
+                "Software update notifications and validations",
+            ],
         }
-    
+
     def _generate_appendices(self) -> Dict[str, List[str]]:
         """Generate appendices list."""
         return {
             "technical_appendices": [
                 "Detailed software documentation",
-                "Algorithm technical specifications", 
+                "Algorithm technical specifications",
                 "Performance test results",
-                "Cybersecurity assessment report"
+                "Cybersecurity assessment report",
             ],
             "clinical_appendices": [
                 "Clinical study protocols",
                 "Clinical study reports",
                 "Statistical analysis plans",
-                "Clinical data listings"
+                "Clinical data listings",
             ],
             "regulatory_appendices": [
                 "FDA guidance document references",
                 "Regulatory precedent analysis",
                 "International regulatory considerations",
-                "Quality system documentation"
-            ]
+                "Quality system documentation",
+            ],
         }
-    
+
     # Additional methods for De Novo specific sections
     def _generate_classification_rationale(self) -> Dict[str, Any]:
         """Generate classification rationale for De Novo submission."""
@@ -852,7 +869,7 @@ class FDADocumentationGenerator:
                 "Advanced AI/ML ensemble methodology",
                 "Multi-modal data integration capabilities",
                 "Real-time adaptive learning algorithms",
-                "Explainable AI decision pathways"
+                "Explainable AI decision pathways",
             ],
             "classification_justification": (
                 "This device represents a novel class of AI-enabled medical devices "
@@ -862,10 +879,10 @@ class FDADocumentationGenerator:
             "proposed_classification": {
                 "class": "Class II",
                 "rationale": "Moderate risk device with appropriate special controls",
-                "proposed_controls": "Software validation, clinical performance standards"
-            }
+                "proposed_controls": "Software validation, clinical performance standards",
+            },
         }
-    
+
     def _generate_novel_features_analysis(self) -> Dict[str, Any]:
         """Generate novel features analysis for De Novo."""
         return {
@@ -873,48 +890,48 @@ class FDADocumentationGenerator:
                 "novel_algorithms": "Proprietary ensemble AI methodology",
                 "data_integration": "Novel multi-modal data fusion techniques",
                 "adaptive_learning": "Continuous learning from real-world data",
-                "explainability": "Advanced explainable AI capabilities"
+                "explainability": "Advanced explainable AI capabilities",
             },
             "clinical_novelty": {
                 "new_clinical_applications": "Previously unavailable clinical insights",
                 "workflow_innovation": "Revolutionary clinical workflow integration",
-                "outcome_improvements": "Demonstrated superior clinical outcomes"
+                "outcome_improvements": "Demonstrated superior clinical outcomes",
             },
             "safety_novelty": {
                 "safety_innovations": "Advanced safety monitoring and alerts",
                 "risk_mitigation": "Novel risk mitigation strategies",
-                "human_oversight": "Enhanced human-AI collaboration features"
-            }
+                "human_oversight": "Enhanced human-AI collaboration features",
+            },
         }
-    
+
     def _generate_benefit_risk_analysis(self) -> Dict[str, Any]:
         """Generate benefit-risk analysis for De Novo."""
         return {
             "clinical_benefits": {
                 "primary_benefits": [
                     "Improved diagnostic accuracy",
-                    "Reduced time to diagnosis", 
+                    "Reduced time to diagnosis",
                     "Enhanced clinical decision-making",
-                    "Better patient outcomes"
+                    "Better patient outcomes",
                 ],
                 "quantified_benefits": {
                     "diagnostic_accuracy_improvement": "15% over standard care",
                     "time_savings": "30% reduction in diagnosis time",
-                    "outcome_improvement": "20% better clinical outcomes"
-                }
+                    "outcome_improvement": "20% better clinical outcomes",
+                },
             },
             "identified_risks": {
                 "clinical_risks": ["Potential misdiagnosis", "Over-reliance on AI"],
                 "technical_risks": ["Software failures", "Data security breaches"],
-                "operational_risks": ["Integration challenges", "User training requirements"]
+                "operational_risks": ["Integration challenges", "User training requirements"],
             },
             "benefit_risk_conclusion": (
                 "The clinical benefits of the device significantly outweigh the "
                 "identified risks, which have been appropriately mitigated through "
                 "comprehensive risk controls and safety measures."
-            )
+            ),
         }
-    
+
     def _generate_special_controls(self) -> Dict[str, Any]:
         """Generate special controls for De Novo device class."""
         return {
@@ -922,37 +939,37 @@ class FDADocumentationGenerator:
                 {
                     "control_name": "Software Validation Requirements",
                     "description": "Comprehensive software validation including algorithm validation, clinical validation, and performance monitoring",
-                    "rationale": "Ensures safe and effective AI/ML algorithm performance"
+                    "rationale": "Ensures safe and effective AI/ML algorithm performance",
                 },
                 {
-                    "control_name": "Clinical Performance Standards", 
+                    "control_name": "Clinical Performance Standards",
                     "description": "Minimum clinical performance benchmarks for accuracy, sensitivity, and specificity",
-                    "rationale": "Ensures adequate clinical performance for intended use"
+                    "rationale": "Ensures adequate clinical performance for intended use",
                 },
                 {
                     "control_name": "Risk Management Requirements",
-                    "description": "ISO 14971 risk management with AI-specific risk considerations", 
-                    "rationale": "Addresses unique risks associated with AI/ML medical devices"
+                    "description": "ISO 14971 risk management with AI-specific risk considerations",
+                    "rationale": "Addresses unique risks associated with AI/ML medical devices",
                 },
                 {
                     "control_name": "Human Factors Validation",
                     "description": "Comprehensive human factors testing for clinical workflow integration",
-                    "rationale": "Ensures safe and effective use in clinical environment"
+                    "rationale": "Ensures safe and effective use in clinical environment",
                 },
                 {
                     "control_name": "Cybersecurity Controls",
                     "description": "Advanced cybersecurity measures for patient data protection",
-                    "rationale": "Protects sensitive patient information and system integrity"
-                }
+                    "rationale": "Protects sensitive patient information and system integrity",
+                },
             ],
             "labeling_requirements": [
                 "Clear indications for use and limitations",
                 "Training requirements for users",
                 "Performance characteristics and validation data",
-                "Risk information and mitigation strategies"
-            ]
+                "Risk information and mitigation strategies",
+            ],
         }
-    
+
     def _generate_post_market_studies(self) -> Dict[str, Any]:
         """Generate post-market study requirements."""
         return {
@@ -962,33 +979,39 @@ class FDADocumentationGenerator:
                     "objective": "Monitor device performance in real-world clinical settings",
                     "duration": "2 years",
                     "sample_size": "5,000 patients",
-                    "endpoints": ["Clinical accuracy", "User satisfaction", "Workflow impact"]
+                    "endpoints": ["Clinical accuracy", "User satisfaction", "Workflow impact"],
                 },
                 {
                     "study_name": "Long-term Safety Surveillance",
                     "objective": "Monitor for long-term safety signals and adverse events",
-                    "duration": "3 years", 
+                    "duration": "3 years",
                     "sample_size": "10,000 patients",
-                    "endpoints": ["Adverse events", "Safety signals", "Risk mitigation effectiveness"]
-                }
+                    "endpoints": [
+                        "Adverse events",
+                        "Safety signals",
+                        "Risk mitigation effectiveness",
+                    ],
+                },
             ],
             "reporting_requirements": {
                 "interim_reports": "Every 6 months",
                 "final_reports": "Within 90 days of study completion",
-                "safety_reporting": "Expedited reporting for serious adverse events"
-            }
+                "safety_reporting": "Expedited reporting for serious adverse events",
+            },
         }
 
 
 # Convenience functions for easy integration
-def create_fda_documentation_generator(device_name: str, classification: DeviceClassification = None) -> FDADocumentationGenerator:
+def create_fda_documentation_generator(
+    device_name: str, classification: DeviceClassification = None
+) -> FDADocumentationGenerator:
     """Create FDA documentation generator for medical device."""
     device_info = DeviceInformation(
         device_name=device_name,
         device_classification=classification or DeviceClassification.CLASS_II,
-        indication_for_use=f"The {device_name} is intended for use by healthcare professionals to assist in clinical decision-making through AI-powered analysis of patient data."
+        indication_for_use=f"The {device_name} is intended for use by healthcare professionals to assist in clinical decision-making through AI-powered analysis of patient data.",
     )
-    
+
     return FDADocumentationGenerator(device_info)
 
 
@@ -1009,21 +1032,21 @@ if __name__ == "__main__":
     # Demo FDA documentation generation
     print("🏥 FDA Documentation Generator - Regulatory Submission Demo")
     print("=" * 70)
-    
+
     # Create documentation generator
     generator = create_fda_documentation_generator("DuetMind Adaptive Clinical AI")
-    
+
     # Generate 510(k) submission
     print("📋 Generating 510(k) submission package...")
     submission_510k = generator.generate_510k_submission()
     print(f"✅ 510(k) package generated with {len(submission_510k)} sections")
-    
-    # Generate De Novo submission  
+
+    # Generate De Novo submission
     print("📋 Generating De Novo submission package...")
     generator.device_info.regulatory_pathway = RegulatoryPathway.DE_NOVO
     submission_de_novo = generator.generate_de_novo_submission()
     print(f"✅ De Novo package generated with {len(submission_de_novo)} sections")
-    
+
     # Display key sections
     print(f"\n🎯 Key submission sections:")
     print(f"   • Device Description: ✅ Complete")
@@ -1032,5 +1055,5 @@ if __name__ == "__main__":
     print(f"   • Risk Analysis: ✅ {len(generator.risk_analyses)} risks assessed")
     print(f"   • Cybersecurity: ✅ Complete")
     print(f"   • Human Factors: ✅ Complete")
-    
+
     print("\n🎯 FDA DOCUMENTATION STATUS: ✅ READY FOR REGULATORY SUBMISSION")

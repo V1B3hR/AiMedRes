@@ -1,16 +1,18 @@
-import numpy as np
-import random
+import logging
 import math
+import random
 import time
 import uuid
-import logging
-from collections import deque, Counter
+from collections import Counter, deque
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 
 # ===================== Logging & Monitoring Setup =====================
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("UnifiedLabyrinth")
+
 
 # ===================== Memory & SocialSignal Core =====================
 @dataclass
@@ -30,8 +32,16 @@ class Memory:
         if abs(self.emotional_valence) > 0.7:
             self.decay_rate = min(0.997, 0.97 + (abs(self.emotional_valence) - 0.7) * 0.1)
 
+
 class SocialSignal:
-    def __init__(self, content: Any, signal_type: str, urgency: float, source_id: int, requires_response: bool = False):
+    def __init__(
+        self,
+        content: Any,
+        signal_type: str,
+        urgency: float,
+        source_id: int,
+        requires_response: bool = False,
+    ):
         self.id = str(uuid.uuid4())
         self.content = content
         self.signal_type = signal_type
@@ -40,6 +50,7 @@ class SocialSignal:
         self.timestamp = 0
         self.requires_response = requires_response
         self.response = None
+
 
 # ===================== Capacitor Resource Core =====================
 class CapacitorInSpace:
@@ -56,6 +67,7 @@ class CapacitorInSpace:
 
     def status(self):
         return f"Capacitor: Position {self.position}, Energy {round(self.energy,2)}/{self.capacity}"
+
 
 # ===================== AliveLoopNode (Agent Brain) =====================
 class AliveLoopNode:
@@ -99,14 +111,21 @@ class AliveLoopNode:
             "insight": f"{agent_name} reasoned: {task}",
             "confidence": confidence,
             "energy": self.energy,
-            "confusion_level": self.confusion_level
+            "confusion_level": self.confusion_level,
         }
-        mem = Memory(content=task, importance=confidence, timestamp=self._time, memory_type="prediction", emotional_valence=random.uniform(-1,1))
+        mem = Memory(
+            content=task,
+            importance=confidence,
+            timestamp=self._time,
+            memory_type="prediction",
+            emotional_valence=random.uniform(-1, 1),
+        )
         self.memory.append(mem)
         return result
 
     def move(self):
         self.position += self.velocity
+
 
 # ===================== ResourceRoom & NetworkMetrics =====================
 class ResourceRoom:
@@ -118,6 +137,7 @@ class ResourceRoom:
 
     def retrieve(self, agent_id: str) -> Dict[str, Any]:
         return self.resources.get(agent_id, {})
+
 
 class NetworkMetrics:
     def __init__(self):
@@ -132,7 +152,7 @@ class NetworkMetrics:
             self.confusion_history.append(0.0)
             self.agent_statuses = []
             return
-        
+
         total_energy = sum(a.alive_node.energy for a in agents)
         avg_confusion = np.mean([a.confusion_level for a in agents])
         self.energy_history.append(total_energy)
@@ -140,15 +160,19 @@ class NetworkMetrics:
         self.agent_statuses = [a.status for a in agents]
 
     def health_score(self):
-        if not self.energy_history: return 0.5
+        if not self.energy_history:
+            return 0.5
         e = np.mean(self.energy_history)
         c = np.mean(self.confusion_history)
-        score = 0.5 * (min(e/100,1.0) + max(0,1.0-c))
+        score = 0.5 * (min(e / 100, 1.0) + max(0, 1.0 - c))
         return round(score, 3)
+
 
 # ===================== MazeMaster (Governance Layer) =====================
 class MazeMaster:
-    def __init__(self, confusion_escape_thresh=0.85, entropy_escape_thresh=1.5, soft_advice_thresh=0.65):
+    def __init__(
+        self, confusion_escape_thresh=0.85, entropy_escape_thresh=1.5, soft_advice_thresh=0.65
+    ):
         self.interventions = 0
         self.confusion_escape_thresh = confusion_escape_thresh
         self.entropy_escape_thresh = entropy_escape_thresh
@@ -174,12 +198,16 @@ class MazeMaster:
 
     def intervene(self, agent: "UnifiedAdaptiveAgent"):
         self.interventions += 1
-        if (agent.confusion_level >= self.confusion_escape_thresh or
-            agent.entropy >= self.entropy_escape_thresh or
-            agent.status in {"stuck", "looping"}):
+        if (
+            agent.confusion_level >= self.confusion_escape_thresh
+            or agent.entropy >= self.entropy_escape_thresh
+            or agent.status in {"stuck", "looping"}
+        ):
             return self.quick_escape(agent)
-        if (agent.confusion_level >= self.soft_advice_thresh or
-            agent.entropy >= self.soft_advice_thresh):
+        if (
+            agent.confusion_level >= self.soft_advice_thresh
+            or agent.entropy >= self.soft_advice_thresh
+        ):
             return self.psychologist(agent)
         return {"action": "none"}
 
@@ -189,9 +217,16 @@ class MazeMaster:
             if action["action"] != "none":
                 agent.log_event(f"MazeMaster intervention: {action['message']}")
 
+
 # ===================== Unified Adaptive Agent =====================
 class UnifiedAdaptiveAgent:
-    def __init__(self, name: str, style: Dict[str, float], alive_node: AliveLoopNode, resource_room: ResourceRoom):
+    def __init__(
+        self,
+        name: str,
+        style: Dict[str, float],
+        alive_node: AliveLoopNode,
+        resource_room: ResourceRoom,
+    ):
         self.agent_id = str(uuid.uuid4())
         self.name = name
         self.style = style
@@ -237,7 +272,7 @@ class UnifiedAdaptiveAgent:
         if self.style_cache:
             counts = Counter(self.style_cache)
             total = sum(counts.values())
-            probs = [c/total for c in counts.values() if total]
+            probs = [c / total for c in counts.values() if total]
             self.entropy = -sum(p * math.log2(p) for p in probs if p > 0)
 
     def teleport_to_resource_room(self, info: Dict[str, Any]):
@@ -263,6 +298,7 @@ class UnifiedAdaptiveAgent:
             "event_log": self.event_log,
         }
 
+
 # ===================== Simulation Runner =====================
 def run_labyrinth_simulation():
     logger.info("=== Unified Adaptive Labyrinth Simulation ===")
@@ -272,11 +308,26 @@ def run_labyrinth_simulation():
 
     # Create agents
     agents = [
-        UnifiedAdaptiveAgent("AgentA", {"logic": 0.8, "creativity": 0.5}, AliveLoopNode((0,0), (0.5,0), 15.0, node_id=1), resource_room),
-        UnifiedAdaptiveAgent("AgentB", {"creativity": 0.9, "analytical": 0.7}, AliveLoopNode((2,0), (0,0.5), 12.0, node_id=2), resource_room),
-        UnifiedAdaptiveAgent("AgentC", {"logic": 0.6, "expressiveness": 0.8}, AliveLoopNode((0,2), (0.3,-0.2), 10.0, node_id=3), resource_room),
+        UnifiedAdaptiveAgent(
+            "AgentA",
+            {"logic": 0.8, "creativity": 0.5},
+            AliveLoopNode((0, 0), (0.5, 0), 15.0, node_id=1),
+            resource_room,
+        ),
+        UnifiedAdaptiveAgent(
+            "AgentB",
+            {"creativity": 0.9, "analytical": 0.7},
+            AliveLoopNode((2, 0), (0, 0.5), 12.0, node_id=2),
+            resource_room,
+        ),
+        UnifiedAdaptiveAgent(
+            "AgentC",
+            {"logic": 0.6, "expressiveness": 0.8},
+            AliveLoopNode((0, 2), (0.3, -0.2), 10.0, node_id=3),
+            resource_room,
+        ),
     ]
-    capacitors = [CapacitorInSpace((1,1), capacity=8.0, initial_energy=3.0)]
+    capacitors = [CapacitorInSpace((1, 1), capacity=8.0, initial_energy=3.0)]
 
     topics = ["Find exit", "Share wisdom", "Collaborate"]
     for step in range(1, 21):
@@ -286,7 +337,9 @@ def run_labyrinth_simulation():
             agent.reason(f"{topic} at step {step}")
             agent.alive_node.move()
             if step % 5 == 0:
-                agent.teleport_to_resource_room({"topic": topic, "step": step, "energy": agent.alive_node.energy})
+                agent.teleport_to_resource_room(
+                    {"topic": topic, "step": step, "energy": agent.alive_node.energy}
+                )
                 retrieved = agent.retrieve_from_resource_room()
         maze_master.govern_agents(agents)
         metrics.update(agents)
@@ -299,6 +352,7 @@ def run_labyrinth_simulation():
 
     logger.info("\n=== Simulation Complete ===")
     logger.info(f"Total MazeMaster interventions: {maze_master.interventions}")
+
 
 if __name__ == "__main__":
     run_labyrinth_simulation()

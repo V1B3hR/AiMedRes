@@ -30,22 +30,24 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 # Local modules (new)
 try:
+    from config_loader import load_config_merged
+    from phase_runner import PhaseDefinition, PhaseExecutionError, PhaseRunner
     from result_models import (
+        ComprehensiveResultPayload,
         PhaseResult,
+        ResultStatus,
+        SimulationResultPayload,
         SystemResult,
         TrainingResultPayload,
-        SimulationResultPayload,
-        ComprehensiveResultPayload,
-        ResultStatus,
     )
-    from config_loader import load_config_merged
-    from phase_runner import PhaseRunner, PhaseDefinition, PhaseExecutionError
 except ImportError:
     # Fallback minimal internal definitions if modules not yet added
     from dataclasses import dataclass, field
+
     class ResultStatus:
         SUCCESS = "success"
         FAILURE = "failure"
+
     @dataclass
     class PhaseResult:
         name: str
@@ -53,6 +55,7 @@ except ImportError:
         duration_sec: float
         details: Dict[str, Any] = field(default_factory=dict)
         error: Optional[str] = None
+
     @dataclass
     class SystemResult:
         status: str
@@ -60,18 +63,23 @@ except ImportError:
         started_at: float
         finished_at: float
         meta: Dict[str, Any] = field(default_factory=dict)
+
     class PhaseExecutionError(Exception):
         pass
+
     def load_config_merged(path: Optional[str], env_prefix: str = "DUETMIND_") -> Dict[str, Any]:
         return {}
+
     class PhaseDefinition:
         def __init__(self, name: str, func, retries: int = 0):
             self.name = name
             self.func = func
             self.retries = retries
+
     class PhaseRunner:
         def __init__(self, logger: logging.Logger):
             self.logger = logger
+
         def run_phases(self, phases: Sequence[PhaseDefinition]) -> List[PhaseResult]:
             results = []
             for p in phases:
@@ -85,13 +93,17 @@ except ImportError:
                     duration = time.time() - start
                     tb = traceback.format_exc()
                     self.logger.error(f"Phase {p.name} failed: {e}")
-                    results.append(PhaseResult(p.name, ResultStatus.FAILURE, duration, {}, error=str(e)))
+                    results.append(
+                        PhaseResult(p.name, ResultStatus.FAILURE, duration, {}, error=str(e))
+                    )
                     break
             return results
+
 
 # -------------------------------------------------------------------------------------------------
 # Logging Setup
 # -------------------------------------------------------------------------------------------------
+
 
 def configure_logging(verbose: bool, log_format: str) -> logging.Logger:
     logger = logging.getLogger("DuetMindMain")
@@ -100,7 +112,7 @@ def configure_logging(verbose: bool, log_format: str) -> logging.Logger:
     if log_format == "json":
         formatter = JsonLogFormatter()
     else:
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     # Avoid duplicate handlers if reconfigured
     logger.handlers[:] = [handler]
@@ -125,11 +137,14 @@ class JsonLogFormatter(logging.Formatter):
 # Custom Exceptions
 # -------------------------------------------------------------------------------------------------
 
+
 class TrainingError(Exception):
     pass
 
+
 class SimulationError(Exception):
     pass
+
 
 class ComprehensiveError(Exception):
     pass
@@ -139,7 +154,10 @@ class ComprehensiveError(Exception):
 # Phase Implementations
 # -------------------------------------------------------------------------------------------------
 
-def phase_training(timeout: int, training_script: str, python_executable: str, logger: logging.Logger) -> Dict[str, Any]:
+
+def phase_training(
+    timeout: int, training_script: str, python_executable: str, logger: logging.Logger
+) -> Dict[str, Any]:
     """
     Runs the external comprehensive training script with a timeout.
     """
@@ -222,7 +240,9 @@ def phase_comprehensive(logger: logging.Logger) -> Dict[str, Any]:
     return {
         "training_accuracy": result["training_phase"]["accuracy"],
         "simulation_health_score": result["simulation_phase"]["health_score"],
-        "labyrinth_components_imported": result["system_integration"]["labyrinth_components_imported"],
+        "labyrinth_components_imported": result["system_integration"][
+            "labyrinth_components_imported"
+        ],
         "raw": result,
     }
 
@@ -230,6 +250,7 @@ def phase_comprehensive(logger: logging.Logger) -> Dict[str, Any]:
 # -------------------------------------------------------------------------------------------------
 # Utility Functions
 # -------------------------------------------------------------------------------------------------
+
 
 def _extract_metric(output: str, key: str) -> Optional[float]:
     # Naive example: find lines like "accuracy: 0.912"
@@ -254,13 +275,25 @@ def build_arg_parser() -> argparse.ArgumentParser:
     common_parent = argparse.ArgumentParser(add_help=False)
     common_parent.add_argument("--config", type=str, help="Path to config file (JSON or YAML)")
     common_parent.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
-    common_parent.add_argument("--log-format", choices=["text", "json"], default="text", help="Log format")
-    common_parent.add_argument("--json-output", action="store_true", help="Emit final result as JSON")
-    common_parent.add_argument("--strict", action="store_true", help="Exit non-zero if any phase fails")
-    common_parent.add_argument("--retries", type=int, default=0, help="Retries for each phase on failure")
-    common_parent.add_argument("--dry-run", action="store_true", help="Validate configuration only and exit")
+    common_parent.add_argument(
+        "--log-format", choices=["text", "json"], default="text", help="Log format"
+    )
+    common_parent.add_argument(
+        "--json-output", action="store_true", help="Emit final result as JSON"
+    )
+    common_parent.add_argument(
+        "--strict", action="store_true", help="Exit non-zero if any phase fails"
+    )
+    common_parent.add_argument(
+        "--retries", type=int, default=0, help="Retries for each phase on failure"
+    )
+    common_parent.add_argument(
+        "--dry-run", action="store_true", help="Validate configuration only and exit"
+    )
 
-    p_train = sub.add_parser("training", parents=[common_parent], help="Run comprehensive training only")
+    p_train = sub.add_parser(
+        "training", parents=[common_parent], help="Run comprehensive training only"
+    )
     p_train.add_argument("--timeout", type=int, default=300, help="Training timeout seconds")
     p_train.add_argument("--script", default="full_training.py", help="Training script filename")
 
@@ -269,9 +302,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p_both.add_argument("--timeout", type=int, default=300, help="Training timeout seconds")
     p_both.add_argument("--script", default="full_training.py", help="Training script filename")
 
-    p_comp = sub.add_parser("comprehensive", parents=[common_parent],
-                            help="Run comprehensive medical AI training + simulation integration")
-    p_interactive = sub.add_parser("interactive", parents=[common_parent], help="Interactive mode menu")
+    p_comp = sub.add_parser(
+        "comprehensive",
+        parents=[common_parent],
+        help="Run comprehensive medical AI training + simulation integration",
+    )
+    p_interactive = sub.add_parser(
+        "interactive", parents=[common_parent], help="Interactive mode menu"
+    )
 
     # Default to interactive if no subcommand
     parser.set_defaults(command="interactive")
@@ -282,6 +320,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 # -------------------------------------------------------------------------------------------------
 # Signal Handling
 # -------------------------------------------------------------------------------------------------
+
 
 class GracefulTerminator:
     def __init__(self, logger: logging.Logger):
@@ -302,6 +341,7 @@ class GracefulTerminator:
 # -------------------------------------------------------------------------------------------------
 # Execution Coordinator
 # -------------------------------------------------------------------------------------------------
+
 
 def execute_command(args: argparse.Namespace, logger: logging.Logger) -> SystemResult:
     start = time.time()
@@ -338,7 +378,9 @@ def execute_command(args: argparse.Namespace, logger: logging.Logger) -> SystemR
             )
         )
     elif args.command == "simulation":
-        phases.append(PhaseDefinition("simulation", lambda: phase_simulation(logger), retries=args.retries))
+        phases.append(
+            PhaseDefinition("simulation", lambda: phase_simulation(logger), retries=args.retries)
+        )
     elif args.command == "both":
         phases.append(
             PhaseDefinition(
@@ -352,9 +394,15 @@ def execute_command(args: argparse.Namespace, logger: logging.Logger) -> SystemR
                 retries=args.retries,
             )
         )
-        phases.append(PhaseDefinition("simulation", lambda: phase_simulation(logger), retries=args.retries))
+        phases.append(
+            PhaseDefinition("simulation", lambda: phase_simulation(logger), retries=args.retries)
+        )
     elif args.command == "comprehensive":
-        phases.append(PhaseDefinition("comprehensive_system", lambda: phase_comprehensive(logger), retries=args.retries))
+        phases.append(
+            PhaseDefinition(
+                "comprehensive_system", lambda: phase_comprehensive(logger), retries=args.retries
+            )
+        )
     elif args.command == "interactive":
         return run_interactive_menu(logger, config, args)
     else:
@@ -387,7 +435,9 @@ def execute_command(args: argparse.Namespace, logger: logging.Logger) -> SystemR
     return system_result
 
 
-def run_interactive_menu(logger: logging.Logger, config: Dict[str, Any], args: argparse.Namespace) -> SystemResult:
+def run_interactive_menu(
+    logger: logging.Logger, config: Dict[str, Any], args: argparse.Namespace
+) -> SystemResult:
     logger.info("Entering interactive mode")
     menu = [
         ("Run comprehensive training", "training"),
@@ -428,6 +478,7 @@ def run_interactive_menu(logger: logging.Logger, config: Dict[str, Any], args: a
 # Output Helpers
 # -------------------------------------------------------------------------------------------------
 
+
 def emit_final_result(result: SystemResult, json_output: bool, logger: logging.Logger):
     if json_output:
         safe = {
@@ -462,6 +513,7 @@ def emit_final_result(result: SystemResult, json_output: bool, logger: logging.L
 # -------------------------------------------------------------------------------------------------
 # Main Entry
 # -------------------------------------------------------------------------------------------------
+
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = build_arg_parser()

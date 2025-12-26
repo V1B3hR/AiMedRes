@@ -18,26 +18,26 @@ This module is self-contained and keeps optional dependencies lazy-loaded.
 
 from __future__ import annotations
 
-import os
-import re
-import json
-import yaml
-import time
-import queue
 import hashlib
+import json
 import logging
+import os
+import queue
+import re
 import threading
-from typing import (
-    Dict, Any, Optional, Union, List, Callable, Tuple, get_type_hints
-)
+import time
+from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
-from dataclasses import dataclass, field, fields, MISSING
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, get_type_hints
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------
 # Dataclass Section Definitions
 # ------------------------------------------------------------------------------
+
 
 @dataclass
 class SecurityConfig:
@@ -130,6 +130,7 @@ def load_file_any(path: Path) -> Dict[str, Any]:
 # Secret Providers
 # ------------------------------------------------------------------------------
 
+
 class SecretProvider:
     name: str = "base"
 
@@ -157,6 +158,7 @@ class VaultSecretProvider(SecretProvider):
         self._loaded = True
         try:
             import hvac  # type: ignore
+
             vault_url = os.getenv("VAULT_URL")
             vault_token = os.getenv("VAULT_TOKEN")
             if not (vault_url and vault_token):
@@ -200,6 +202,7 @@ class AWSSecretProvider(SecretProvider):
         try:
             import boto3  # type: ignore
             from botocore.exceptions import ClientError  # type: ignore
+
             secret_name = os.getenv("AWS_SECRET_NAME", "aimedres/secrets")
             region_name = os.getenv("AWS_REGION", "us-east-1")
             session = boto3.session.Session()
@@ -249,6 +252,7 @@ class SecretManager:
 # ------------------------------------------------------------------------------
 # Validation Framework (with optional Pydantic)
 # ------------------------------------------------------------------------------
+
 
 class ValidationErrorReport(Exception):
     def __init__(self, errors: List[str]):
@@ -351,6 +355,7 @@ def try_pydantic_validate(sections: Dict[str, Any]) -> Optional[Exception]:
 # ------------------------------------------------------------------------------
 # Configuration Core
 # ------------------------------------------------------------------------------
+
 
 class DuetMindConfig:
     """
@@ -544,11 +549,13 @@ class DuetMindConfig:
             section_obj = getattr(self, section_name)
             for f in fields(section_obj):
                 prov = self._provenance.get((section_name, f.name), "default")
-                report.append({
-                    "path": f"{section_name}.{f.name}",
-                    "value": repr(getattr(section_obj, f.name)),
-                    "provenance": prov
-                })
+                report.append(
+                    {
+                        "path": f"{section_name}.{f.name}",
+                        "value": repr(getattr(section_obj, f.name)),
+                        "provenance": prov,
+                    }
+                )
         return report
 
     # ------------------------------ Export ---------------------------------
@@ -580,7 +587,9 @@ class DuetMindConfig:
         digest = hashlib.sha256(self.to_json(mask_sensitive=False).encode("utf-8")).hexdigest()
         return digest
 
-    def save_to_file(self, path: Union[str, Path], format: str = "yaml", mask_sensitive: bool = False):
+    def save_to_file(
+        self, path: Union[str, Path], format: str = "yaml", mask_sensitive: bool = False
+    ):
         path = Path(path).expanduser()
         data = self.to_dict(mask_sensitive=mask_sensitive)
         try:
@@ -709,5 +718,6 @@ class DuetMindConfig:
 
     def __repr__(self):
         return f"<DuetMindConfig fingerprint={self.config_fingerprint()[:12]}>"
+
 
 # End of module

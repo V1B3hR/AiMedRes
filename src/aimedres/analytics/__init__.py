@@ -1,19 +1,19 @@
 """Analytics package for AiMedRes."""
 
 from .predictive_healthcare import (
-    create_predictive_healthcare_engine,
     PredictiveHealthcareEngine,
-    TrendType,
     PreventionStrategy,
+    ResourceType,
     TreatmentResponseType,
-    ResourceType
+    TrendType,
+    create_predictive_healthcare_engine,
 )
 
 __all__ = [
-    'create_predictive_healthcare_engine',
-    'PredictiveHealthcareEngine',
-    'TrendType',
-    'PreventionStrategy',
-    'TreatmentResponseType',
-    'ResourceType'
+    "create_predictive_healthcare_engine",
+    "PredictiveHealthcareEngine",
+    "TrendType",
+    "PreventionStrategy",
+    "TreatmentResponseType",
+    "ResourceType",
 ]

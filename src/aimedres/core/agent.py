@@ -17,28 +17,29 @@ Advanced, production-oriented cognitive agent with:
 from __future__ import annotations
 
 import logging
-import uuid
-import time
-import threading
 import math
 import re
-from typing import (
-    Dict,
-    Any,
-    List,
-    Optional,
-    Callable,
-    Iterable,
-    Tuple,
-)
+import threading
+import time
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+)
+
 import numpy as np
 
-from .neural_network import AdaptiveNeuralNetwork, BiologicalState, MoodType
 from ..security.validation import InputValidator
 from ..utils.safety import SafetyMonitor
+from .neural_network import AdaptiveNeuralNetwork, BiologicalState, MoodType
 
 # -----------------------------------------------------------------------------
 # Logging Setup (non-intrusive; respects existing configuration)
@@ -47,21 +48,21 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     # Avoid duplicate handlers in multi-import scenarios
     handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)s %(name)s :: %(message)s"
-    )
+    formatter = logging.Formatter("[%(asctime)s] %(levelname)s %(name)s :: %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
 
 # -----------------------------------------------------------------------------
 # Agent Enumerations & Data Models
 # -----------------------------------------------------------------------------
 class AgentState(Enum):
     """Agent operational states"""
+
     ACTIVE = "active"
-    Mindful = "mindful"            # Preserved for backward compatibility
-    MINDFUL = "mindful"            # Canonical alias
+    Mindful = "mindful"  # Preserved for backward compatibility
+    MINDFUL = "mindful"  # Canonical alias
     SLEEPING = "sleeping"
     LEARNING = "learning"
     COMMUNICATING = "communicating"
@@ -74,6 +75,7 @@ class AgentState(Enum):
 @dataclass
 class ConversationMessage:
     """Structured conversation message"""
+
     message_id: str
     sender_id: str
     sender_name: str
@@ -87,6 +89,7 @@ class ConversationMessage:
 @dataclass
 class Conversation:
     """Secure conversation record"""
+
     conversation_id: str
     participants: List[str]
     messages: List[ConversationMessage] = field(default_factory=list)
@@ -102,6 +105,7 @@ class Conversation:
 @dataclass
 class MemoryItem:
     """Unified internal memory structure"""
+
     memory_id: str
     type: str
     payload: Dict[str, Any]
@@ -118,6 +122,7 @@ class MemoryItem:
 @dataclass
 class RollingMetric:
     """Exponential moving average for telemetry metrics"""
+
     name: str
     alpha: float = 0.15
     value: Optional[float] = None
@@ -133,11 +138,7 @@ class RollingMetric:
         self.count += 1
 
     def snapshot(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "ema": self.value,
-            "updates": self.count
-        }
+        return {"name": self.name, "ema": self.value, "updates": self.count}
 
 
 # -----------------------------------------------------------------------------
@@ -146,6 +147,7 @@ class RollingMetric:
 @dataclass
 class AgentConfig:
     """Configuration parameters for DuetMindAgent"""
+
     input_validation: bool = True
     safety_monitoring: bool = True
     memory_limit: int = 2000
@@ -606,9 +608,9 @@ class DuetMindAgent:
                 candidates = list(self.memory)
 
             filtered = [
-                m for m in candidates
-                if (memory_type is None or m.type == memory_type)
-                and m.confidence >= min_confidence
+                m
+                for m in candidates
+                if (memory_type is None or m.type == memory_type) and m.confidence >= min_confidence
             ]
 
             # Sort by importance then recency
@@ -749,7 +751,8 @@ class DuetMindAgent:
     def _consolidate_memory(self):
         # Promote high-confidence working memory -> long-term
         promotable = [
-            m for m in self.working_memory
+            m
+            for m in self.working_memory
             if m.confidence >= self.config.confidence_threshold_long_term
         ]
         for m in promotable:
@@ -763,12 +766,11 @@ class DuetMindAgent:
             self.long_term_memory[m.memory_id] = m
 
         self.working_memory.clear()
-        logger.info(
-            f"[Memory] Consolidated: {len(self.long_term_memory)} long-term memories"
-        )
+        logger.info(f"[Memory] Consolidated: {len(self.long_term_memory)} long-term memories")
 
     def _extract_topics(self, context: Dict[str, Any]) -> List[str]:
         topics: List[str] = []
+
         def add_token(tok: str):
             if (
                 2 < len(tok) < 28
@@ -797,9 +799,7 @@ class DuetMindAgent:
 
         # Biological adjustments
         energy_cost = (1.0 - confidence) * 2.0
-        self.biological_state.energy = max(
-            0.0, self.biological_state.energy - energy_cost
-        )
+        self.biological_state.energy = max(0.0, self.biological_state.energy - energy_cost)
         if confidence < 0.3:
             self.biological_state.stress_level = min(
                 100.0, self.biological_state.stress_level + 2.0
@@ -832,9 +832,7 @@ class DuetMindAgent:
             logger.debug(f"Deactivated {deactivated} stale conversations")
 
     def _handle_low_energy(self):
-        logger.warning(
-            f"Agent {self.name} low energy: {self.biological_state.energy:.2f}"
-        )
+        logger.warning(f"Agent {self.name} low energy: {self.biological_state.energy:.2f}")
         if self.biological_state.energy < self.config.critical_energy_threshold:
             logger.info("Critical energy - triggering automatic nap")
             self.sleep(self.config.auto_nap_hours)
