@@ -1,8 +1,10 @@
 # Contributing to AiMedRes
 
-**Version**: 1.0.0 | **Last Updated**: November 2025
+**Version**: 1.0.1 | **Last Updated**: December 2025
 
 Welcome to the AiMedRes project! We're excited to have you contribute to advancing AI in healthcare and medical research. This guide will help you get started with contributing to our open-source medical AI platform.
+
+**Note**: AiMedRes is now licensed under the MIT License, promoting broader adoption and collaboration in the healthcare AI community.
 
 ## 🚀 Quick Start
 
@@ -109,7 +111,7 @@ tests/                     # Test suite
 - Clinical modules → `src/aimedres/clinical/`
 - Compliance features → `src/aimedres/compliance/`
 
-See [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md) for the complete migration guide.
+See [docs/REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md) for the complete migration guide.
 
 ### 1. Choose an Issue
 - Look for issues labeled `good first issue` or `help wanted`

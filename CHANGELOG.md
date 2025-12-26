@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-12-26
+
+### Changed
+- **License Update**: Changed from GPL-3.0 to MIT License for broader adoption
+- **Documentation Consolidation**: Moved obsolete documentation files to docs/archive/
+  - Training summaries (ALS, Alzheimer's, Parkinson's, etc.)
+  - Implementation completion and verification reports
+  - Historical feature status and release checklists
+- **Code Organization**: Reorganized root-level Python scripts into appropriate src/aimedres/ subdirectories
+- **PEP8 Compliance**: Applied black, isort, and flake8 to ensure consistent code style
+- **Standardization**: Updated pyproject.toml with complete configuration
+
+### Removed
+- Obsolete markdown files archived from root directory (33 total)
+- Legacy training summary files moved to docs/archive/
+
 ## [1.0.0] - 2025-11-07
 
 ### Major Release - Production Ready
