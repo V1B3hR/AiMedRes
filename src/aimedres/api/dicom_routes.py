@@ -19,6 +19,7 @@ dicom_workflow = DICOMWorkflowManager(config={})
 
 # In-memory DICOM study store (ephemeral, per-process)
 DICOM_STUDY_STORE: Dict[str, Dict[str, Any]] = {}
+MAX_STORED_STUDIES = 50
 
 
 @dicom_bp.route("/upload", methods=["POST"])
@@ -52,12 +53,41 @@ def upload_dicom_series():
 
         study_uid = result["study_uid"]
         metadata_items = result.get("metadata", [])
-        first_meta = DICOMMetadata(**metadata_items[0]) if metadata_items else None
+        first_meta_dict = metadata_items[0] if metadata_items else None
+        first_meta = None
+        if first_meta_dict:
+            pixel_spacing = first_meta_dict.get("pixel_spacing", [1.0, 1.0])
+            if not isinstance(pixel_spacing, (list, tuple)):
+                pixel_spacing = [1.0, 1.0]
+
+            first_meta = DICOMMetadata(
+                patient_id=str(first_meta_dict.get("patient_id", "")),
+                study_instance_uid=str(first_meta_dict.get("study_instance_uid", "")),
+                series_instance_uid=str(first_meta_dict.get("series_instance_uid", "")),
+                sop_instance_uid=str(first_meta_dict.get("sop_instance_uid", "")),
+                modality=str(first_meta_dict.get("modality", "")),
+                study_date=str(first_meta_dict.get("study_date", "")),
+                study_description=str(first_meta_dict.get("study_description", "")),
+                series_description=str(first_meta_dict.get("series_description", "")),
+                rows=int(first_meta_dict.get("rows", 0) or 0),
+                columns=int(first_meta_dict.get("columns", 0) or 0),
+                slice_thickness=float(first_meta_dict.get("slice_thickness", 0.0) or 0.0),
+                pixel_spacing=list(pixel_spacing),
+                instance_number=int(first_meta_dict.get("instance_number", 0) or 0),
+                window_center=float(first_meta_dict.get("window_center", 40.0) or 40.0),
+                window_width=float(first_meta_dict.get("window_width", 400.0) or 400.0),
+                manufacturer=str(first_meta_dict.get("manufacturer", "")),
+                body_part_examined=str(first_meta_dict.get("body_part_examined", "")),
+            )
 
         fhir_resource = None
         if first_meta:
             patient_id = first_meta.patient_id or "anonymous"
             fhir_resource = dicom_workflow.generate_fhir_imaging_study(first_meta, patient_id)
+
+        if study_uid not in DICOM_STUDY_STORE and len(DICOM_STUDY_STORE) >= MAX_STORED_STUDIES:
+            oldest_study_uid = next(iter(DICOM_STUDY_STORE))
+            del DICOM_STUDY_STORE[oldest_study_uid]
 
         DICOM_STUDY_STORE[study_uid] = {
             "preprocessed_volume": result["preprocessed_volume"],
@@ -86,7 +116,7 @@ def upload_dicom_series():
         return jsonify({"error": "Invalid DICOM format"}), 400
     except Exception as exc:
         logger.error("DICOM upload failed: %s", exc, exc_info=True)
-        return jsonify({"error": "DICOM upload failed", "message": str(exc)}), 500
+        return jsonify({"error": "DICOM upload failed"}), 500
 
 
 @dicom_bp.route("/analyze", methods=["POST"])
@@ -105,7 +135,7 @@ def analyze_dicom_study():
             return jsonify({"error": "Study not found"}), 404
 
         window_preset = data.get("window_preset", "soft_tissue")
-        _model = data.get("model")  # model selection placeholder for integration path
+        selected_model = data.get("model", "default_ct_model")
 
         preprocessed_volume = study_data["preprocessed_volume"]
         center, width = dicom_workflow.processor.get_window_preset(window_preset)
@@ -124,6 +154,7 @@ def analyze_dicom_study():
                     "status": "analyzed",
                     "study_uid": study_uid,
                     "window_preset": window_preset,
+                    "model": selected_model,
                     "volume_stats": volume_stats,
                     "inference_ready": True,
                 }
@@ -133,7 +164,7 @@ def analyze_dicom_study():
 
     except Exception as exc:
         logger.error("DICOM analyze failed: %s", exc, exc_info=True)
-        return jsonify({"error": "DICOM analysis failed", "message": str(exc)}), 500
+        return jsonify({"error": "DICOM analysis failed"}), 500
 
 
 @dicom_bp.route("/preview/<study_uid>", methods=["GET"])

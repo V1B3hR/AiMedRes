@@ -316,4 +316,4 @@ class DICOMWorkflowManager:
             return False, "Invalid DICOM file"
         except Exception as exc:
             logger.error("DICOM validation error: %s", exc)
-            return False, f"Validation failed: {exc}"
+            return False, "Unable to parse DICOM file"

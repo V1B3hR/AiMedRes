@@ -85,4 +85,4 @@ def test_dicom_workflow_validate_invalid_file_returns_false(_mock_dcmread):
     valid, reason = manager.validate_dicom_file(b"not-a-dicom")
 
     assert valid is False
-    assert "Validation failed" in reason or "Invalid DICOM" in reason
+    assert reason == "Unable to parse DICOM file"
