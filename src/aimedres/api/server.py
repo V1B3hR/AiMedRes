@@ -30,6 +30,8 @@ from ..utils.safety import SafetyMonitor
 
 logger = logging.getLogger(__name__)
 
+DICOM_CT_MAX_CONTENT_LENGTH = 512 * 1024 * 1024
+
 
 class RateLimiter:
     """
@@ -166,7 +168,10 @@ class SecureAPIServer:
             {
                 "SECRET_KEY": self.config.get_secret("FLASK_SECRET_KEY")
                 or "dev-secret-change-in-production",
-                "MAX_CONTENT_LENGTH": self.config.api.max_request_size,
+                # Increased cap to accommodate multi-slice DICOM CT series uploads
+                "MAX_CONTENT_LENGTH": max(
+                    self.config.api.max_request_size, DICOM_CT_MAX_CONTENT_LENGTH
+                ),
                 "JSON_SORT_KEYS": False,
                 "JSONIFY_PRETTYPRINT_REGULAR": False,
             }
@@ -196,7 +201,13 @@ class SecureAPIServer:
                 return jsonify({"error": "Service temporarily unavailable"}), 503
 
             # Request size validation
-            if request.content_length and request.content_length > self.config.api.max_request_size:
+            max_content_length = self.config.api.max_request_size
+            if request.path == "/api/v1/dicom/upload":
+                max_content_length = self.app.config.get(
+                    "MAX_CONTENT_LENGTH", self.config.api.max_request_size
+                )
+
+            if request.content_length and request.content_length > max_content_length:
                 return jsonify({"error": "Request too large"}), 413
 
             # Log request for audit
@@ -268,6 +279,14 @@ class SecureAPIServer:
             logger.info("Quantum crypto routes registered (P3-2)")
         except Exception as e:
             logger.warning(f"Failed to register quantum routes: {e}")
+
+        try:
+            from .dicom_routes import dicom_bp
+
+            self.app.register_blueprint(dicom_bp)
+            logger.info("DICOM imaging routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to register DICOM routes: {e}")
 
         @self.app.route("/health", methods=["GET"])
         @rate_limit(limit=30, window=60)  # 30 requests per minute
