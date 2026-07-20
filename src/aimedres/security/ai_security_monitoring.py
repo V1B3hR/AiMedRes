@@ -127,7 +127,7 @@ class IsolationForest:
             # Average path length adjustment for leaf node
             if n <= 1:
                 return depth
-            h = 2.0 * (math.log(n - 1) + 0.5772156649) - (2.0 * (n - 1) / n)
+            h = 2.0 * (math.log(n - 1) + 0.5772156649) - (2.0 * (n - 1) / n)  # 0.5772156649 = Euler-Mascheroni constant (γ)
             return depth + h
         if sample[node["feat_idx"]] < node["split"]:
             return self._path_length(node["left"], sample, depth + 1)
@@ -162,7 +162,7 @@ class IsolationForest:
         n = self._subsample
         if n <= 1:
             return 0.5
-        c_n = 2.0 * (math.log(n - 1) + 0.5772156649) - (2.0 * (n - 1) / n)
+        c_n = 2.0 * (math.log(n - 1) + 0.5772156649) - (2.0 * (n - 1) / n)  # Euler-Mascheroni constant (γ)
         score = 2.0 ** (-avg_path / c_n)
         return float(score)
 

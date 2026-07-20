@@ -49,13 +49,13 @@ spec:
             - configMapRef:
                 name: aimedres-config
           env:
-            - name: DATABASE_URL
-              value: "******aimedres-postgres:5432/aimedres"
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: aimedres-secrets
                   key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "******aimedres-postgres:5432/aimedres"
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:

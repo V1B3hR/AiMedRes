@@ -89,7 +89,10 @@ env:
   ENABLE_ENCRYPTION_AT_REST: "true"
 
 secrets:
-  # These MUST be overridden via --set or a separate secrets values file
+  # REQUIRED: These MUST be overridden before deployment via --set or a
+  # separate secrets values file. Deploying with empty values is insecure
+  # and will cause the chart to fail (the template uses the 'required' function).
+  # Generate with: openssl rand -base64 32
   secretKey: ""
   encryptionKey: ""
 
@@ -98,7 +101,8 @@ postgresql:
   auth:
     database: aimedres
     username: aimedres
-    # Set postgresql.auth.password via --set or external secret
+    # REQUIRED: Set postgresql.auth.password via --set or an external secret manager.
+    # Deploying with an empty password is insecure and not permitted in production.
     password: ""
   primary:
     persistence:
@@ -116,7 +120,8 @@ redis:
   enabled: true
   auth:
     enabled: true
-    # Set redis.auth.password via --set or external secret
+    # REQUIRED: Set redis.auth.password via --set or an external secret manager.
+    # Deploying with an empty password is insecure and not permitted in production.
     password: ""
   master:
     persistence:
