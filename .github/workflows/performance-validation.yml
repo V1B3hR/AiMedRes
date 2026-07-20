@@ -1,0 +1,88 @@
+name: Performance Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: "Base URL for API load tests"
+        required: false
+        default: "http://localhost:8080"
+        type: string
+      health_path:
+        description: "Health endpoint path for k6 script"
+        required: false
+        default: "/health"
+        type: string
+      vus:
+        description: "Virtual users for k6"
+        required: false
+        default: "10"
+        type: string
+      duration:
+        description: "k6 test duration (e.g., 30s, 2m)"
+        required: false
+        default: "30s"
+        type: string
+
+jobs:
+  k6-load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run k6 API load test
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+          HEALTH_PATH: ${{ inputs.health_path }}
+          K6_VUS: ${{ inputs.vus }}
+          K6_DURATION: ${{ inputs.duration }}
+        run: |
+          mkdir -p performance-results
+          k6 run \
+            --summary-export performance-results/k6-summary.json \
+            tests/performance/k6_api_load.js
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-summary
+          path: performance-results/k6-summary.json
+          retention-days: 14
+
+  lighthouse-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        run: npx @lhci/cli@0.14.x autorun --config=./lighthouserc.json
+
+      - name: Upload Lighthouse artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: frontend/.lighthouseci
+          retention-days: 14

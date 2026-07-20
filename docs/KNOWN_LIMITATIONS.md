@@ -122,12 +122,17 @@ CORS(app, resources={
 - Add external service integration tests
 
 ### 3. Performance Tests
-**Status**: Not implemented
+**Status**: Baseline implemented (`k6` + Lighthouse CI)
 
-**Future**:
-- Add Lighthouse CI for frontend
-- Add load testing with k6
-- Add stress testing for APIs
+**Implemented**:
+- GitHub Actions workflow: `.github/workflows/performance-validation.yml`
+- k6 health-endpoint load test: `tests/performance/k6_api_load.js`
+- Lighthouse CI configuration: `frontend/lighthouserc.json`
+
+**Remaining work**:
+- Expand k6 scenarios to additional production endpoints
+- Add stress/soak profiles for higher sustained traffic
+- Enforce stricter performance budgets as merge-gating policy
 
 ## Deployment Considerations
 

@@ -907,7 +907,7 @@ This section tracks the production-ready implementations and clinical impact cap
 - ✅ Frontend unit tests (Vitest) — `frontend/src/__tests__/` (July 2026)
 - ✅ Drug discovery / clinical trial support modules — `src/aimedres/clinical/drug_discovery.py` (July 2026)
 - ✅ Phase 3 Security: AI Security Monitoring Enhancement — `src/aimedres/security/ai_security_monitoring.py` (July 2026)
-- 🔜 Load tests (k6), Lighthouse CI
+- ✅ Load tests (k6), Lighthouse CI baseline — `tests/performance/k6_api_load.js` + `frontend/lighthouserc.json` + `.github/workflows/performance-validation.yml` (July 2026)
 - 🔜 Formal third-party HIPAA/GDPR audit and penetration test
 - 🔜 ISO 27001 / SOC 2 Type II certification (Phase 3 Security — see section 12 below)
 - 🔜 Mobile clinical companion app (design phase)
