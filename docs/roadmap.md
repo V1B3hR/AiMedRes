@@ -867,9 +867,11 @@ This section tracks the production-ready implementations and clinical impact cap
 
 ---
 
-## 11. Quick Reference (Top Current Focus)
+## 11. Quick Reference (Current Status)
 
-**Recently Completed (Dec 2024 - Oct 2025):**
+> ⚠️ **Important distinction:** "Complete" below refers to **framework/module implementation and testing** in this codebase. Several items (P8B clinical pilots, P9 FDA pathway, P12 multi-hospital network) involve planning frameworks and document generators — they are **not** confirmations of live clinical deployment, regulatory approval, or certified production operations. See [`docs/KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) for full details.
+
+**Completed (Dec 2024 - Oct 2025):**
 1. ✅ P1 – Import Path Migration (100% complete)
 2. ✅ P2 – Core engine stabilization verified (100% complete)
 3. ✅ P3 – Cross-validation automation fully operational (100% complete)
@@ -878,8 +880,8 @@ This section tracks the production-ready implementations and clinical impact cap
 6. ✅ P6 – EHR Connectivity production implementation complete
 7. ✅ P7 – Clinical Decision Support Dashboard operational
 8. ✅ P8A – Multi-Condition Support expansion complete
-9. ✅ P8B – Clinical Pilot Programs complete (100% complete)
-10. ✅ P9 – FDA Regulatory Pathway Planning complete (100% complete)
+9. ✅ P8B – Clinical Pilot Programs framework complete (100% complete)
+10. ✅ P9 – FDA Regulatory Pathway Planning documents complete (100% complete)
 11. ✅ P10 – Scalable Cloud Architecture complete with DR drills (100% complete)
 12. ✅ P11 – Advanced AI Safety Monitoring complete (100% complete)
 13. ✅ P12 – Multi-Hospital Network Launch complete (100% complete)
@@ -888,18 +890,55 @@ This section tracks the production-ready implementations and clinical impact cap
 16. ✅ P15 – 3D Brain Visualization Platform complete (100% complete)
 17. ✅ P16 – Multi-Modal AI Integration complete (100% complete)
 18. ✅ P17 – Predictive Healthcare Analytics complete (100% complete)
-
-**Current Focus:**
-1. P18 – International Healthcare Systems (localization and regional adaptation)
-2. P19 – Rare Disease Research Extension (orphan disease detection)
-3. P20 – Quantum-Enhanced Computing (hybrid quantum ML prototypes)
+19. ✅ P18 – International Healthcare Systems framework complete (100% complete)
+20. ✅ P19 – Rare Disease Research Extension framework complete (100% complete)
+21. ✅ P20 – Quantum-Enhanced Computing prototypes complete (100% complete)
 
 **Progress Summary:**
 - **Phase 1 (P1-P4):** ✅ 100% Complete
 - **Phase 2 (P5-P9):** ✅ 100% Complete
 - **Phase 3 (P10-P14):** ✅ 100% Complete
-- **Phase 4 (P15-P17):** ✅ 100% Complete
-- **Total Progress:** 17/20 major items (85% complete)
+- **Phase 4 (P15-P20):** ✅ 100% Complete
+- **Total Core Roadmap Progress:** 20/20 major items (100% of P1–P20 implemented)
+
+**Remaining / Future Work (Not in P1–P20):**
+- 🔜 Container orchestration (K8s manifests, Helm charts) — see KNOWN_LIMITATIONS.md
+- 🔜 Full observability stack (Prometheus/Grafana/Loki/Sentry)
+- 🔜 Frontend unit tests (Vitest), load tests (k6), Lighthouse CI
+- 🔜 Formal third-party HIPAA/GDPR audit and penetration test
+- 🔜 ISO 27001 / SOC 2 Type II certification (Phase 3 Security — see section 12 below)
+- 🔜 Mobile clinical companion app (design phase)
+- 🔜 Drug discovery / clinical trial support modules
+- 🔜 Actual FDA regulatory submission (P9 only produced planning documents)
+
+---
+
+## 12. Security Roadmap — Future Phases
+
+*Consolidated from the former `docs/roadmapsecurity.md` (archived at `docs/archive/roadmapsecurity.md`).*
+
+**Phase 3: Production Security Scale (Q3–Q4 2026)**
+
+4. **AI Security Monitoring Enhancement**
+   - [ ] Deploy autonomous security threat detection
+   - [ ] Implement ML-powered security analytics
+   - [ ] Integrate advanced threat intelligence feeds
+   - [ ] Automate incident response workflows
+   - [ ] Establish 24/7 security operations center (SOC)
+
+5. **Multi-Region Security Deployment**
+   - [ ] Configure region-specific compliance controls
+   - [ ] Deploy geo-redundant security infrastructure
+   - [ ] Implement data residency requirements
+   - [ ] Establish cross-region security monitoring
+   - [ ] Validate regional regulatory compliance
+
+6. **Security Validation & Certification**
+   - [ ] Complete ISO 27001 certification process
+   - [ ] Obtain SOC 2 Type II compliance
+   - [ ] Conduct third-party penetration testing
+   - [ ] Perform security architecture review
+   - [ ] Document security posture for regulatory submissions
 
 ---
 
