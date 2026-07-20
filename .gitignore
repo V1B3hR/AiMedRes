@@ -104,6 +104,16 @@ demo_outputs/
 *_demo_results.json
 *_results/
 *_training_results/
+
+# Large training result directories (should be DVC-tracked, not in git)
+# See .dvc/ for DVC configuration — run `dvc push` to store these remotely
+als_training_results/
+alzheimer_training_results/
+final_parkinsons_results/
+cardiovascular_colewelkins_full/
+cardiovascular_sulianova_full/
+diabetes_akshay_full/
+diabetes_mathchi_full/
 *_output/
 phase*_results.json
 test_*_output/

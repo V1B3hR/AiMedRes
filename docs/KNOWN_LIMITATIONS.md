@@ -48,23 +48,16 @@ npm install @cornerstonejs/core @cornerstonejs/tools @cornerstonejs/dicom-image-
 ## Security Considerations
 
 ### 1. Rate Limiting
-**Status**: Not implemented in current endpoints
+**Status**: ✅ Implemented in `src/aimedres/api/server.py` (Redis-backed sliding window with local fallback)
 
-**Recommendation**: Add rate limiting middleware
-```python
-from flask_limiter import Limiter
+Current limits: `/health` → 30 req/min, `/api/v1/predict` → 60 req/min, `/api/v1/agent/think` → 30 req/min, `/api/v1/status` → 20 req/min
 
-limiter = Limiter(
-    app,
-    key_func=lambda: request.headers.get('X-API-Key'),
-    default_limits=["100 per hour"]
-)
-```
+**Remaining work**: The legacy `secure_api_server.py` wrapper and `src/aimedres/cli/serve.py` do not apply these rate limits. Ensure all public-facing endpoints route through `src/aimedres/api/server.py` in production, or apply the same `RateLimiter` to remaining endpoints.
 
 ### 2. CORS Configuration
-**Status**: Using flask-cors with default settings
+**Status**: ✅ Implemented in `src/aimedres/api/server.py` — origins are read from `self.config.security.allowed_origins`
 
-**Recommendation**: Restrict CORS origins in production
+**Remaining work**: Ensure `allowed_origins` is set explicitly in your production config (do **not** leave it as `["*"]`). The example configuration:
 ```python
 CORS(app, resources={
     r"/api/*": {

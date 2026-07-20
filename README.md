@@ -5,32 +5,66 @@
 > **Safety‑aware, explainable AI for neurological and mental health research**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/V1B3hR/AiMedRes)
-[![Status](https://img.shields.io/badge/status-production%20ready-green.svg)](https://github.com/V1B3hR/AiMedRes)
+[![Status](https://img.shields.io/badge/status-research%20prototype-orange.svg)](https://github.com/V1B3hR/AiMedRes)
 
 ---
 
-## 🏥 Production-Ready Clinical Platform
+> **⚠️ RESEARCH USE ONLY — NOT FOR CLINICAL DIAGNOSIS ⚠️**  
+> This software has **NOT** been approved by the FDA or any other regulatory authority.  
+> It is intended exclusively for research and development purposes.  
+> Clinical decisions must only be made by licensed healthcare professionals.  
+> See the full [Disclaimer](#️-disclaimer) below.
 
-AiMedRes is now fully validated for secure deployment in clinical, hospital, and enterprise healthcare environments.  
-All compliance, security, interoperability, and reliability requirements described in [healthcaredeploymentplan.md](healthcaredeploymentplan.md) are **fully implemented, tested, and ready for patient-facing IT**.
+---
 
-### 🚦 Implementation Status: 100%
+## 📊 Implementation Status
 
-| Step                     | Status   |
-|--------------------------|----------|
-| Preparation & Planning   | ✅ DONE  |
-| Technical Setup          | ✅ DONE  |
-| Data & Integration       | ✅ DONE  |
-| Security & Compliance    | ✅ DONE  |
-| System Validation        | ✅ DONE  |
-| Production Deployment    | ✅ DONE  |
-| Clinical Readiness       | ✅ DONE  |
-| Governance & Improvement | ✅ DONE  |
-| Post-Go-Live Review      | ✅ DONE  |
+AiMedRes is an actively developed research platform. The table below separates what is **actually implemented and tested** in this codebase from items that are **documentation/planning artifacts** or **not yet implemented**.
 
-**See:** [healthcaredeploymentplan.md](healthcaredeploymentplan.md) for line-by-line implementation details, checklists, scripts, and SOPs.
+### ✅ Implemented & Tested in This Codebase
+
+| Capability | Location | Notes |
+|---|---|---|
+| Core adaptive neural architecture | `src/aimedres/core/` | Tested |
+| Multi-agent consultation system | `src/aimedres/agents/` | Tested |
+| HIPAA audit logging & PHI scrubbing | `src/aimedres/security/`, `src/aimedres/compliance/` | Tested |
+| FHIR/HL7 EHR integration | `src/aimedres/integration/ehr.py` | Tested |
+| Clinical Decision Support | `src/aimedres/clinical/decision_support.py` | Tested |
+| 3D Brain Visualization (P15) | Frontend viewer | Prototype tested |
+| Multi-modal AI integration (P16) | `src/aimedres/core/multimodal_integration.py` | Tested |
+| Predictive healthcare analytics (P17) | `src/aimedres/clinical/` | Tested |
+| Multi-hospital network framework (P12) | `src/aimedres/clinical/multi_hospital_network.py` | Tested |
+| Quantum-safe cryptography (Kyber768/AES-256) | `src/aimedres/security/` | Hybrid implementation |
+| Rate limiting & CORS hardening | `src/aimedres/api/server.py` | Configurable per endpoint |
+| Training pipeline (7 disease models) | `src/aimedres/training/` | ALS, Alzheimer's, Parkinson's, CVD, Diabetes, Brain MRI, Agents |
+
+### 📄 Documentation / Planning Artifacts Only
+
+These modules **generate planning documents or scaffold skeletons** — they are **not** regulatory approvals, clinical certifications, or operational deployments.
+
+| Item | Reality |
+|---|---|
+| FDA Q-Sub package generator (P9) | Generates pre-submission *draft documents*; **no FDA submission has been made** |
+| QMS documentation skeleton (P9) | Provides SOP templates; **not a certified Quality Management System** |
+| Clinical pilot programs framework (P8B) | Provides tracking/study-design structure; **no confirmed live patient data collected** |
+| HIPAA compliance scaffolding | Implements technical safeguards; **formal third-party audit not yet completed** |
+| International healthcare systems (P18) | Framework implemented; **no regulatory validation in non-US jurisdictions** |
+
+### 🔜 Not Yet Implemented — Roadmap Items
+
+See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) for the full list. Key gaps:
+
+| Item | Status |
+|---|---|
+| Production container images (K8s manifests, Helm charts) | Root `Dockerfile` added; K8s manifests are future work |
+| Full observability stack (Prometheus / Grafana / Loki / Sentry) | Not yet deployed |
+| Frontend unit tests (Vitest), load tests (k6), Lighthouse CI | Future |
+| Formal third-party HIPAA/GDPR audit & penetration test | Future |
+| FDA regulatory submission | Future (currently only planning documentation exists) |
+
+**See:** [healthcaredeploymentplan.md](healthcaredeploymentplan.md) for deployment planning details and [docs/roadmap.md](docs/roadmap.md) for full roadmap.
 
 ## 🎯 Mission
 
@@ -99,19 +133,21 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - HIPAA/GDPR compliance built-in
 
 ### 🚢 MLOps & Deployment (P3-3)
-- **Canary Deployment Pipeline** - Shadow mode with continuous validation
+- **Canary Deployment Pipeline** - Shadow mode with continuous validation (implementation in `mlops/`)
 - **Automated Testing** - Accuracy, fairness, performance, drift detection
 - **Auto-Rollback** - Intelligent rollback on failures
 - A/B testing for model comparison
 - Production monitoring and alerting
 
+> ⚠️ **Note:** Full container orchestration (K8s, Helm), Prometheus/Grafana monitoring stack, and automated CI/CD pipelines are **planned roadmap items**, not yet fully operational. See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+
   **Validated model performance & workflow:**
 - Alzheimer’s Detection (AUC 0.93), Parkinson’s, ALS, MRI, CVD, and more
 - CLI/API/GUI validated in real-world scenarios according to healthcaredeploymentplan.md
 
-**Complete deployment & governance stack:**
-- End-to-end deployment automation: Docker, K8s, Helm, blue/green/canary, rollback
-- Prometheus/Grafana monitoring, AlertManager, ELK, SIEM, and post-go-live review
+**Deployment planning stack (see KNOWN_LIMITATIONS for gaps):**
+- Deployment planning: Docker (root `Dockerfile`), K8s manifests (future work), Helm (future), blue/green/canary strategies documented
+- Monitoring stack planned: Prometheus/Grafana, AlertManager, ELK, SIEM (not yet deployed — see [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md))
 
 ---
 
@@ -149,19 +185,21 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 
 ### Deploying AiMedRes in a Hospital or Clinical Setting
 
-- **All technical, clinical, compliance, and operational requirements described in [healthcaredeploymentplan.md](healthcaredeploymentplan.md) are implemented**
+- **Technical, compliance, and operational planning documentation is available in [healthcaredeploymentplan.md](healthcaredeploymentplan.md)**
 - **Reference the plan for scripts, templates, rollback, support, backup/DR, escalation, audit sample code, checklists, and SOPs**
-- **Validated by: automated + manual, UAT, and clinical stakeholder sign-off**
-- **Incident management, governance, and continuous improvement are institutionalized**
+- **Any actual clinical deployment requires institutional review, local regulatory validation, and sign-off by qualified personnel**
+- **Incident management, governance, and continuous improvement must be established by your institution**
+
+> ⚠️ The deployment plan is a **planning and reference document**, not a guarantee of production readiness. Several infrastructure items (K8s manifests, observability stack, formal security audits) are still roadmap items — see [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
 
 ### What You Get
 
-- Turn-key deployable stack with all 9 stages fully completed
-- Built-in scripts and guides for local adaptation at any institution
-- Full compliance with HIPAA, GDPR, NIST, and FDA-pre-market planning
+- A research-grade ML platform with security scaffolding and compliance documentation stubs
+- Built-in scripts and guides for local adaptation
+- Compliance documentation generators for HIPAA, GDPR, NIST, and FDA pre-submission planning
 
 **Start here:**  
-[healthcaredeploymentplan.md](healthcaredeploymentplan.md) — your how-to guide for a safe, secure, and compliant go-live.
+[healthcaredeploymentplan.md](healthcaredeploymentplan.md) — deployment planning guide.
 
 ---
 
@@ -219,9 +257,9 @@ See [LICENSE](LICENSE) for details.
 
 ## 👨‍⚕️ Clinical Safety Note
 
-**This software is production-ready for regulated environments, but always deploy in accordance with institutional policy and local laws!**  
-Clinical validation, sign-off, and responsible use is mandatory for patient-facing decisions.  
-By using this system, you agree to all legal and compliance disclaimers in [README.md](README.md) and [healthcaredeploymentplan.md](healthcaredeploymentplan.md).
+**This software is a research prototype. Before any clinical deployment, institutional validation, regulatory compliance review, and sign-off are mandatory.**  
+It is **NOT** approved for patient-facing decisions without proper clinical validation.  
+By using this system, you agree to all legal and compliance disclaimers in this README and [healthcaredeploymentplan.md](healthcaredeploymentplan.md).
 
 ---
 
@@ -432,13 +470,16 @@ data/
 
 ## 📚 Documentation
 
-| Topic                 | Link                               |
-|-----------------------|------------------------------------|
-| Technical Architecture| docs/architecture.md               |
-| Medical Applications  | docs/medical-applications.md       |
-| API Reference         | docs/api-reference.md              |
-| Compliance Tracking   | docs/compliance.md                 |
-| Publications / Notes  | docs/publications.md               |
+| Topic                 | Link                                                      |
+|-----------------------|-----------------------------------------------------------|
+| Technical Architecture| docs/architecture.md                                      |
+| Medical Applications  | docs/medical-applications.md                              |
+| API Reference         | [docs/API_REFERENCE.md](docs/API_REFERENCE.md)            |
+| Compliance Tracking   | docs/compliance.md                                        |
+| Publications / Notes  | docs/publications.md                                      |
+| Known Limitations     | [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md)    |
+| Agent Memory System   | [agent_memory/README.md](agent_memory/README.md)          |
+| Development Roadmap   | [docs/roadmap.md](docs/roadmap.md)                        |
 
 (Missing docs: generate via `scripts/scaffold_docs.py`)
 
@@ -471,7 +512,7 @@ data/
 - Deployment orchestrator (K8s + streaming inference)
 - Adversarial robustness suite
 
-> For full roadmap and documentation, see [ROADMAP.md](ROADMAP.md) and [architecture docs](docs/architecture.md).  
+> For full roadmap and documentation, see [docs/roadmap.md](docs/roadmap.md) and [architecture docs](docs/architecture.md).  
 > Recent PRs: [Implement P15-P17: 3D Brain Visualization, Multi-Modal AI Integration, and Predictive Healthcare Analytics](https://github.com/V1B3hR/AiMedRes/pull/162), [Implement P8B Clinical Pilot Programs and P9 FDA Regulatory Pathway Planning](https://github.com/V1B3hR/AiMedRes/pull/161), [Implement P12, P13, P14 roadmap phases](https://github.com/V1B3hR/AiMedRes/pull/160), [more...](https://github.com/V1B3hR/AiMedRes/pulls?q=is%3Apr+is%3Aclosed)
 
 ---
