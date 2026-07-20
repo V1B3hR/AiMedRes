@@ -869,6 +869,8 @@ This section tracks the production-ready implementations and clinical impact cap
 
 ## 11. Quick Reference (Current Status)
 
+> ⚠️ **Important distinction:** "Complete" below refers to **framework/module implementation and testing** in this codebase. Several items (P8B clinical pilots, P9 FDA pathway, P12 multi-hospital network) involve planning frameworks and document generators — they are **not** confirmations of live clinical deployment, regulatory approval, or certified production operations. See [`docs/KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) for full details.
+
 **Completed (Dec 2024 - Oct 2025):**
 1. ✅ P1 – Import Path Migration (100% complete)
 2. ✅ P2 – Core engine stabilization verified (100% complete)
@@ -898,8 +900,6 @@ This section tracks the production-ready implementations and clinical impact cap
 - **Phase 3 (P10-P14):** ✅ 100% Complete
 - **Phase 4 (P15-P20):** ✅ 100% Complete
 - **Total Core Roadmap Progress:** 20/20 major items (100% of P1–P20 implemented)
-
-> ⚠️ **Important distinction:** "Complete" refers to the framework/module implementation and testing in this codebase. Several items (P8B clinical pilots, P9 FDA pathway, P12 multi-hospital network) involve planning frameworks and document generators — they are **not** confirmations of live clinical deployment, regulatory approval, or certified production operations. See [`docs/KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) for full details.
 
 **Remaining / Future Work (Not in P1–P20):**
 - 🔜 Container orchestration (K8s manifests, Helm charts) — see KNOWN_LIMITATIONS.md

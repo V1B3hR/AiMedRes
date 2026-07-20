@@ -15,7 +15,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    AIMEDRES_HOST=0.0.0.0 \
+    AIMEDRES_PORT=8000
 
 # Non-root user (least-privilege)
 RUN groupadd -r aimedres && \
@@ -51,6 +53,6 @@ USER aimedres
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:${AIMEDRES_PORT}/health || exit 1
 
-CMD ["python", "-m", "aimedres", "serve", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python -m aimedres serve --host ${AIMEDRES_HOST} --port ${AIMEDRES_PORT}"]
