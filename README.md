@@ -39,6 +39,11 @@ AiMedRes is an actively developed research platform. The table below separates w
 | Quantum-safe cryptography (Kyber768/AES-256) | `src/aimedres/security/` | Hybrid implementation |
 | Rate limiting & CORS hardening | `src/aimedres/api/server.py` | Configurable per endpoint |
 | Training pipeline (7 disease models) | `src/aimedres/training/` | ALS, Alzheimer's, Parkinson's, CVD, Diabetes, Brain MRI, Agents |
+| Container orchestration (K8s + Helm) | `k8s/`, `helm/aimedres/` | Deployment manifests and chart present |
+| Observability stack | `monitoring/` | Prometheus, Grafana, Alertmanager configs present |
+| AI security monitoring enhancement | `src/aimedres/security/ai_security_monitoring.py` | Threat detection, analytics, incident response tested |
+| Drug discovery & clinical trial support | `src/aimedres/clinical/drug_discovery.py` | Screening, trial design, safety workflows tested |
+| Frontend unit tests (Vitest) | `frontend/src/__tests__/` | API-focused unit coverage present |
 
 ### 📄 Documentation / Planning Artifacts Only
 
@@ -58,9 +63,7 @@ See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) for the full list. 
 
 | Item | Status |
 |---|---|
-| Production container images (K8s manifests, Helm charts) | Root `Dockerfile` added; K8s manifests are future work |
-| Full observability stack (Prometheus / Grafana / Loki / Sentry) | Not yet deployed |
-| Frontend unit tests (Vitest), load tests (k6), Lighthouse CI | Future |
+| Load tests (k6) and Lighthouse CI | Future |
 | Formal third-party HIPAA/GDPR audit & penetration test | Future |
 | FDA regulatory submission | Future (currently only planning documentation exists) |
 
@@ -139,15 +142,15 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - A/B testing for model comparison
 - Production monitoring and alerting
 
-> ⚠️ **Note:** Full container orchestration (K8s, Helm), Prometheus/Grafana monitoring stack, and automated CI/CD pipelines are **planned roadmap items**, not yet fully operational. See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+> ⚠️ **Note:** K8s/Helm deployment assets and Prometheus/Grafana/Alertmanager observability configs are implemented in-repo. Remaining roadmap work focuses on CI/CD expansion, load testing, Lighthouse CI, and formal external audits. See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
 
   **Validated model performance & workflow:**
 - Alzheimer’s Detection (AUC 0.93), Parkinson’s, ALS, MRI, CVD, and more
 - CLI/API/GUI validated in real-world scenarios according to healthcaredeploymentplan.md
 
-**Deployment planning stack (see KNOWN_LIMITATIONS for gaps):**
-- Deployment planning: Docker (root `Dockerfile`), K8s manifests (future work), Helm (future), blue/green/canary strategies documented
-- Monitoring stack planned: Prometheus/Grafana, AlertManager, ELK, SIEM (not yet deployed — see [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md))
+**Deployment planning stack (see KNOWN_LIMITATIONS for remaining gaps):**
+- Deployment assets: Docker (root `Dockerfile`), K8s manifests (`k8s/`), Helm chart (`helm/aimedres/`), blue/green/canary strategies documented
+- Monitoring assets: Prometheus/Grafana/Alertmanager (`monitoring/`), ELK and SIEM integration guidance in deployment docs
 
 ---
 
@@ -190,7 +193,7 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - **Any actual clinical deployment requires institutional review, local regulatory validation, and sign-off by qualified personnel**
 - **Incident management, governance, and continuous improvement must be established by your institution**
 
-> ⚠️ The deployment plan is a **planning and reference document**, not a guarantee of production readiness. Several infrastructure items (K8s manifests, observability stack, formal security audits) are still roadmap items — see [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+> ⚠️ The deployment plan is a **planning and reference document**, not a guarantee of production readiness. Infrastructure assets for K8s/Helm and observability are included, while formal security audits, external certifications, and institution-specific rollout validation remain future work — see [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
 
 ### What You Get
 

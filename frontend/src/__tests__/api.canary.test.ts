@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('./cases', () => {
+vi.mock('../api/cases', () => {
   const mock = {
     get: vi.fn(),
     post: vi.fn(),

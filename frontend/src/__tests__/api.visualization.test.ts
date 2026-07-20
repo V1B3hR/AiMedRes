@@ -43,7 +43,7 @@ describe('brainVisualizationAPI', () => {
     })
 
     expect(mockAxios.post).toHaveBeenCalledWith(
-      '/api/v1/brain/overlay',
+      '/brain/overlay',
       expect.objectContaining({
         patient_id: 'p1',
         regions_of_interest: ['frontal_lobe'],
@@ -53,7 +53,7 @@ describe('brainVisualizationAPI', () => {
     expect(result.overlay_id).toBe('ov1')
   })
 
-  it('getDiseaseMap returns disease mapping data', async () => {
+  it('createDiseaseMap returns disease mapping data', async () => {
     const mockResponse = {
       map_id: 'dm1',
       patient_id: 'p1',
@@ -63,12 +63,20 @@ describe('brainVisualizationAPI', () => {
     }
     mockAxios.post.mockResolvedValueOnce({ data: mockResponse })
 
-    const result = await brainVisualizationAPI.getDiseaseMap({
+    const result = await brainVisualizationAPI.createDiseaseMap({
       patient_id: 'p1',
       disease_type: 'alzheimers',
-      progression_stage: 'moderate',
+      severity_map: { hippocampus: 0.8 },
     })
 
+    expect(mockAxios.post).toHaveBeenCalledWith(
+      '/brain/disease-map',
+      expect.objectContaining({
+        patient_id: 'p1',
+        disease_type: 'alzheimers',
+        severity_map: { hippocampus: 0.8 },
+      })
+    )
     expect(result.disease_type).toBe('alzheimers')
     expect(result.affected_regions).toContain('hippocampus')
   })
@@ -83,12 +91,14 @@ describe('brainVisualizationAPI', () => {
 
     const result = await brainVisualizationAPI.simulateTreatment({
       patient_id: 'p1',
+      baseline_snapshot_id: 'snap-1',
       treatment_type: 'medication',
-      treatment_params: { drug: 'donepezil', dose_mg: 10 },
+      duration_days: 30,
+      efficacy_rate: 0.72,
     })
 
     expect(mockAxios.post).toHaveBeenCalledWith(
-      '/api/v1/brain/simulate-treatment',
+      '/brain/treatment-simulation',
       expect.objectContaining({ treatment_type: 'medication' })
     )
     expect(result.predicted_outcome.improvement_probability).toBeGreaterThan(0.5)

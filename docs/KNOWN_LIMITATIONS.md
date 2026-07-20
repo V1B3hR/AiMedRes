@@ -106,11 +106,11 @@ CORS(app, resources={
 ## Testing Improvements
 
 ### 1. Unit Tests
-**Status**: E2E tests only
+**Status**: Frontend Vitest API unit tests and targeted pytest coverage are implemented
 
 **Future**:
-- Add component unit tests with Vitest
-- Add API unit tests with pytest
+- Expand Vitest coverage from API modules into more frontend components
+- Add broader pytest coverage for additional backend integration surfaces
 - Add utility function tests
 
 ### 2. Integration Tests
@@ -132,29 +132,20 @@ CORS(app, resources={
 ## Deployment Considerations
 
 ### 1. Container Configuration
-**Recommendation**: Create Dockerfiles
-```dockerfile
-# Frontend Dockerfile
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY frontend/package*.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
+**Status**: Root `Dockerfile` exists; K8s manifests and Helm chart are available for deployment orchestration
 
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-```
+**Remaining work**:
+- Publish production-ready container images through CI/CD
+- Add a dedicated frontend container image if the UI is deployed independently
+- Harden image provenance/signing for regulated environments
 
 ### 2. Kubernetes Deployment
-**Recommendation**: Add Kubernetes manifests
-- Deployment for frontend
-- Deployment for backend
-- Services for load balancing
-- Ingress for routing
-- ConfigMaps for configuration
-- Secrets for sensitive data
+**Status**: Kubernetes manifests exist in `k8s/` and Helm chart exists in `helm/aimedres/`
+
+**Remaining work**:
+- Add cloud-provider-specific production overlays
+- Validate multi-region deployment and residency controls in target environments
+- Automate release promotion through CI/CD
 
 ### 3. CI/CD Pipeline
 **Recommendation**: Add GitHub Actions workflows
@@ -167,11 +158,12 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 ## Monitoring & Observability
 
 ### 1. Application Monitoring
-**Recommendation**: Add monitoring stack
-- Prometheus for metrics
-- Grafana for dashboards
-- Loki for logs
-- Jaeger for distributed tracing
+**Status**: Prometheus, Grafana, and Alertmanager configs are present in `monitoring/`
+
+**Remaining work**:
+- Add Loki/Jaeger or equivalent centralized logs and tracing
+- Wire production dashboards and alerts into hosted infrastructure
+- Add automated validation for observability configs
 
 ### 2. Frontend Monitoring
 **Recommendation**: Add frontend monitoring
@@ -180,11 +172,13 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 - Web Vitals monitoring
 
 ### 3. Security Monitoring
-**Recommendation**: Enhanced security monitoring
-- SIEM integration
-- Automated vulnerability scanning
-- Penetration testing
-- Security audit logs analysis
+**Status**: AI security monitoring is implemented in `src/aimedres/security/ai_security_monitoring.py`
+
+**Remaining work**:
+- Integrate hosted SIEM pipelines
+- Add automated vulnerability scanning in CI/CD
+- Conduct external penetration testing
+- Expand long-term audit log analytics
 
 ## Documentation Improvements
 
