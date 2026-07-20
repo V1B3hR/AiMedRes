@@ -74,6 +74,7 @@ describe('brainVisualizationAPI', () => {
       expect.objectContaining({
         patient_id: 'p1',
         disease_type: 'alzheimers',
+        severity_map: { hippocampus: 0.8 },
       })
     )
     expect(result.disease_type).toBe('alzheimers')
