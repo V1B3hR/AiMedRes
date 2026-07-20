@@ -1,0 +1,69 @@
+groups:
+  - name: aimedres.application
+    rules:
+      - alert: AiMedResDown
+        expr: up{job="aimedres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "AiMedRes instance is down"
+          description: "AiMedRes {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: HighResponseLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="aimedres"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 response latency"
+          description: "p95 latency is {{ $value | humanizeDuration }} (target <100ms)."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="aimedres",status=~"5.."}[5m]) / rate(http_requests_total{job="aimedres"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.instance }}."
+
+  - name: aimedres.security
+    rules:
+      - alert: HighFailedAuthRate
+        expr: rate(aimedres_auth_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failures: {{ $value }}/min on {{ $labels.instance }}."
+
+      - alert: SecurityThreatDetected
+        expr: aimedres_security_threats_total > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Security threat detected"
+          description: "{{ $value }} active security threat(s) detected."
+
+  - name: aimedres.clinical
+    rules:
+      - alert: ClinicalDecisionSupportDown
+        expr: aimedres_clinical_decision_support_available == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Clinical decision support unavailable"
+          description: "Clinical decision support is unavailable – clinical workflows may be impacted."
+
+      - alert: ModelDriftDetected
+        expr: aimedres_model_drift_score > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model drift detected"
+          description: "Drift score {{ $value }} exceeds threshold 0.3 for model {{ $labels.model }}."

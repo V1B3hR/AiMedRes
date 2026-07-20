@@ -1,0 +1,152 @@
+# Default values for aimedres Helm chart.
+# Override these in a values-<env>.yaml file or with --set flags.
+
+replicaCount: 2
+
+image:
+  repository: aimedres
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8000"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  httpPort: 80
+  appPort: 8000
+  adminPort: 8001
+  healthPort: 8002
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: aimedres.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: aimedres-tls
+      hosts:
+        - aimedres.example.com
+
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "2"
+    memory: "4Gi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+persistence:
+  data:
+    enabled: true
+    size: 50Gi
+    storageClass: standard
+  logs:
+    enabled: true
+    size: 10Gi
+    storageClass: standard
+
+env:
+  LOG_LEVEL: INFO
+  ENVIRONMENT: production
+  ENABLE_AUDIT_LOGGING: "true"
+  ENABLE_PHI_SCRUBBING: "true"
+  ENABLE_ENCRYPTION_AT_REST: "true"
+
+secrets:
+  # These MUST be overridden via --set or a separate secrets values file
+  secretKey: ""
+  encryptionKey: ""
+
+postgresql:
+  enabled: true
+  auth:
+    database: aimedres
+    username: aimedres
+    # Set postgresql.auth.password via --set or external secret
+    password: ""
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1"
+        memory: "2Gi"
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    # Set redis.auth.password via --set or external secret
+    password: ""
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+
+mlflow:
+  enabled: true
+  image: python:3.11-slim
+  port: 5000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8002
+  initialDelaySeconds: 60
+  periodSeconds: 30
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8002
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3

@@ -12,6 +12,7 @@ This module provides comprehensive security features including:
 from .auth import SecureAuthManager, require_admin, require_auth
 from .encryption import DataEncryption
 from .monitoring import SecurityMonitor
+from .ai_security_monitoring import AISecurityMonitor, ThreatIntelligenceFeed, IncidentResponseEngine
 from .privacy import DataRetentionPolicy, PrivacyManager
 from .validation import InputValidator, SecurityValidator
 
@@ -25,4 +26,7 @@ __all__ = [
     "PrivacyManager",
     "DataRetentionPolicy",
     "SecurityMonitor",
+    "AISecurityMonitor",
+    "ThreatIntelligenceFeed",
+    "IncidentResponseEngine",
 ]

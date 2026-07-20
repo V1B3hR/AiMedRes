@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aimedres
+  labels:
+    app.kubernetes.io/name: aimedres
+    app.kubernetes.io/part-of: aimedres
+    environment: production
