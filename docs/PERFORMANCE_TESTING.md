@@ -13,7 +13,7 @@ AiMedRes now includes a roadmap-aligned performance validation baseline:
 Prerequisite: install [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/).
 
 ```bash
-cd /home/runner/work/AiMedRes/AiMedRes
+cd AiMedRes
 API_BASE_URL=http://localhost:8080 HEALTH_PATH=/health K6_VUS=10 K6_DURATION=30s k6 run tests/performance/k6_api_load.js
 ```
 
@@ -27,7 +27,7 @@ Environment variables:
 ## Run Lighthouse Locally
 
 ```bash
-cd /home/runner/work/AiMedRes/AiMedRes/frontend
+cd AiMedRes/frontend
 npm ci --legacy-peer-deps
 npm run build
 npx @lhci/cli@0.14.x autorun --config=./lighthouserc.json

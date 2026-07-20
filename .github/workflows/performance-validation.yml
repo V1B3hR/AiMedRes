@@ -24,6 +24,9 @@ on:
         default: "30s"
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   k6-load-test:
     runs-on: ubuntu-latest
