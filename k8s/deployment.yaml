@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aimedres
+  namespace: aimedres
+  labels:
+    app.kubernetes.io/name: aimedres
+    app.kubernetes.io/component: app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aimedres
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: aimedres
+        app.kubernetes.io/name: aimedres
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      serviceAccountName: aimedres
+      containers:
+        - name: aimedres
+          image: aimedres:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+            - name: admin
+              containerPort: 8001
+              protocol: TCP
+            - name: health
+              containerPort: 8002
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: aimedres-config
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aimedres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: DATABASE_URL
+              value: "******aimedres-postgres:5432/aimedres"
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aimedres-secrets
+                  key: SECRET_KEY
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aimedres-secrets
+                  key: ENCRYPTION_KEY
+            - name: MINIO_ACCESS_KEY
+              value: aimedres
+            - name: MINIO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aimedres-secrets
+                  key: MINIO_ROOT_PASSWORD
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 3
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: logs
+              mountPath: /app/logs
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: aimedres-data
+        - name: logs
+          persistentVolumeClaim:
+            claimName: aimedres-logs
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aimedres
+  namespace: aimedres
+  labels:
+    app.kubernetes.io/name: aimedres

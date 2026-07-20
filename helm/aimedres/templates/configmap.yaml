@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aimedres.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aimedres.labels" . | nindent 4 }}
+data:
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+  ENVIRONMENT: {{ .Values.env.ENVIRONMENT | quote }}
+  ENABLE_AUDIT_LOGGING: {{ .Values.env.ENABLE_AUDIT_LOGGING | quote }}
+  ENABLE_PHI_SCRUBBING: {{ .Values.env.ENABLE_PHI_SCRUBBING | quote }}
+  ENABLE_ENCRYPTION_AT_REST: {{ .Values.env.ENABLE_ENCRYPTION_AT_REST | quote }}
+  MLFLOW_TRACKING_URI: "http://{{ include "aimedres.fullname" . }}-mlflow:5000"
+  AIMEDRES_HOST: "0.0.0.0"
+  AIMEDRES_PORT: "8000"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "aimedres.fullname" . }}-secrets
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aimedres.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  secretKey: {{ .Values.secrets.secretKey | required "secrets.secretKey is required" | quote }}
+  encryptionKey: {{ .Values.secrets.encryptionKey | required "secrets.encryptionKey is required" | quote }}
+{{- if .Values.serviceAccount.create }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "aimedres.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aimedres.labels" . | nindent 4 }}
+  {{- with .Values.serviceAccount.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}
+{{- if .Values.persistence.data.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "aimedres.fullname" . }}-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aimedres.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}
+  storageClassName: {{ .Values.persistence.data.storageClass }}
+{{- end }}
+{{- if .Values.persistence.logs.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "aimedres.fullname" . }}-logs
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "aimedres.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.logs.size }}
+  storageClassName: {{ .Values.persistence.logs.storageClass }}
+{{- end }}

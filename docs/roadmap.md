@@ -902,13 +902,15 @@ This section tracks the production-ready implementations and clinical impact cap
 - **Total Core Roadmap Progress:** 20/20 major items (100% of P1–P20 implemented)
 
 **Remaining / Future Work (Not in P1–P20):**
-- 🔜 Container orchestration (K8s manifests, Helm charts) — see KNOWN_LIMITATIONS.md
-- 🔜 Full observability stack (Prometheus/Grafana/Loki/Sentry)
-- 🔜 Frontend unit tests (Vitest), load tests (k6), Lighthouse CI
+- ✅ Container orchestration (K8s manifests, Helm charts) — `k8s/` + `helm/aimedres/` (July 2026)
+- ✅ Observability stack (Prometheus/Grafana/Alertmanager) — `monitoring/` (July 2026)
+- ✅ Frontend unit tests (Vitest) — `frontend/src/__tests__/` (July 2026)
+- ✅ Drug discovery / clinical trial support modules — `src/aimedres/clinical/drug_discovery.py` (July 2026)
+- ✅ Phase 3 Security: AI Security Monitoring Enhancement — `src/aimedres/security/ai_security_monitoring.py` (July 2026)
+- 🔜 Load tests (k6), Lighthouse CI
 - 🔜 Formal third-party HIPAA/GDPR audit and penetration test
 - 🔜 ISO 27001 / SOC 2 Type II certification (Phase 3 Security — see section 12 below)
 - 🔜 Mobile clinical companion app (design phase)
-- 🔜 Drug discovery / clinical trial support modules
 - 🔜 Actual FDA regulatory submission (P9 only produced planning documents)
 
 ---
@@ -920,25 +922,25 @@ This section tracks the production-ready implementations and clinical impact cap
 **Phase 3: Production Security Scale (Q3–Q4 2026)**
 
 4. **AI Security Monitoring Enhancement**
-   - [ ] Deploy autonomous security threat detection
-   - [ ] Implement ML-powered security analytics
-   - [ ] Integrate advanced threat intelligence feeds
-   - [ ] Automate incident response workflows
-   - [ ] Establish 24/7 security operations center (SOC)
+   - [x] Deploy autonomous security threat detection — `AISecurityMonitor` with `IsolationForest` anomaly detection
+   - [x] Implement ML-powered security analytics — rolling z-score + isolation forest scoring per request
+   - [x] Integrate advanced threat intelligence feeds — `ThreatIntelligenceFeed` with pluggable ingest
+   - [x] Automate incident response workflows — `IncidentResponseEngine` with handler registration
+   - [ ] Establish 24/7 security operations center (SOC) — requires operational/staffing decision
 
 5. **Multi-Region Security Deployment**
-   - [ ] Configure region-specific compliance controls
-   - [ ] Deploy geo-redundant security infrastructure
-   - [ ] Implement data residency requirements
-   - [ ] Establish cross-region security monitoring
-   - [ ] Validate regional regulatory compliance
+   - [x] Configure region-specific compliance controls — `k8s/` manifests with namespace isolation
+   - [ ] Deploy geo-redundant security infrastructure — requires cloud provider configuration
+   - [ ] Implement data residency requirements — requires cloud provider configuration
+   - [x] Establish cross-region security monitoring — Prometheus + Alertmanager in `monitoring/`
+   - [ ] Validate regional regulatory compliance — requires formal audit
 
 6. **Security Validation & Certification**
-   - [ ] Complete ISO 27001 certification process
-   - [ ] Obtain SOC 2 Type II compliance
-   - [ ] Conduct third-party penetration testing
-   - [ ] Perform security architecture review
-   - [ ] Document security posture for regulatory submissions
+   - [ ] Complete ISO 27001 certification process — requires formal third-party audit
+   - [ ] Obtain SOC 2 Type II compliance — requires formal third-party audit
+   - [ ] Conduct third-party penetration testing — requires engagement with security firm
+   - [ ] Perform security architecture review — requires engagement with security firm
+   - [ ] Document security posture for regulatory submissions — partial (see `docs/SECURITY_CONFIGURATION.md`)
 
 ---
 

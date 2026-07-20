@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aimedres-config
+  namespace: aimedres
+  labels:
+    app.kubernetes.io/name: aimedres
+data:
+  LOG_LEVEL: "INFO"
+  ENVIRONMENT: "production"
+  ENABLE_AUDIT_LOGGING: "true"
+  ENABLE_PHI_SCRUBBING: "true"
+  ENABLE_ENCRYPTION_AT_REST: "true"
+  MINIO_ENDPOINT: "aimedres-minio:9000"
+  MLFLOW_TRACKING_URI: "http://aimedres-mlflow:5000"
+  AIMEDRES_HOST: "0.0.0.0"
+  AIMEDRES_PORT: "8000"
