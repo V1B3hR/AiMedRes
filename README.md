@@ -63,7 +63,7 @@ See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) for the full list. 
 
 | Item | Status |
 |---|---|
-| Load tests (k6) and Lighthouse CI | Future |
+| Load tests (k6) and Lighthouse CI baseline | Implemented |
 | Formal third-party HIPAA/GDPR audit & penetration test | Future |
 | FDA regulatory submission | Future (currently only planning documentation exists) |
 
@@ -142,7 +142,7 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 - A/B testing for model comparison
 - Production monitoring and alerting
 
-> ⚠️ **Note:** K8s/Helm deployment assets and Prometheus/Grafana/Alertmanager observability configs are implemented in-repo. Remaining roadmap work focuses on CI/CD expansion, load testing, Lighthouse CI, and formal external audits. See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+> ⚠️ **Note:** K8s/Helm deployment assets, Prometheus/Grafana/Alertmanager observability configs, and baseline k6/Lighthouse performance validation are implemented in-repo. Remaining roadmap work focuses on CI/CD expansion and formal external audits/certifications. See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
 
   **Validated model performance & workflow:**
 - Alzheimer’s Detection (AUC 0.93), Parkinson’s, ALS, MRI, CVD, and more

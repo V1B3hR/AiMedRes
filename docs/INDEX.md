@@ -29,6 +29,7 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 - [MLOps Architecture](MLOPS_ARCHITECTURE.md) - MLOps infrastructure and deployment
 - [Production MLOps Guide](PRODUCTION_MLOPS_GUIDE.md) - Production deployment guide
 - [Monitoring Enhancements](MONITORING_ENHANCEMENTS.md) - System monitoring and observability
+- [Performance Testing Guide](PERFORMANCE_TESTING.md) - k6 and Lighthouse CI baseline
 - [Phase 2B README](PHASE2B_README.md) - Phase 2B features
 
 ## 🤖 Agents & Features

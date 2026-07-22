@@ -176,3 +176,29 @@ The workflow will automatically configure Kaggle authentication when these secre
 - Main training orchestrator documentation: [`run_all_training.py`](../../run_all_training.py)
 - Training usage guide: [`TRAINING_USAGE.md`](../../TRAINING_USAGE.md)
 - Repository README: [`README.md`](../../README.md)
+
+---
+
+## Performance Validation Workflow
+
+The `performance-validation.yml` workflow runs roadmap baseline performance checks:
+
+- k6 API load test (`tests/performance/k6_api_load.js`)
+- Lighthouse CI frontend audit (`frontend/lighthouserc.json`)
+
+### How to Use
+
+1. Go to the **Actions** tab
+2. Select **Performance Validation**
+3. Click **Run workflow**
+4. Optionally set:
+   - `api_base_url` (default `http://localhost:8080`)
+   - `health_path` (default `/health`)
+   - `vus` (default `10`)
+   - `duration` (default `30s`)
+5. Run the workflow
+
+### Output Artifacts
+
+- `k6-summary`: JSON summary from k6 run
+- `lighthouse-report`: Lighthouse artifacts from `.lighthouseci/`
