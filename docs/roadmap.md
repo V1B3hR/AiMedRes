@@ -910,7 +910,7 @@ This section tracks the production-ready implementations and clinical impact cap
 - ✅ Load tests (k6), Lighthouse CI baseline — `tests/performance/k6_api_load.js` + `frontend/lighthouserc.json` + `.github/workflows/performance-validation.yml` (July 2026)
 - 🔜 Formal third-party HIPAA/GDPR audit and penetration test
 - 🔜 ISO 27001 / SOC 2 Type II certification (Phase 3 Security — see section 12 below)
-- 🔜 Mobile clinical companion app (design phase)
+- ✅ Mobile clinical companion app — `mobile/` (July 2026): Expo/React Native app with Dashboard, Cases (list + detail + approve/reject), and Alerts screens; full Vitest test suite (35 tests)
 - 🔜 Actual FDA regulatory submission (P9 only produced planning documents)
 
 ---
