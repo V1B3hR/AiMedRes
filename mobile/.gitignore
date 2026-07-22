@@ -1,0 +1,6 @@
+node_modules/
+.expo/
+dist/
+*.lock
+ios/
+android/
