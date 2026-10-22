@@ -40,7 +40,7 @@ Working code, training pipelines, and interfaces developed as research scaffoldi
 | Pattern-Based PHI Scrubbing | `src/aimedres/security/` | Regex-based detection; technical safeguard (not a formal HIPAA certification) |
 | DICOM Header Anonymization | `src/aimedres/integration/` | Strips specified tags; requires institutional review before PHI exposure |
 | Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Validated K8s manifests, Helm charts, Prometheus configs, CycloneDX 1.5 SBOM generator, and local CI gateway runner |
-| Unit & Integration Tests | `tests/` | 71 automated unit tests passing across research configuration, experiment tracking, PPMI zero-leakage, open-access connectors, security hardening, domain decoupling, CycloneDX SBOM, human factors usability, and SaMD AST traceability |
+| Maintained Unit-Test Gate | `tests/unit/` | Runs the supported research, security, deployment, and selected training checks. See [`debug/README.md`](debug/README.md) for the current command, scope, and clean-environment procedure; it is not evidence that every historical test or prototype module remains supported. |
 
 ### 🔬 Tier 2: Partially Implemented or Heuristic Simulations
 Components operating via heuristics, mock data, or simulation loops (not evidence-based clinical models):
@@ -62,9 +62,9 @@ Declarative documentation, templates, and roadmap specifications (not completed 
 | Third-Party HIPAA/GDPR Audits | `docs/` | Internal technical controls; **formal third-party audit pending** |
 | External Penetration Testing | `docs/` | Documented security posture; **external testing pending** |
 
-### 🧭 Production-Ready AI/ML Roadmap Status
+### 🧭 Research Roadmap Status
 
-See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) and **[`docs/roadmap.md`](docs/roadmap.md)** for our verified Master Roadmap (100% Complete):
+See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) and **[`docs/roadmap.md`](docs/roadmap.md)** for implemented research artefacts and outstanding validation work. Completion of an in-repository roadmap item is not clinical or production readiness:
 - **Phase 0 (Immediate Containment)**: Data governance, single Parkinson's research focus, claim truthfulness, MIT license alignment. `[COMPLETED]`
 - **Phase 1 (Research-Grade Pipeline)**: Participant-grouped `StratifiedGroupKFold` on PPMI PATNO with zero data leakage. `[COMPLETED]`
 - **Phase 2 (Scientific Reproducibility)**: Typed Pydantic configs, `LocalExperimentTracker` (SQLite/JSON), and honest model card. `[COMPLETED]`

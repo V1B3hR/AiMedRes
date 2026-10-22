@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Import existing security components
-from secure_medical_processor import SecureMedicalDataProcessor
+from aimedres.security.secure_medical_processor import SecureMedicalDataProcessor
 
 logger = logging.getLogger("EHRIntegration")
 

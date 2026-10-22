@@ -20,7 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from secure_medical_processor import SecureMedicalDataProcessor
+from aimedres.security.secure_medical_processor import SecureMedicalDataProcessor
 
 # Import existing components
 from aimedres.agents.specialized_medical_agents import MedicalKnowledgeAgent

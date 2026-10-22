@@ -108,7 +108,7 @@ try:
 except Exception:
     TORCH_AVAILABLE = False
 
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import BaseModel, Field, model_validator, validator
 from sqlalchemy import JSON, TIMESTAMP, Boolean, CheckConstraint
 from sqlalchemy import Enum as PgEnum
 from sqlalchemy import (
@@ -240,13 +240,13 @@ class MemoryConfig(BaseModel):
             raise ValueError("Weights must be 0..1")
         return v
 
-    @root_validator
-    def hybrid_weight_sum(cls, values):
-        if values.get("hybrid_search"):
-            total = values.get("hybrid_semantic_weight", 0) + values.get("hybrid_keyword_weight", 0)
+    @model_validator(mode="after")
+    def hybrid_weight_sum(self):
+        if self.hybrid_search:
+            total = self.hybrid_semantic_weight + self.hybrid_keyword_weight
             if abs(total - 1.0) > 1e-6:
                 raise ValueError("Hybrid weights must sum to 1.0")
-        return values
+        return self
 
     @validator("dp_noise_scale")
     def dp_scale_pos(cls, v):

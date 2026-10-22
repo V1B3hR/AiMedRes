@@ -7,6 +7,7 @@ Tests the structure and basic functionality of P3 API endpoints.
 import pytest
 from unittest.mock import Mock, patch
 import json
+from pathlib import Path
 
 
 def test_visualization_routes_import():
@@ -104,18 +105,16 @@ def test_dicom_viewer_component():
 
 def test_p3_documentation():
     """Test that P3 implementation documentation exists."""
-    import os
-    doc_path = os.path.join(os.path.dirname(__file__), '../../P3_IMPLEMENTATION.md')
-    assert os.path.exists(doc_path), "P3_IMPLEMENTATION.md should exist"
+    doc_path = Path(__file__).resolve().parents[2] / "docs" / "P3_IMPLEMENTATION_GUIDE.md"
+    assert doc_path.exists(), "P3 implementation guide should exist"
     
-    with open(doc_path, 'r') as f:
-        content = f.read()
-        assert 'P3-1' in content
-        assert 'P3-2' in content
-        assert 'P3-3' in content
-        assert 'Brain Visualization' in content
-        assert 'Quantum-Safe Cryptography' in content
-        assert 'Canary Pipeline' in content
+    content = doc_path.read_text(encoding="utf-8")
+    assert 'P3-1' in content
+    assert 'P3-2' in content
+    assert 'P3-3' in content
+    assert 'Brain Visualization' in content
+    assert 'Quantum-Safe Cryptography' in content
+    assert 'Canary Pipeline' in content
 
 
 @pytest.mark.skipif(True, reason="Requires Flask app context and dependencies")

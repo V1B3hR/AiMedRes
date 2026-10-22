@@ -24,7 +24,9 @@ import numpy as np
 import pandas as pd
 
 # Import security modules
-from security import DataEncryption, PrivacyManager, SecurityMonitor
+from aimedres.security.encryption import DataEncryption
+from aimedres.security.monitoring import SecurityMonitor
+from aimedres.security.privacy import PrivacyManager
 
 # Configure medical data logging
 medical_logger = logging.getLogger("duetmind.medical")
