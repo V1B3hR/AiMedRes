@@ -24,7 +24,7 @@ import sys
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -100,41 +100,56 @@ except ImportError:
     XGBOOST_AVAILABLE = False
 
 # Neural Network Libraries
-try:
+if TYPE_CHECKING:
     import torch
     import torch.nn as nn
     import torch.optim as optim
     from torch.utils.data import DataLoader, TensorDataset
 
     PYTORCH_AVAILABLE = True
-except ImportError:
-    PYTORCH_AVAILABLE = False
+    _ModuleBase = nn.Module
+else:
+    try:
+        import torch
+        import torch.nn as nn
+        import torch.optim as optim
+        from torch.utils.data import DataLoader, TensorDataset
 
-    # Create dummy objects when PyTorch is not available
-    class nn:
-        class Module:
-            def __init__(self):
-                pass
+        PYTORCH_AVAILABLE = True
+        _ModuleBase = nn.Module
+    except ImportError:
+        PYTORCH_AVAILABLE = False
+        _ModuleBase = object
 
-        class Sequential:
-            def __init__(self, *args):
-                pass
+        # Create dummy objects when PyTorch is not available
+        class nn:
+            class Module:
+                def __init__(self):
+                    pass
 
-        class Linear:
-            def __init__(self, *args, **kwargs):
-                pass
+            class Sequential:
+                def __init__(self, *args):
+                    pass
 
-        class BatchNorm1d:
-            def __init__(self, *args, **kwargs):
-                pass
+            class Linear:
+                def __init__(self, *args, **kwargs):
+                    pass
 
-        class ReLU:
-            def __init__(self, *args, **kwargs):
-                pass
+            class BatchNorm1d:
+                def __init__(self, *args, **kwargs):
+                    pass
 
-        class Dropout:
-            def __init__(self, *args, **kwargs):
-                pass
+            class ReLU:
+                def __init__(self, *args, **kwargs):
+                    pass
+
+            class Dropout:
+                def __init__(self, *args, **kwargs):
+                    pass
+
+            class CrossEntropyLoss:
+                def __init__(self, *args, **kwargs):
+                    pass
 
 
 # Data Loading
@@ -148,7 +163,7 @@ except ImportError:
 # Visualization
 try:
     import matplotlib.pyplot as plt
-    import seaborn as sns
+    import seaborn as sns  # type: ignore
 
     VISUALIZATION_AVAILABLE = True
 except ImportError:
@@ -163,7 +178,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class ParkinsonsMLPClassifier(nn.Module):
+class ParkinsonsMLPClassifier(_ModuleBase):
     """
     Multi-layer perceptron optimized for Parkinson's disease classification
     """
@@ -171,7 +186,7 @@ class ParkinsonsMLPClassifier(nn.Module):
     def __init__(self, input_size: int, num_classes: int = 2):
         super(ParkinsonsMLPClassifier, self).__init__()
 
-        self.layers = nn.Sequential(
+        self.layers: Any = nn.Sequential(
             # First hidden layer
             nn.Linear(input_size, 128),
             nn.BatchNorm1d(128),
@@ -191,7 +206,7 @@ class ParkinsonsMLPClassifier(nn.Module):
             nn.Linear(32, num_classes),
         )
 
-    def forward(self, x):
+    def forward(self, x: Any) -> Any:
         return self.layers(x)
 
 
@@ -217,7 +232,7 @@ class ParkinsonsTrainingPipeline:
         (self.output_dir / "visualizations").mkdir(exist_ok=True)
 
         # Initialize components
-        self.data = None
+        self.data: Optional[pd.DataFrame] = None
         self.preprocessor = None
         self.label_encoder = None
         self.X_raw = None
@@ -225,6 +240,14 @@ class ParkinsonsTrainingPipeline:
         self.y_processed = None
         self.groups = None
         self.feature_names = None
+
+        # Results storage
+        self.classical_results = {}
+        self.neural_results = {}
+
+        logger.info(
+            f"Initialized Parkinson's Training Pipeline. Outputs will be saved to {self.output_dir}"
+        )
 
     def _build_preprocessor(self, X: pd.DataFrame) -> ColumnTransformer:
         """
@@ -252,15 +275,9 @@ class ParkinsonsTrainingPipeline:
 
         return ColumnTransformer(transformers=preprocessors, remainder="drop")
 
-        # Results storage
-        self.classical_results = {}
-        self.neural_results = {}
-
-        logger.info(
-            f"Initialized Parkinson's Training Pipeline. Outputs will be saved to {self.output_dir}"
-        )
-
-    def load_data(self, data_path: str = None, dataset_choice: str = "vikasukani") -> pd.DataFrame:
+    def load_data(
+        self, data_path: Optional[str] = None, dataset_choice: str = "vikasukani"
+    ) -> pd.DataFrame:
         """
         Load Parkinson's disease dataset
 
@@ -331,12 +348,15 @@ class ParkinsonsTrainingPipeline:
             logger.warning("Kagglehub not available, creating sample dataset")
             self.data = self._create_sample_parkinsons_data()
 
+        if self.data is None:
+            self.data = self._create_sample_parkinsons_data()
+
         logger.info(f"Dataset loaded successfully. Shape: {self.data.shape}")
         logger.info(f"Columns: {list(self.data.columns)}")
 
         return self.data
 
-    def _load_from_directory(self, dir_path: str) -> pd.DataFrame:
+    def _load_from_directory(self, dir_path: Union[str, Path]) -> pd.DataFrame:
         """
         Load Parkinson's data from a directory containing multiple CSV files.
         Prioritizes PET SBR Analysis data which contains striatal binding ratios.
@@ -347,13 +367,13 @@ class ParkinsonsTrainingPipeline:
         Returns:
             Processed DataFrame ready for training
         """
-        dir_path = Path(dir_path)
-        logger.info(f"Scanning directory for Parkinson's datasets: {dir_path}")
+        path_obj = Path(dir_path)
+        logger.info(f"Scanning directory for Parkinson's datasets: {path_obj}")
 
         # Prioritize synthetic PPMI benchmark fixture for open-source / CI, or PET SBR Analysis
         selected_file = None
         for pattern in ["*synthetic*pet_sbr*.csv", "*PET_SBR*.csv", "*.csv"]:
-            matches = list(dir_path.glob(pattern))
+            matches = list(path_obj.glob(pattern))
             if matches:
                 selected_file = matches[0]
                 break
@@ -440,7 +460,7 @@ class ParkinsonsTrainingPipeline:
         else:
             # Fallback: try to load any CSV and create sample data
             logger.warning("PET SBR Analysis file not found in directory")
-            csv_files = list(dir_path.glob("*.csv"))
+            csv_files = list(path_obj.glob("*.csv"))
 
             if csv_files:
                 logger.info(f"Loading first available CSV: {csv_files[0].name}")
@@ -516,7 +536,7 @@ class ParkinsonsTrainingPipeline:
 
         return df
 
-    def preprocess_data(self, target_column: str = None) -> Tuple[np.ndarray, np.ndarray]:
+    def preprocess_data(self, target_column: Optional[str] = None) -> Tuple[np.ndarray, np.ndarray]:
         """
         Preprocess the Parkinson's dataset for machine learning
 
@@ -611,7 +631,7 @@ class ParkinsonsTrainingPipeline:
 
         return X_processed, y_processed
 
-    def train_classical_models(self, n_folds: int = 5) -> Dict[str, Dict[str, float]]:
+    def train_classical_models(self, n_folds: int = 5) -> Dict[str, Dict[str, Any]]:
         """
         Train classical machine learning models with leakage-safe cross-validation.
         Encapsulates preprocessing inside Pipeline to fit only on training folds,
@@ -1006,8 +1026,8 @@ class ParkinsonsTrainingPipeline:
 
     def run_full_pipeline(
         self,
-        data_path: str = None,
-        target_column: str = None,
+        data_path: Optional[str] = None,
+        target_column: Optional[str] = None,
         epochs: int = 100,
         n_folds: int = 5,
         dataset_choice: str = "vikasukani",
@@ -1122,12 +1142,16 @@ def main():
 # Aliases for backward compatibility and clean naming
 ParkinsonTrainingPipeline = ParkinsonsTrainingPipeline
 ParkinsonMLPClassifier = ParkinsonsMLPClassifier
+ParkinsonNeuralNetwork = ParkinsonsMLPClassifier
+ParkinsonDataset = None
 
 __all__ = [
     "ParkinsonsTrainingPipeline",
     "ParkinsonTrainingPipeline",
     "ParkinsonsMLPClassifier",
     "ParkinsonMLPClassifier",
+    "ParkinsonNeuralNetwork",
+    "ParkinsonDataset",
     "compute_bootstrap_ci",
     "main",
 ]

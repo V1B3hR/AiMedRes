@@ -14,11 +14,21 @@ import hmac
 import logging
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, overload
 
 import jwt
+
+try:
+    from flask import current_app, has_request_context, jsonify, request
+    FLASK_AVAILABLE = True
+except ImportError:
+    current_app = None  # type: ignore
+    jsonify = None  # type: ignore
+    request = None  # type: ignore
+    has_request_context = lambda: False  # type: ignore
+    FLASK_AVAILABLE = False
 
 # Configure security logging
 security_logger = logging.getLogger("duetmind.security")
@@ -39,9 +49,19 @@ class SecureAuthManager:
     - Brute force protection
     """
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.jwt_secret = config.get("jwt_secret") or self._generate_secure_secret()
+    def __init__(self, config: Optional[Union[Dict[str, Any], Any]] = None):
+        if config is None:
+            self.config = {}
+        elif hasattr(config, "to_dict"):
+            self.config = config.to_dict()
+        elif hasattr(config, "__dict__"):
+            self.config = vars(config)
+        elif isinstance(config, dict):
+            self.config = config
+        else:
+            self.config = dict(config)
+
+        self.jwt_secret = self.config.get("jwt_secret") or self._generate_secure_secret()
         self.api_keys = {}  # In production, use secure database
         self.user_roles = {}
         self.failed_attempts = {}  # Track failed auth attempts
@@ -118,7 +138,11 @@ class SecureAuthManager:
         if not provided_key:
             return False, None
 
-        client_ip = request.remote_addr if request else "unknown"
+        client_ip = (
+            request.remote_addr
+            if (FLASK_AVAILABLE and has_request_context() and request is not None)
+            else "unknown"
+        )
 
         # Check for brute force attempts
         if self._is_locked_out(client_ip):
@@ -184,11 +208,12 @@ class SecureAuthManager:
 
     def generate_jwt_token(self, user_info: Dict[str, Any]) -> str:
         """Generate JWT token for authenticated user."""
+        now = datetime.now(timezone.utc)
         payload = {
             "user_id": user_info["user_id"],
             "roles": user_info["roles"],
-            "iat": datetime.utcnow(),
-            "exp": datetime.utcnow() + timedelta(hours=self.token_expiry_hours),
+            "iat": now,
+            "exp": now + timedelta(hours=self.token_expiry_hours),
         }
 
         token = jwt.encode(payload, self.jwt_secret, algorithm="HS256")
@@ -220,18 +245,30 @@ class SecureAuthManager:
             return False, None
 
 
-def require_auth(required_role: Optional[str] = None):
+@overload
+def require_auth(required_role: Callable[..., Any]) -> Callable[..., Any]: ...
+
+
+@overload
+def require_auth(required_role: Optional[str] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]: ...
+
+
+def require_auth(
+    required_role: Optional[Union[str, Callable[..., Any]]] = None
+) -> Any:
     """
     Decorator for endpoints requiring authentication.
-
-    Args:
-        required_role: Optional role requirement
+    Supports both @require_auth (bare) and @require_auth("admin") / @require_auth(required_role="admin").
     """
-
-    def decorator(f):
+    def _create_wrapper(f: Callable[..., Any], role_req: Optional[str] = None) -> Callable[..., Any]:
         @wraps(f)
-        def decorated_function(*args, **kwargs):
-            auth_manager = current_app.auth_manager
+        def decorated_function(*args: Any, **kwargs: Any) -> Any:
+            if current_app is None or request is None:
+                return f(*args, **kwargs)
+
+            auth_manager = getattr(current_app, "auth_manager", None)
+            if auth_manager is None:
+                return f(*args, **kwargs)
 
             # Check API key
             api_key = request.headers.get("X-API-Key") or request.args.get("api_key")
@@ -241,9 +278,9 @@ def require_auth(required_role: Optional[str] = None):
                 return jsonify({"error": "Invalid or missing API key"}), 401
 
             # Check role if required
-            if required_role and not auth_manager.has_role(user_info, required_role):
+            if role_req and not auth_manager.has_role(user_info, role_req):
                 return (
-                    jsonify({"error": f"Insufficient permissions. Role {required_role} required"}),
+                    jsonify({"error": f"Insufficient permissions. Role {role_req} required"}),
                     403,
                 )
 
@@ -254,9 +291,16 @@ def require_auth(required_role: Optional[str] = None):
 
         return decorated_function
 
+    if callable(required_role):
+        # Used as bare @require_auth without parentheses
+        return _create_wrapper(required_role, role_req=None)
+
+    def decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+        return _create_wrapper(f, role_req=required_role)
+
     return decorator
 
 
-def require_admin(f):
+def require_admin(f: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator for admin-only endpoints."""
     return require_auth("admin")(f)

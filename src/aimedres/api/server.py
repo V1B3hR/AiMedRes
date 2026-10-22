@@ -17,7 +17,7 @@ from functools import wraps
 from typing import Any, Dict, Optional
 
 from flask import Flask, g, jsonify, request
-from flask_cors import CORS
+from flask_cors import CORS  # type: ignore
 from werkzeug.exceptions import TooManyRequests
 
 from ..core.agent import DuetMindAgent
@@ -136,17 +136,20 @@ class SecureAPIServer:
         self.app = Flask(__name__)
 
         # Security components
-        self.auth_manager = SecureAuthManager(self.config)
+        config_dict = vars(self.config) if hasattr(self.config, "__dict__") else self.config
+        self.auth_manager = SecureAuthManager(config_dict)
         self.input_validator = InputValidator()
         self.safety_monitor = SafetyMonitor()
 
         # Rate limiting
         try:
+            import redis  # type: ignore
+
             redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
             redis_client.ping()  # Test connection
             self.rate_limiter = RateLimiter(redis_client)
             logger.info("Redis rate limiting enabled")
-        except:
+        except Exception:
             self.rate_limiter = RateLimiter()  # Local fallback
             logger.warning("Using local rate limiting (Redis unavailable)")
 
