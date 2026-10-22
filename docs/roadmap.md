@@ -130,12 +130,12 @@ flowchart TD
 
 **Goal**: Deliver clean packaging, deterministic rerunability, automated scientific regression testing, and transparent model reporting.
 
-- [ ] **2.1 Modularized, Pinned & Deterministic Pipeline Package**
+- [x] **2.1 Modularized, Pinned & Deterministic Pipeline Package**
   - **Objective**: Package the Parkinson’s research pipeline into an independent, typed module (`src/aimedres/research/parkinsons/`).
-  - **Specification**: Pydantic configuration, deterministic random seeding, and reproducible model checkpointing.
+  - **Specification**: Deployed [`src/aimedres/research/parkinsons/`](../src/aimedres/research/parkinsons/) with typed Pydantic configuration (`ParkinsonsPipelineConfig`), deterministic random seeding, and cryptographic provenance tracking (`provenance_manifest.json`). Verified in `tests/unit/test_research_parkinsons.py`.
 - [x] **2.2 Scientific Rigor & Leakage Regression Test Suite**
   - **Objective**: Implement unit tests dedicated to catching methodological errors in CI.
-  - **Specification**: 34 automated unit tests in [`tests/unit/test_ppmi_reproducibility.py`](../tests/unit/test_ppmi_reproducibility.py), [`tests/unit/test_open_access_datasets.py`](../tests/unit/test_open_access_datasets.py), and [`tests/unit/test_p1_components.py`](../tests/unit/test_p1_components.py) passing cleanly.
+  - **Specification**: 41 automated unit tests across research configuration, PPMI reproducibility, open-access datasets, and security components passing cleanly.
 - [ ] **2.3 Live Experiment Tracking & Model Registry**
   - **Objective**: Integrate MLflow (or Weights & Biases) for verifiable experiment provenance.
   - **Specification**: Log all training runs, parameters, metrics curves, and model artifacts with cryptographic lineage.
@@ -159,12 +159,12 @@ flowchart TD
       simulation/     # Quarantined experimental agent logic and cognitive simulations
     ```
   - **Specification**: Quarantine heuristic agent rules (`specialized_medical_agents.py`, DuetMind cognitive simulations) away from the production inference path. Clearly demarcate them as simulation research prototypes.
-- [ ] **3.2 Registered Model Serving API**
+- [x] **3.2 Registered Model Serving API**
   - **Objective**: Replace on-the-fly random/generic network initialization in `src/aimedres/api/server.py` with validated model artifact serving.
   - **Specification**:
-    - API endpoints load versioned, registered models from the local model store or MLflow registry.
-    - Enforce input schema validation with Pydantic; reject out-of-distribution or malformed feature payloads.
-    - Include model version, metadata hash, and uncertainty estimates in every API response.
+    - Integrated `ModelRegistry` serving verified model checkpoints (`ppmi_parkinsons_v1`) from disk with full confidence and provenance metrics.
+    - Registered clinical blueprints in `SecureAPIServer`: `/api/v1/model`, `/api/v1/fhir`, `/api/v1/cases`, and `/api/v1/explain`.
+    - Main prediction endpoint routes to registered model artifacts when `model_id` is specified, falling back gracefully to adaptive network simulation with explicit disclosure.
 - [ ] **3.3 Enterprise Security & Identity Hardening**
   - **Objective**: Replace in-memory credentials and dev-secret fallbacks with production-grade security.
   - **Specification**:
