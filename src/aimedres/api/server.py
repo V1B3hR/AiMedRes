@@ -156,6 +156,12 @@ class SecureAPIServer:
         # AI components
         self.agents: Dict[str, DuetMindAgent] = {}
         self.neural_networks: Dict[str, AdaptiveNeuralNetwork] = {}
+        try:
+            from .model_routes import model_registry
+
+            self.model_registry = model_registry
+        except Exception:
+            self.model_registry = None
 
         # Configure Flask app
         self._configure_app()
@@ -257,6 +263,39 @@ class SecureAPIServer:
     def _register_routes(self):
         """Register API routes with security"""
 
+        # Register core clinical & model serving blueprints
+        try:
+            from .model_routes import model_bp
+
+            self.app.register_blueprint(model_bp)
+            logger.info("Model serving routes registered (/api/v1/model)")
+        except Exception as e:
+            logger.warning(f"Failed to register model routes: {e}")
+
+        try:
+            from .fhir_routes import fhir_bp
+
+            self.app.register_blueprint(fhir_bp)
+            logger.info("FHIR integration routes registered (/api/v1/fhir)")
+        except Exception as e:
+            logger.warning(f"Failed to register FHIR routes: {e}")
+
+        try:
+            from .case_routes import cases_bp
+
+            self.app.register_blueprint(cases_bp)
+            logger.info("Case management routes registered (/api/v1/cases)")
+        except Exception as e:
+            logger.warning(f"Failed to register case routes: {e}")
+
+        try:
+            from .explain_routes import explain_bp
+
+            self.app.register_blueprint(explain_bp)
+            logger.info("Explainability routes registered (/api/v1/explain)")
+        except Exception as e:
+            logger.warning(f"Failed to register explainability routes: {e}")
+
         # Register P3 blueprints for advanced features
         try:
             from .visualization_routes import visualization_bp
@@ -310,7 +349,7 @@ class SecureAPIServer:
         @rate_limit(limit=60, window=60)  # 60 requests per minute
         @require_auth
         def predict():
-            """Secure prediction endpoint"""
+            """Secure prediction endpoint supporting both registered models and adaptive networks"""
             try:
                 # Validate input
                 data = request.get_json()
@@ -321,7 +360,16 @@ class SecureAPIServer:
                 if not self.input_validator.validate_json(data):
                     return jsonify({"error": "Invalid input data"}), 400
 
-                # Get or create neural network
+                # Check if requesting a registered model
+                model_id = data.get("model_id") or data.get("model_version")
+                if self.model_registry and model_id and model_id in self.model_registry.models:
+                    res = self.model_registry.predict(model_id, data["input"])
+                    self.safety_monitor.record_operation(
+                        operation="prediction", duration=0.05, success=True
+                    )
+                    return jsonify(res)
+
+                # Get or create adaptive neural network
                 network_id = data.get("network_id", "default")
                 if network_id not in self.neural_networks:
                     self.neural_networks[network_id] = AdaptiveNeuralNetwork()

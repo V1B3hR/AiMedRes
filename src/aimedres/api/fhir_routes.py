@@ -150,6 +150,7 @@ fhir_server = FHIRMockServer()
 
 
 @fhir_bp.route("/patients", methods=["GET"])
+@fhir_bp.route("/Patient", methods=["GET"])
 @require_auth()
 def list_fhir_patients():
     """
@@ -186,6 +187,7 @@ def list_fhir_patients():
 
 
 @fhir_bp.route("/patients/<patient_id>", methods=["GET"])
+@fhir_bp.route("/Patient/<patient_id>", methods=["GET"])
 @require_auth()
 def get_fhir_patient(patient_id: str):
     """
