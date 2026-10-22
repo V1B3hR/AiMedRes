@@ -73,12 +73,13 @@ The table below maps each Clinical User Need through functional requirements, ri
 | **UN-06** (Clinical Decision Transparency) | **SRS-09**: The system shall report 95% bootstrap confidence intervals and Brier reliability calibration. | `HAZ-006` | `RC-006` | `VER-009` | `tests/unit/test_ppmi_reproducibility.py::test_end_to_end_pipeline_execution` | **PASS** |
 | **UN-07** (Supply Chain Integrity) | **SRS-10**: The system shall generate CycloneDX 1.5 SBOM containing package metadata, hashes, and licenses. | `HAZ-007` | `RC-007` | `VER-010` | `tests/unit/test_cicd_and_deployment.py::test_sbom_generation_schema` | **PASS** |
 | **UN-08** (Safe Deployment Sandbox) | **SRS-11**: The system shall validate Kubernetes manifests and Helm templates for non-root execution and health probes. | `HAZ-008` | `RC-008` | `VER-011` | `tests/unit/test_cicd_and_deployment.py::test_repository_deployment_validations`<br>`tests/unit/test_cicd_and_deployment.py::test_k8s_deployment_validator_flags_missing_run_as_non_root` | **PASS** |
+| **UN-09** (Clinician Usability & Transparency) | **SRS-12**: The system shall provide signed feature attributions conforming to clinical guidelines and achieve sub-second latency (< 200 ms). | `HAZ-006` | `RC-006` | `VER-012` | `tests/unit/test_usability_and_human_factors.py::test_clinical_domain_concordance`<br>`tests/unit/test_usability_and_human_factors.py::test_clinical_turnaround_time_benchmark` | **PASS** |
 
 ---
 
 ## 5. Verification Gate Enforcement & Maintenance
 
-All 11 verification tests listed above are executed automatically during every pull request and build via [`scripts/run_ci_checks.py`](../../scripts/run_ci_checks.py) and GitHub Actions [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). 
+All 12 verification tests listed above are executed automatically during every pull request and build via [`scripts/run_ci_checks.py`](../../scripts/run_ci_checks.py) and GitHub Actions [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). 
 
 A change to any software requirement, risk control, or model architecture requires:
 1. Re-running the complete SaMD verification suite (`pytest tests/unit/`).

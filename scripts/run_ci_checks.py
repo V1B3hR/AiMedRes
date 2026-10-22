@@ -59,6 +59,7 @@ def main() -> int:
                 "-m",
                 "pytest",
                 "tests/unit/test_clinical_and_compliance.py",
+                "tests/unit/test_usability_and_human_factors.py",
                 "tests/unit/test_cicd_and_deployment.py",
                 "tests/unit/test_security_and_architecture.py",
                 "tests/unit/test_research_parkinsons.py",

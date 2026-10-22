@@ -97,12 +97,34 @@ def test_samd_traceability_matrix_structure_and_standards():
         assert f"HAZ-{i:03d}" in content, f"Missing hazard HAZ-{i:03d} in traceability matrix"
 
     # Verify user needs and requirements
-    for i in range(1, 9):
+    for i in range(1, 10):
         assert f"UN-{i:02d}" in content, f"Missing user need UN-{i:02d}"
 
-    for i in range(1, 12):
+    for i in range(1, 13):
         assert f"SRS-{i:02d}" in content, f"Missing software requirement SRS-{i:02d}"
         assert f"VER-{i:03d}" in content, f"Missing verification test ID VER-{i:03d}"
+
+
+def test_clinician_usability_protocol_completeness():
+    """Verify Clinician-in-the-Loop Usability & Human Factors Protocol (Phase 4.3)."""
+    hfe_path = REPO_ROOT / "docs" / "clinical" / "CLINICIAN_USABILITY_AND_HUMAN_FACTORS.md"
+    assert hfe_path.exists(), f"Missing Human Factors protocol: {hfe_path}"
+    content = hfe_path.read_text(encoding="utf-8")
+
+    # Verify standards alignment
+    assert "IEC 62366-1" in content
+    assert "Applying Human Factors" in content
+    assert "ANSI/AAMI HE75" in content
+
+    # Verify quantitative criteria
+    assert "System Usability Scale (SUS)" in content
+    assert "NASA-TLX" in content
+    assert "200 ms" in content
+
+    # Verify use-related hazards and mitigations
+    assert "AUTOMATION BIAS" in content
+    assert "DISMISSAL BIAS" in content
+    assert "COGNITIVE INFORMATION OVERLOAD" in content
 
 
 def test_samd_traceability_test_functions_exist_in_ast():
