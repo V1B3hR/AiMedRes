@@ -1,7 +1,10 @@
 """
-Agents Module
+Agents Module (Quarantined Simulation Prototype).
 
-Specialized medical agents for enhanced multi-agent medical simulation.
+Contains heuristic multi-agent medical simulation logic.
+Conforms to Phase 3.1 of the Consolidated Roadmap:
+Quarantined from production inference pipelines. For cognitive simulations,
+refer to `aimedres.simulation`.
 """
 
 from .specialized_medical_agents import (

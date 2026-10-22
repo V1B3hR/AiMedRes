@@ -32,14 +32,14 @@ The table below establishes an unvarnished audit of the repository, categorizing
 |---|:---:|---|---|
 | **Training Infrastructure** | Tier 1 | 7 default jobs in `src/aimedres/cli/train.py`; orchestrator records Git SHA, GPU details, logs, JSON summaries. Classical ML and PyTorch. | DVC has no configured cloud remote; long-running distributed GPU training requires local setup. |
 | **Parkinson's / PPMI Work** | Tier 1 | Research-grade decoupled module in `src/aimedres/research/parkinsons/`, synthetic fixture, leakage-free `StratifiedGroupKFold` on `PATNO`, independent target, 95% bootstrap CIs, Brier score calibration, and `provenance_manifest.json`. | External multi-site cohort validation (BioFIND/DATATOP) pending in Phase 4. |
-| **Adaptive NN & Agents** | Tier 2 | `AdaptiveNeuralNetwork`, `DuetMindAgent`, specialist agent roles, state handling, memory store, and safety heuristics in `src/aimedres/core/` and `src/aimedres/agents/`. | Experimental simulation code only. `specialized_medical_agents.py` generates heuristic diagnoses, simulated peer review, and synthetic outcome accuracy. Not validated clinical reasoning. |
+| **Adaptive NN & Agents** | Tier 2 | `AdaptiveNeuralNetwork`, `DuetMindAgent`, specialist agent roles, state handling, memory store, and safety heuristics in `src/aimedres/core/` and `src/aimedres/agents/`. Quarantined in `src/aimedres/simulation/` with runtime isolation gates (`assert_simulation_allowed()`). | Experimental simulation code only. `specialized_medical_agents.py` generates heuristic diagnoses, simulated peer review, and synthetic outcome accuracy. Not validated clinical reasoning. |
 | **Clinical Decision Support (CDS)** | Tier 2 | Risk scoring logic, intervention recommendation structures, FHIR/HL7 conversion helpers, human-in-the-loop audit stubs in `src/aimedres/clinical/`. | Risk engine is hand-authored static heuristic rules. EHR "sync" methods are explicitly simulated mocks. Not connected to live partner hospital EHRs. |
-| **API & Applications** | Tier 1 | Flask API in `src/aimedres/api/server.py`, rate limiting, security headers, DICOM routes, registered model serving via `/api/v1/model/infer` and `/api/v1/predict` (PPMI trained pipeline), FHIR R4 sandbox (`/api/v1/fhir`), and CDS review (`/api/v1/cases`). | Web UI connects to prototype mocks; mobile companion UI is exploratory. |
-| **Privacy & Security** | Tier 1 / 3 | Regex-based PHI scrubbing, DICOM tag clearing, encryption helpers (AES-256 / Kyber-768 hybrid prototype), security documentation. | Pattern scrubbing is not a formal HIPAA de-identification certification or data-use authorization system. DICOM stripper clears limited fields. No third-party penetration testing or external SOC audit completed. |
-| **Deployment & MLOps** | Tier 1 / 3 | Dockerfiles, Docker Compose, Kubernetes manifests (`k8s/`), Helm chart (`helm/aimedres/`), Prometheus/Grafana configs (`monitoring/`). | Deployment assets and declarative configurations only, not proof of deployed live operations. Image publishing, signed provenance, cloud overlays, and automated tracing remain unfinished. |
+| **API & Applications** | Tier 1 | Flask API in `src/aimedres/api/server.py` and decoupled `src/aimedres/service/server.py`, rate limiting, security headers, DICOM routes, registered model serving via `/api/v1/model/infer` and `/api/v1/predict` (PPMI trained pipeline), FHIR R4 sandbox (`/api/v1/fhir`), and CDS review (`/api/v1/cases`). | Web UI connects to prototype mocks; mobile companion UI is exploratory. |
+| **Privacy & Security** | Tier 1 | Regex-based PHI scrubbing, DICOM tag clearing, encryption helpers (AES-256 / Kyber-768 hybrid prototype), database-backed `AuthDatabaseStore` (SQLite), instant token & key revocation, PBKDF2 hashing with salt, security audit logging, and fail-closed production secret validation. | Pattern scrubbing is not a formal HIPAA de-identification certification or data-use authorization system. DICOM stripper clears limited fields. No third-party penetration testing or external SOC audit completed. |
+| **Deployment & MLOps** | Tier 1 / 3 | Dockerfiles, Docker Compose, Kubernetes manifests (`k8s/`), Helm chart (`helm/aimedres/`), Prometheus/Grafana configs (`monitoring/`), local SQLite/JSON experiment tracking and model lineage (`src/aimedres/research/tracking.py`). | Deployment assets and declarative configurations only, not proof of deployed live operations. Image publishing, signed provenance, cloud overlays, and automated tracing remain unfinished. |
 | **Documentation & Compliance** | Tier 3 | Extensive documentation: training guides, security policies, model cards, FDA Q-Sub generator (`src/aimedres/compliance/`). | Claims overstate maturity. Generates draft FDA/QMS skeletons, but no formal FDA submission has been made, no clinical pilot has run with live patients, and no certified QMS exists. |
 | **Packaging & Governance** | Tier 1 | `pyproject.toml`, `setup.py`, requirements files, MIT `LICENSE`, `ParkinsonDatasets/DATA_GOVERNANCE.md`. | Fully reconciled under MIT license with clear DUA governance controls. |
-| **Testing & CI** | Tier 1 | 41 automated unit tests across research configuration, PPMI participant-leakage isolation, open-access datasets, and security modules; Vitest frontend tests; performance benchmarks (k6, Lighthouse CI). | Optional medical packages (`pydicom`, `torchvision`) are guarded with runtime fallbacks for lightweight CI runner execution. |
+| **Testing & CI** | Tier 1 | 51 automated unit tests across research configuration, live experiment tracking, PPMI participant-leakage isolation, open-access datasets, security hardening, and domain decoupling; Vitest frontend tests; performance benchmarks (k6, Lighthouse CI). | Optional medical packages (`pydicom`, `torchvision`) are guarded with runtime fallbacks for lightweight CI runner execution. |
 
 ---
 
@@ -136,9 +136,9 @@ flowchart TD
 - [x] **2.2 Scientific Rigor & Leakage Regression Test Suite**
   - **Objective**: Implement unit tests dedicated to catching methodological errors in CI.
   - **Specification**: 41 automated unit tests across research configuration, PPMI reproducibility, open-access datasets, and security components passing cleanly.
-- [ ] **2.3 Live Experiment Tracking & Model Registry**
-  - **Objective**: Integrate MLflow (or Weights & Biases) for verifiable experiment provenance.
-  - **Specification**: Log all training runs, parameters, metrics curves, and model artifacts with cryptographic lineage.
+- [x] **2.3 Live Experiment Tracking & Model Lineage**
+  - **Objective**: Implement verifiable experiment provenance, parameter logging, metric tracking, and artifact checksums.
+  - **Specification**: Deployed [`src/aimedres/research/tracking.py`](../src/aimedres/research/tracking.py) featuring `LocalExperimentTracker`, SQLite relational run store (`experiments.db`), JSON run cards (`runs/<run_id>.json`), parameter sweeps, metric curves, and cryptographic SHA-256 artifact hashing. Integrated into `ParkinsonsResearchPipeline`.
 - [x] **2.4 Evidence-Based Model Card & External Methodological Signoff**
   - **Objective**: Publish a comprehensive, honest model card adhering to FDA Good Machine Learning Practice (GMLP) and TRIPOD-AI principles.
   - **Specification**: Published [`docs/MODEL_CARD_PPMI_PARKINSONS.md`](MODEL_CARD_PPMI_PARKINSONS.md) with ROC-AUC CIs, PR-AUC, calibration curves, demographic caveats, and out-of-scope boundaries.
@@ -149,28 +149,31 @@ flowchart TD
 
 **Goal**: Decouple research analytics from production services, harden security boundaries, and eliminate architectural anti-patterns.
 
-- [ ] **3.1 Domain-Driven Architectural Decoupling**
+- [x] **3.1 Domain-Driven Architectural Decoupling**
   - **Objective**: Restructure the repository into clear architectural boundaries:
     ```text
     src/aimedres/
-      research/       # Reproducible scientific pipelines (PPMI, validation, manifests)
+      research/       # Reproducible scientific pipelines (PPMI, OASIS, PRO-ACT, datasets, tracking)
       service/        # Production inference API, model serving, security middleware
-      ui/             # Clinical decision-support dashboard and client interfaces
       simulation/     # Quarantined experimental agent logic and cognitive simulations
+      ui/             # Clinical decision-support dashboard and client interfaces
     ```
-  - **Specification**: Quarantine heuristic agent rules (`specialized_medical_agents.py`, DuetMind cognitive simulations) away from the production inference path. Clearly demarcate them as simulation research prototypes.
+  - **Specification**:
+    - Established decoupled [`src/aimedres/service/`](../src/aimedres/service/) exporting production `create_app`, `SecureAPIServer`, and `ModelRegistry`.
+    - Quarantined heuristic multi-agent rules into [`src/aimedres/simulation/`](../src/aimedres/simulation/) with runtime quarantine checks (`assert_simulation_allowed()`) preventing unvalidated cognitive simulation execution in production clinical mode.
+    - Centralized open dataset loaders and tracking in [`src/aimedres/research/`](../src/aimedres/research/).
 - [x] **3.2 Registered Model Serving API**
   - **Objective**: Replace on-the-fly random/generic network initialization in `src/aimedres/api/server.py` with validated model artifact serving.
   - **Specification**:
     - Integrated `ModelRegistry` serving verified model checkpoints (`ppmi_parkinsons_v1`) from disk with full confidence and provenance metrics.
     - Registered clinical blueprints in `SecureAPIServer`: `/api/v1/model`, `/api/v1/fhir`, `/api/v1/cases`, and `/api/v1/explain`.
     - Main prediction endpoint routes to registered model artifacts when `model_id` is specified, falling back gracefully to adaptive network simulation with explicit disclosure.
-- [ ] **3.3 Enterprise Security & Identity Hardening**
+- [x] **3.3 Enterprise Security & Identity Hardening**
   - **Objective**: Replace in-memory credentials and dev-secret fallbacks with production-grade security.
   - **Specification**:
-    - Remove hardcoded default secrets and fail closed if required environment secrets are absent.
-    - Integrate OAuth2 / OpenID Connect (OIDC) authentication with role-based access control (RBAC).
-    - Database-backed, audited session and API token storage (PostgreSQL).
+    - Implemented fail-closed security gates: raises `SecurityConfigurationError` in production mode (`AIMEDRES_ENV=production` or `STRICT_SECURITY=true`) if `FLASK_SECRET_KEY` or `JWT_SECRET` are missing, weak (< 32 chars), or using default values.
+    - Deployed `AuthDatabaseStore` in `src/aimedres/security/auth.py` providing SQLite relational persistence for API keys, PBKDF2 hash verification with salt, instant key and session revocation (`revoke_api_key`, `revoke_session`), and audit logging (`auth_audit_log`).
+    - Integrated OIDC provider scaffolding, MFA manager, and role-based access control (RBAC).
 - [ ] **3.4 Production CI/CD Gateways**
   - **Objective**: Establish strict gating workflows before merge.
   - **Specification**:

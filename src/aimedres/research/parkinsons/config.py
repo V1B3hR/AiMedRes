@@ -70,6 +70,14 @@ class ParkinsonsPipelineConfig(BaseModel):
         default="vikasukani",
         description="Kaggle or LONI dataset variant fallback",
     )
+    track_experiments: bool = Field(
+        default=True,
+        description="Enable SQLite/JSON experiment tracking and model lineage",
+    )
+    experiment_name: str = Field(
+        default="parkinsons_progression",
+        description="Experiment group label for lineage tracking",
+    )
 
     class Config:
         arbitrary_types_allowed = True

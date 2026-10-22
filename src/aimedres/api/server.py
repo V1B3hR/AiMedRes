@@ -23,7 +23,7 @@ from werkzeug.exceptions import TooManyRequests
 from ..core.agent import DuetMindAgent
 from ..core.config import DuetMindConfig
 from ..core.neural_network import AdaptiveNeuralNetwork
-from ..security.auth import SecureAuthManager, require_auth
+from ..security.auth import SecureAuthManager, SecurityConfigurationError, require_auth
 from ..security.validation import InputValidator
 from ..utils.safety import SafetyMonitor
 
@@ -171,11 +171,24 @@ class SecureAPIServer:
         logger.info("Secure API server initialized")
 
     def _configure_app(self):
-        """Configure Flask application settings"""
+        """Configure Flask application settings with fail-closed production security"""
+        flask_secret = self.config.get_secret("FLASK_SECRET_KEY") or os.environ.get("FLASK_SECRET_KEY")
+        env = os.environ.get("AIMEDRES_ENV", "").lower()
+        strict_sec = os.environ.get("STRICT_SECURITY", "false").lower() in ("true", "1")
+
+        if env == "production" or strict_sec:
+            if not flask_secret or flask_secret == "dev-secret-change-in-production" or len(flask_secret) < 32:
+                raise SecurityConfigurationError(
+                    "CRITICAL SECURITY CONFIGURATION ERROR: Production environment requires an explicitly "
+                    "configured, high-entropy FLASK_SECRET_KEY (minimum 32 characters). Insecure default fallback "
+                    "secrets are strictly prohibited."
+                )
+
+        final_secret = flask_secret or "dev-secret-change-in-production"
+
         self.app.config.update(
             {
-                "SECRET_KEY": self.config.get_secret("FLASK_SECRET_KEY")
-                or "dev-secret-change-in-production",
+                "SECRET_KEY": final_secret,
                 # Increased cap to accommodate multi-slice DICOM CT series uploads
                 "MAX_CONTENT_LENGTH": max(
                     self.config.api.max_request_size, DICOM_CT_MAX_CONTENT_LENGTH

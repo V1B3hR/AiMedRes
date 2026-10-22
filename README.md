@@ -27,15 +27,16 @@ In accordance with our [Consolidated Roadmap](docs/roadmap.md) and [Known Limita
 Working code, training pipelines, and interfaces developed as research scaffolding:
 | Capability | Location | Reality & Notes |
 |---|---|---|
-| Parkinson's Research Package | `src/aimedres/research/parkinsons/` | Modularized, typed Pydantic config, leakage-safe cross-validation, and cryptographic provenance manifest (`provenance_manifest.json`) |
-| Training Pipeline Scaffolding | `src/aimedres/training/` | Classical ML & PyTorch scripts; leak-safe PPMI pipeline with participant grouping on `PATNO` |
-| Registered Model Serving API | `src/aimedres/api/server.py` | Serves registered, calibrated models (`ppmi_parkinsons_v1`) from disk; registered FHIR R4 (`/api/v1/fhir`), case review (`/api/v1/cases`), and explainability (`/api/v1/explain`) |
+| Parkinson's & Open Research Package | `src/aimedres/research/` | Modularized, typed Pydantic config, `LocalExperimentTracker` (SQLite/JSON), leakage-safe cross-validation, open dataset connectors (OASIS-2, PRO-ACT, PTB-XL), and cryptographic provenance manifest (`provenance_manifest.json`) |
+| Decoupled Production Service API | `src/aimedres/service/` | Production application factory (`create_app`), registered model serving (`ppmi_parkinsons_v1`), FHIR R4 sandbox (`/api/v1/fhir`), case review (`/api/v1/cases`), and explainability (`/api/v1/explain`) |
+| Quarantined Simulation Agents | `src/aimedres/simulation/` | Heuristic multi-agent prototypes quarantined with runtime gates (`assert_simulation_allowed()`) preventing unvalidated simulation in production |
+| Database-Backed Auth & Security | `src/aimedres/security/auth.py` | `AuthDatabaseStore` (SQLite), PBKDF2 hashing with salt, instant API key & JWT session revocation, audit logging, and fail-closed production secret validation |
 | Clinical CDS & Imaging Web UI | `frontend/` | React + Vite + Three.js viewer; prototype CDS dashboards |
 | Mobile Companion UI | `mobile/` | Expo/React Native prototype interface |
 | Pattern-Based PHI Scrubbing | `src/aimedres/security/` | Regex-based detection; technical safeguard (not a formal HIPAA certification) |
 | DICOM Header Anonymization | `src/aimedres/integration/` | Strips specified tags; requires institutional review before PHI exposure |
 | Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Declarative K8s manifests, Helm charts, Prometheus configs (not live production) |
-| Unit & Integration Tests | `tests/` | 41 automated unit tests passing across research configuration, PPMI zero-leakage, open-access connectors, and clinical security |
+| Unit & Integration Tests | `tests/` | 51 automated unit tests passing across research configuration, experiment tracking, PPMI zero-leakage, open-access connectors, security hardening, and domain decoupling |
 
 ### 🔬 Tier 2: Partially Implemented or Heuristic Simulations
 Components operating via heuristics, mock data, or simulation loops (not evidence-based clinical models):

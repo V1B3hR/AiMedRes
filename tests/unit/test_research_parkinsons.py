@@ -111,3 +111,76 @@ class TestParkinsonsResearchPipeline:
 
         assert pipeline.config.n_folds == 3
         assert pipeline.config.output_dir == str(tmp_path)
+        assert pipeline.tracker is not None
+
+
+class TestLocalExperimentTracker:
+    """Validate SQLite and JSON experiment tracking and model lineage (Phase 2.3)."""
+
+    def test_tracker_lifecycle_and_provenance(self, tmp_path):
+        from aimedres.research.tracking import LocalExperimentTracker
+
+        db_file = tmp_path / "test_experiments.db"
+        tracker = LocalExperimentTracker(db_path=db_file, experiment_name="test_parkinsons")
+
+        # Start run
+        run_id = tracker.start_run(
+            run_name="benchmark_k5",
+            params={"n_folds": 5, "learning_rate": 0.001, "model": "logistic_regression"},
+            tags={"env": "pytest", "author": "researcher"},
+            dataset_sha256="abcdef1234567890",
+            output_dir=tmp_path,
+        )
+        assert run_id.startswith("run_")
+        assert tracker.active_run_id == run_id
+
+        # Log metrics across steps
+        tracker.log_metric("roc_auc", 0.88, step=1)
+        tracker.log_metric("roc_auc", 0.92, step=2)
+        tracker.log_metrics({"brier_score": 0.11, "accuracy": 0.86})
+
+        # Log artifact
+        artifact_file = tmp_path / "model_weights.pkl"
+        artifact_file.write_bytes(b"sample_serialized_model")
+        sha = tracker.log_artifact("best_model", artifact_file)
+        assert sha is not None
+        assert len(sha) == 64
+
+        # End run
+        summary = tracker.end_run(status="COMPLETED")
+        assert summary["status"] == "COMPLETED"
+        assert summary["git_commit"] is not None
+        assert summary["metrics"]["roc_auc"] == 0.92
+        assert summary["metrics"]["brier_score"] == 0.11
+        assert summary["params"]["n_folds"] == "5"
+        assert summary["tags"]["env"] == "pytest"
+
+        # Verify JSON card exported
+        card_file = tmp_path / "runs" / f"{run_id}.json"
+        assert card_file.exists()
+        loaded_card = json.loads(card_file.read_text())
+        assert loaded_card["run_id"] == run_id
+
+    def test_tracker_list_and_best_run(self, tmp_path):
+        from aimedres.research.tracking import LocalExperimentTracker
+
+        db_file = tmp_path / "test_query.db"
+        tracker = LocalExperimentTracker(db_path=db_file, experiment_name="sweep_exp")
+
+        # Run 1
+        r1 = tracker.start_run(run_name="run_1", params={"lr": 0.01})
+        tracker.log_metric("roc_auc_mean", 0.78)
+        tracker.end_run()
+
+        # Run 2
+        r2 = tracker.start_run(run_name="run_2", params={"lr": 0.001})
+        tracker.log_metric("roc_auc_mean", 0.91)
+        tracker.end_run()
+
+        runs = tracker.list_runs("sweep_exp")
+        assert len(runs) == 2
+
+        best = tracker.get_best_run("roc_auc_mean", higher_is_better=True)
+        assert best is not None
+        assert best["run_id"] == r2
+        assert best["metrics"]["roc_auc_mean"] == 0.91
