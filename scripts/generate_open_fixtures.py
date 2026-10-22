@@ -185,8 +185,65 @@ def generate_ptbxl_fixture(output_path: Path, n_records: int = 150, random_seed:
     df.to_csv(output_path, index=False)
     print(f"Generated PTB-XL fixture: {output_path} ({len(df)} records)")
 
+def generate_parkinsons_telemonitoring_fixture(output_path: Path, n_subjects: int = 20, random_seed: int = 42):
+    np.random.seed(random_seed)
+    records = []
+    
+    for subj in range(1, n_subjects + 1):
+        age = int(np.clip(np.random.normal(64, 8), 45, 85))
+        sex = int(np.random.choice([0, 1], p=[0.35, 0.65]))
+        base_motor = np.clip(np.random.normal(24, 7), 10, 42)
+        progression_rate = np.clip(np.random.normal(0.04, 0.02), 0.0, 0.12)
+        
+        n_recordings = np.random.randint(15, 30)
+        test_times = np.sort(np.random.uniform(0, 180, n_recordings))
+        
+        for t in test_times:
+            motor = round(float(base_motor + progression_rate * t + np.random.normal(0, 0.5)), 3)
+            total = round(float(motor * 1.3 + np.random.normal(0, 0.8)), 3)
+            
+            jitter_pct = round(max(0.001, np.random.normal(0.005, 0.002)), 5)
+            shimmer = round(max(0.005, np.random.normal(0.025, 0.010)), 5)
+            nhr = round(max(0.001, np.random.normal(0.02, 0.01)), 6)
+            hnr = round(max(10.0, np.random.normal(22.0, 4.0)), 3)
+            rpde = round(np.clip(np.random.normal(0.48, 0.08), 0.2, 0.8), 5)
+            dfa = round(np.clip(np.random.normal(0.65, 0.07), 0.5, 0.85), 5)
+            ppe = round(np.clip(np.random.normal(0.20, 0.06), 0.05, 0.5), 5)
+            
+            records.append({
+                "subject#": subj,
+                "age": age,
+                "sex": sex,
+                "test_time": round(float(t), 4),
+                "motor_UPDRS": motor,
+                "total_UPDRS": total,
+                "Jitter(%)": jitter_pct,
+                "Jitter(Abs)": round(jitter_pct * 0.005, 7),
+                "Jitter:RAP": round(jitter_pct * 0.55, 5),
+                "Jitter:PPQ5": round(jitter_pct * 0.50, 5),
+                "Jitter:DDP": round(jitter_pct * 1.65, 5),
+                "Shimmer": shimmer,
+                "Shimmer(dB)": round(shimmer * 10.0, 3),
+                "Shimmer:APQ3": round(shimmer * 0.5, 5),
+                "Shimmer:APQ5": round(shimmer * 0.55, 5),
+                "Shimmer:APQ11": round(shimmer * 0.75, 5),
+                "Shimmer:DDA": round(shimmer * 1.5, 5),
+                "NHR": nhr,
+                "HNR": hnr,
+                "RPDE": rpde,
+                "DFA": dfa,
+                "PPE": ppe,
+            })
+            
+    df = pd.DataFrame(records)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_path, index=False)
+    print(f"Generated Parkinson's Telemonitoring fixture: {output_path} ({len(df)} records across {n_subjects} subjects)")
+
+
 if __name__ == "__main__":
     base_dir = Path("data/synthetic")
     generate_oasis_fixture(base_dir / "synthetic_oasis_longitudinal.csv")
     generate_proact_fixture(base_dir / "synthetic_proact_als.csv")
     generate_ptbxl_fixture(base_dir / "synthetic_ptbxl_ecg.csv")
+    generate_parkinsons_telemonitoring_fixture(base_dir / "synthetic_parkinsons_telemonitoring.csv")

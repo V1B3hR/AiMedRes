@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:4fdbb5cf-c03c-4299-bdd8-749bca09816b",
+  "serialNumber": "urn:uuid:336c66ab-8305-4ec9-a001-b11660387f6e",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-22T12:04:59.534824+00:00",
+    "timestamp": "2026-10-22T12:19:27.333731+00:00",
     "tools": [
       {
         "vendor": "AiMedRes",

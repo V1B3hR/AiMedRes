@@ -32,6 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = REPO_ROOT / "data"
 SYNTHETIC_DIR = DATA_DIR / "synthetic"
 RAW_DATA_DIR = DATA_DIR / "raw"
+REAL_WORLD_DIR = DATA_DIR / "real_world"
 
 # Public mirror URLs (Zero-wait open access)
 OASIS_PUBLIC_MIRROR_URL = (
@@ -188,6 +189,10 @@ class OASISDataset:
 
         if cls.DEFAULT_RAW_FILE.exists():
             return cls.DEFAULT_RAW_FILE, False
+
+        real_world_file = REAL_WORLD_DIR / "oasis_longitudinal.csv"
+        if real_world_file.exists():
+            return real_world_file, False
 
         if cls.DEFAULT_SYNTHETIC_FILE.exists():
             return cls.DEFAULT_SYNTHETIC_FILE, True
@@ -370,7 +375,113 @@ class PTBXLECGDataset:
         if cls.DEFAULT_SYNTHETIC_FILE.exists():
             return cls.DEFAULT_SYNTHETIC_FILE, True
 
-        raise FileNotFoundError("No PTB-XL ECG dataset found.")
+class ParkinsonsTelemonitoringDataset:
+    """
+    Loader for the Oxford / UCI Parkinson's Telemonitoring Dataset.
+    Tsanas et al., 2010. Accurate telemonitoring of Parkinson's disease progression
+    by noninvasive speech tests. (5,875 recordings across 42 patients).
+    """
+
+    DEFAULT_RAW_FILE = RAW_DATA_DIR / "parkinsons_telemonitoring.csv"
+    REAL_WORLD_FILE = REAL_WORLD_DIR / "parkinsons_telemonitoring.csv"
+    DEFAULT_SYNTHETIC_FILE = SYNTHETIC_DIR / "synthetic_parkinsons_telemonitoring.csv"
+
+    @classmethod
+    def load(
+        cls,
+        data_path: Optional[Union[str, Path]] = None,
+        target_col: str = "delta_motor_progression",
+        progression_threshold: float = 3.0,
+    ) -> DatasetContainer:
+        """
+        Load and validate the Parkinson's Telemonitoring dataset.
+
+        Args:
+            data_path: Path to local CSV file.
+            target_col: Target label ('delta_motor_progression' or continuous motor score).
+            progression_threshold: Threshold in UPDRS points for meaningful motor progression.
+        """
+        resolved_path, is_synthetic = cls._resolve_path(data_path)
+        df = pd.read_csv(resolved_path)
+        logger.info(
+            f"Loaded Parkinson's Telemonitoring dataset from {resolved_path} (synthetic={is_synthetic}, shape={df.shape})"
+        )
+
+        group_col = "subject#"
+        if group_col not in df.columns:
+            for candidate in ["subject_id", "Patient_ID", "ID", "subject"]:
+                if candidate in df.columns:
+                    group_col = candidate
+                    break
+
+        if group_col not in df.columns:
+            raise ValueError(f"Participant grouping column '{group_col}' missing from Parkinson's table.")
+
+        groups = df[group_col].values
+
+        # Calculate subject-specific baseline motor_UPDRS (at earliest test_time)
+        baseline_motor = df.groupby(group_col).apply(
+            lambda g: g.sort_values("test_time").iloc[0]["motor_UPDRS"]
+        ).to_dict()
+        df["baseline_motor"] = df[group_col].map(baseline_motor)
+        df["delta_motor"] = df["motor_UPDRS"] - df["baseline_motor"]
+
+        # Target: Meaningful motor progression milestone
+        if target_col == "delta_motor_progression":
+            y = (df["delta_motor"] >= progression_threshold).astype(int)
+        elif target_col in df.columns:
+            y = df[target_col]
+        else:
+            raise KeyError(f"Target column '{target_col}' not found in Parkinson's dataframe.")
+
+        # Exclude IDs, raw UPDRS scores, and baseline to prevent circular target leakage
+        drop_cols = [
+            group_col,
+            "motor_UPDRS",
+            "total_UPDRS",
+            "baseline_motor",
+            "delta_motor",
+        ]
+        feature_cols = [c for c in df.columns if c not in drop_cols]
+        X = df[feature_cols].copy()
+
+        return DatasetContainer(
+            name="UCI Parkinson's Vocal Telemonitoring",
+            df=df,
+            features=X,
+            target=y,
+            groups=groups,
+            feature_names=list(X.columns),
+            target_name=target_col,
+            group_name=group_col,
+            is_synthetic=is_synthetic,
+            source_path=str(resolved_path),
+            metadata={
+                "n_records": len(df),
+                "n_unique_patients": len(np.unique(groups)),
+                "target": target_col,
+                "progression_threshold": progression_threshold,
+            },
+        )
+
+    @classmethod
+    def _resolve_path(cls, user_path: Optional[Union[str, Path]]) -> Tuple[Path, bool]:
+        if user_path is not None:
+            p = Path(user_path)
+            if p.exists():
+                return p, False
+            raise FileNotFoundError(f"Specified Parkinson's telemonitoring path does not exist: {p}")
+
+        if cls.DEFAULT_RAW_FILE.exists():
+            return cls.DEFAULT_RAW_FILE, False
+
+        if cls.REAL_WORLD_FILE.exists():
+            return cls.REAL_WORLD_FILE, False
+
+        if cls.DEFAULT_SYNTHETIC_FILE.exists():
+            return cls.DEFAULT_SYNTHETIC_FILE, True
+
+        raise FileNotFoundError("No Parkinson's Telemonitoring dataset found.")
 
 
 def get_open_dataset(name: str, **kwargs) -> DatasetContainer:
@@ -382,7 +493,9 @@ def get_open_dataset(name: str, **kwargs) -> DatasetContainer:
         return PROACTALSDataset.load(**kwargs)
     elif "ptb" in canonical or "ecg" in canonical or "cardio" in canonical:
         return PTBXLECGDataset.load(**kwargs)
+    elif "parkinson" in canonical or "telemonitoring" in canonical or "updrs" in canonical:
+        return ParkinsonsTelemonitoringDataset.load(**kwargs)
     else:
         raise ValueError(
-            f"Unknown open dataset '{name}'. Available: 'oasis', 'proact_als', 'ptbxl_ecg'."
+            f"Unknown open dataset '{name}'. Available: 'oasis', 'proact_als', 'ptbxl_ecg', 'parkinsons_telemonitoring'."
         )

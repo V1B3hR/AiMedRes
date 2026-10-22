@@ -20,6 +20,7 @@ from sklearn.metrics import roc_auc_score
 
 from aimedres.data.open_datasets import (
     OASISDataset,
+    ParkinsonsTelemonitoringDataset,
     PROACTALSDataset,
     PTBXLECGDataset,
     get_open_dataset,
@@ -150,3 +151,55 @@ def test_end_to_end_oasis_leakage_safe_training():
     mean_auc = np.mean(fold_aucs)
     assert mean_auc > 0.50, f"Pipeline failed to learn meaningful signal on OASIS: AUC={mean_auc}"
     assert len(fold_aucs) == 5
+
+
+def test_parkinsons_telemonitoring_loader_and_schema():
+    """Verify Parkinson's Telemonitoring loader, anti-leakage drops, and acoustic biomarkers."""
+    dataset = ParkinsonsTelemonitoringDataset.load()
+
+    assert "Parkinson" in dataset.name
+    assert len(dataset.df) > 300
+    assert dataset.groups is not None
+    assert len(dataset.groups) == len(dataset.df)
+
+    # Verify circular leakage protection: raw UPDRS scores dropped from input features
+    assert "motor_UPDRS" not in dataset.feature_names
+    assert "total_UPDRS" not in dataset.feature_names
+    assert "baseline_motor" not in dataset.feature_names
+    assert "delta_motor" not in dataset.feature_names
+    assert "subject#" not in dataset.feature_names
+
+    # Verify acoustic vocal biomarkers are retained
+    for biomarker in ["Jitter(%)", "Shimmer", "NHR", "HNR", "RPDE", "DFA", "PPE"]:
+        assert biomarker in dataset.feature_names
+
+    # Check binary target
+    assert set(np.unique(dataset.target)).issubset({0, 1})
+
+
+def test_parkinsons_telemonitoring_zero_subject_leakage():
+    """Verify that multiple telemetry sessions for any patient never span both train and test folds."""
+    dataset = ParkinsonsTelemonitoringDataset.load()
+    cv = get_leakage_safe_cv(dataset.groups, n_splits=5, y=dataset.target.values)
+
+    for fold, (train_idx, val_idx) in enumerate(cv.split(dataset.features, dataset.target, dataset.groups)):
+        train_patients = set(dataset.groups[train_idx])
+        val_patients = set(dataset.groups[val_idx])
+
+        overlap = train_patients.intersection(val_patients)
+        assert len(overlap) == 0, f"Patient leakage detected in Parkinson's fold {fold}: {overlap}"
+
+
+def test_get_open_dataset_factory():
+    """Verify factory routes all four clinical cohorts correctly."""
+    d1 = get_open_dataset("oasis")
+    assert "OASIS" in d1.name
+
+    d2 = get_open_dataset("proact")
+    assert "PRO-ACT" in d2.name
+
+    d3 = get_open_dataset("ptbxl")
+    assert "PTB-XL" in d3.name
+
+    d4 = get_open_dataset("parkinsons_telemonitoring")
+    assert "Parkinson" in d4.name

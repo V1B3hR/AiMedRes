@@ -6,10 +6,12 @@ Provides zero-wait, leakage-free data loaders for:
 - OASIS-2 (Longitudinal Brain MRI and Clinical Demographics)
 - PRO-ACT (ALS Clinical Trials Consortium Database)
 - PTB-XL (12-Lead Diagnostic Electrocardiography Database)
+- Parkinson's Telemonitoring (Oxford/UCI Longitudinal Vocal Telemetry)
 """
 
 from ..data.open_datasets import (
     OASISDataset,
+    ParkinsonsTelemonitoringDataset,
     PROACTALSDataset,
     PTBXLECGDataset,
     get_leakage_safe_cv,
@@ -18,6 +20,7 @@ from ..data.open_datasets import (
 
 __all__ = [
     "OASISDataset",
+    "ParkinsonsTelemonitoringDataset",
     "PROACTALSDataset",
     "PTBXLECGDataset",
     "get_open_dataset",

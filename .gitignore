@@ -69,14 +69,14 @@ coverage.xml
 audit_logs/
 
 # Test and output directories
-outputs/
-test_outputs/
-cache/
-.cache/
-data/raw/
-results/
-logs/
-experiments/
+/outputs/
+/test_outputs/
+/cache/
+/.cache/
+/data/
+/results/
+/logs/
+/experiments/
 
 # MLflow
 mlruns/

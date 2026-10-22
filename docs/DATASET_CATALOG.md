@@ -154,19 +154,78 @@ print(f"Loaded {len(dataset.df)} ECGs across {len(set(dataset.groups))} patients
 
 ---
 
-### 3.4 Direct Download Commands (Zero-Wait Terminal Setup)
+### 3.4 UCI / Oxford Parkinson's Vocal Telemonitoring Study
 
-To pull real open-access clinical tables directly to your local machine into `data/raw/`:
+* **Portal**: [https://archive.ics.uci.edu/dataset/189/parkinsons+telemonitoring](https://archive.ics.uci.edu/dataset/189/parkinsons+telemonitoring)
+* **Reference**: Tsanas et al., *IEEE Transactions on Biomedical Engineering*, 2010.
+* **Scale**: 5,875 vocal recordings across 42 patients monitored longitudinally for 6 months.
+* **Access Type**: Fully open access, no institutional DUA needed.
+* **Target Task**: Motor UPDRS progression prediction ($\Delta\text{motor\_UPDRS} \ge 3.0$ points above patient baseline) using 16 noninvasive acoustic vocal biomarkers.
+
+#### Schema & Clinical Features
+| Feature | Type | Units / Range | Description |
+| :--- | :--- | :--- | :--- |
+| `subject#` | Integer | 1 - 42 | **Participant Group Key** (enforces zero-leakage cross-validation) |
+| `age` | Integer | 36 - 85 years | Patient age |
+| `sex` | Binary | 0 (Male), 1 (Female) | Biological sex |
+| `test_time` | Float | 0 - 180 days | Elapsed study follow-up time |
+| `motor_UPDRS` | Float | 5.0 - 45.0 | Clinician-scored motor symptom severity (dropped from features) |
+| `Jitter(%)`, `Jitter(Abs)`, etc. | Float | Multiple | Acoustic frequency variation perturbations (vocal tremor proxy) |
+| `Shimmer`, `Shimmer(dB)`, etc. | Float | Multiple | Acoustic amplitude variation perturbations (phonation instability) |
+| `NHR`, `HNR` | Float | Ratio / dB | Noise-to-Harmonics & Harmonics-to-Noise ratio (dysphonia marker) |
+| `RPDE` | Float | 0.2 - 0.9 | Recurrence Period Density Entropy (vocal signal complexity) |
+| `DFA` | Float | 0.5 - 0.9 | Detrended Fluctuation Analysis (fractal scaling exponent) |
+| `PPE` | Float | 0.05 - 0.6 | Pitch Period Entropy (impaired pitch control) |
+
+#### Programmatic Loading & Training
+```python
+from aimedres.data import ParkinsonsTelemonitoringDataset, get_leakage_safe_cv
+
+# Load telemonitoring data with automatic circular target exclusion:
+dataset = ParkinsonsTelemonitoringDataset.load(progression_threshold=3.0)
+
+# 5-fold CV strictly grouped by patient ID (zero subject overlap):
+cv = get_leakage_safe_cv(dataset.groups, n_splits=5, y=dataset.target.values)
+```
+
+---
+
+### 3.5 Real-World Open-Access Empirical Benchmarks (Verified 2026)
+
+AiMedRes includes an automated pipeline for acquiring real clinical cohorts and training leakage-safe models tracked via `LocalExperimentTracker`.
+
+#### One-Command Acquisition & Training
+```bash
+# 1. Download genuine patient cohorts to data/real_world/ (git-ignored)
+python scripts/download_real_world_datasets.py
+
+# 2. Run participant-isolated cross-validation with 95% bootstrap CIs
+python scripts/train_real_world_datasets.py
+```
+
+#### Empirical Benchmark Results on Real Clinical Cohorts
+
+| Cohort | Sample Size & Subjects | Target Endpoint | Model | ROC-AUC [95% CI] | PR-AUC | Brier Score |
+| :--- | :--- | :--- | :--- | :---: | :---: | :---: |
+| **OASIS-2 Dementia MRI** | 373 visits<br>(150 human subjects) | Clinical Dementia Diagnosis (`Group` $\in$ {Demented, Converted}) | **Logistic Regression** | **0.856** [0.818 – 0.893] | **0.879** | **0.150** |
+| **OASIS-2 Dementia MRI** | 373 visits<br>(150 human subjects) | Clinical Dementia Diagnosis (`Group` $\in$ {Demented, Converted}) | **Random Forest** | **0.795** [0.752 – 0.840] | **0.826** | **0.180** |
+| **UCI Parkinson's Telemetry** | 5,875 recordings<br>(42 human patients) | Longitudinal Motor Progression ($\Delta\text{motor\_UPDRS} \ge 3.0$) | **Logistic Regression** | **0.751** [0.737 – 0.764] | **0.484** | **0.181** |
+| **UCI Parkinson's Telemetry** | 5,875 recordings<br>(42 human patients) | Longitudinal Motor Progression ($\Delta\text{motor\_UPDRS} \ge 3.0$) | **Random Forest** | **0.766** [0.753 – 0.779] | **0.511** | **0.171** |
+
+> [!NOTE]
+> All results above are evaluated using `StratifiedGroupKFold` on participant IDs (100% holdout isolation). Preprocessing (median imputation, standard scaling) is strictly fitted within each fold to prevent data leakage. Audit trails and run cards are persisted in `results/real_world_training/experiments.db`.
+
+---
+
+### 3.6 Direct Download Commands (Zero-Wait Terminal Setup)
+
+To pull real open-access clinical tables directly to your local machine into `data/real_world/`:
 
 ```bash
-# 1. Create local raw data directories
-mkdir -p data/raw
+# Execute automated downloader for all zero-wait open-access cohorts:
+python scripts/download_real_world_datasets.py
 
-# 2. Download OASIS-2 longitudinal CSV
-curl -L -o data/raw/oasis_longitudinal.csv \
-  https://raw.githubusercontent.com/V1B3hR/AiMedRes/main/data/synthetic/synthetic_oasis_longitudinal.csv
-
-# 3. Verify files with unit test suite
+# Verify files with unit test suite
 pytest tests/unit/test_open_access_datasets.py
 ```
 
