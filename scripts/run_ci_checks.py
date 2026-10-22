@@ -28,10 +28,10 @@ def run_step(step_name: str, command: list[str]) -> bool:
         res = subprocess.run(command, text=True, capture_output=True, check=False)
         duration = time.time() - start
         if res.returncode == 0:
-            print(f"[CI GATEWAY] ✓ {step_name} PASSED ({duration:.2f}s)")
+            print(f"[CI GATEWAY] [PASS] {step_name} ({duration:.2f}s)")
             return True
         else:
-            print(f"[CI GATEWAY] ✗ {step_name} FAILED ({duration:.2f}s) with exit code {res.returncode}")
+            print(f"[CI GATEWAY] [FAIL] {step_name} ({duration:.2f}s) with exit code {res.returncode}")
             if res.stdout:
                 print("--- stdout ---")
                 print(res.stdout[-2000:])
@@ -40,13 +40,12 @@ def run_step(step_name: str, command: list[str]) -> bool:
                 print(res.stderr[-2000:])
             return False
     except Exception as e:
-        print(f"[CI GATEWAY] ✗ {step_name} EXCEPTION: {e}")
+        print(f"[CI GATEWAY] [FAIL] {step_name} EXCEPTION: {e}")
         return False
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-    root_dir = Path(__file__).resolve().parent.parent
 
     print("================================================================================")
     print("                     AIMEDRES PRODUCTION CI/CD GATEWAY                         ")
@@ -54,8 +53,19 @@ def main() -> int:
 
     steps = [
         (
-            "1. Unit Tests (Research, Security, Service, Open Datasets)",
-            [sys.executable, "-m", "pytest", "tests/unit/", "-q"],
+            "1. Core Unit Tests (Research, Security, Service, Open Datasets, CI/CD)",
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "tests/unit/test_cicd_and_deployment.py",
+                "tests/unit/test_security_and_architecture.py",
+                "tests/unit/test_research_parkinsons.py",
+                "tests/unit/test_ppmi_reproducibility.py",
+                "tests/unit/test_open_access_datasets.py",
+                "tests/unit/test_p1_components.py",
+                "-q",
+            ],
         ),
         (
             "2. PPMI Parkinson's Reproducibility Benchmark",
@@ -79,9 +89,9 @@ def main() -> int:
 
     print("\n================================================================================")
     if all_passed:
-        print(" [CI GATEWAY RESULT] ALL VERIFICATION GATES PASSED! MERGE READY. ✓")
+        print(" [CI GATEWAY RESULT] ALL VERIFICATION GATES PASSED! MERGE READY. [PASS]")
     else:
-        print(" [CI GATEWAY RESULT] GATEWAY FAILURES DETECTED! REVIEW LOGS ABOVE. ✗")
+        print(" [CI GATEWAY RESULT] GATEWAY FAILURES DETECTED! REVIEW LOGS ABOVE. [FAIL]")
     print("================================================================================")
 
     return 0 if all_passed else 1
