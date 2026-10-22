@@ -1,6 +1,10 @@
 # Core AiMedRes Requirements
 # Base dependencies for the package to function
 
+# Authentication and schema validation
+PyJWT>=2.0.0
+pydantic>=2,<3
+
 # Core scientific computing
 numpy>=1.24.0
 pandas>=2.0.0
