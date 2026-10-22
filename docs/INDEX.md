@@ -64,6 +64,7 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 - [Data Imbalance Resolution](DATA_IMBALANCE_RESOLUTION.md) - Handling imbalanced datasets
 - [Imaging De-identification Guide](IMAGING_DEIDENTIFICATION_GUIDE.md) - Medical imaging privacy
 - [Model Card - Imaging](MODEL_CARD_IMAGING.md) - Imaging model documentation
+- [Model Card - PPMI Parkinson's Progression](MODEL_CARD_PPMI_PARKINSONS.md) - Research model card for PPMI Parkinson's motor progression benchmark
 
 ## 🔄 Training Systems
 

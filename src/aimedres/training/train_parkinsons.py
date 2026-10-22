@@ -32,17 +32,51 @@ import pandas as pd
 # Suppress warnings for cleaner output
 warnings.filterwarnings("ignore")
 
+from sklearn.calibration import calibration_curve
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
     balanced_accuracy_score,
+    brier_score_loss,
     classification_report,
+    confusion_matrix,
     f1_score,
     roc_auc_score,
 )
+
+
+def compute_bootstrap_ci(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    metric_fn: Any,
+    n_bootstraps: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 42,
+) -> Tuple[float, float]:
+    """
+    Compute empirical non-parametric bootstrap confidence intervals (e.g. 95% CI)
+    for a given evaluation metric.
+    """
+    rng = np.random.default_rng(seed)
+    n_samples = len(y_true)
+    scores = []
+    for _ in range(n_bootstraps):
+        idx = rng.choice(n_samples, size=n_samples, replace=True)
+        if len(np.unique(y_true[idx])) < 2:
+            continue
+        try:
+            scores.append(metric_fn(y_true[idx], y_pred[idx]))
+        except Exception:
+            continue
+    if len(scores) < 10:
+        return 0.0, 0.0
+    lower = float(np.percentile(scores, 100 * (alpha / 2)))
+    upper = float(np.percentile(scores, 100 * (1 - alpha / 2)))
+    return lower, upper
 
 # ML Libraries
 from sklearn.model_selection import (
@@ -614,60 +648,100 @@ class ParkinsonsTrainingPipeline:
             logger.info(f"Training {name} with leakage-safe pipeline...")
 
             try:
-                # Build end-to-end Pipeline: preprocessing fitted strictly within training folds
-                pipeline = Pipeline([
-                    ("preprocessor", self._build_preprocessor(self.X_raw)),
-                    ("classifier", model),
-                ])
-
                 # Use StratifiedGroupKFold if participant groups are present
                 if self.groups is not None and len(np.unique(self.groups)) >= n_folds:
                     cv = StratifiedGroupKFold(n_splits=n_folds, shuffle=True, random_state=42)
-                    cv_results = cross_validate(
-                        pipeline,
-                        self.X_raw,
-                        self.y_processed,
-                        cv=cv,
-                        groups=self.groups,
-                        scoring=scoring,
-                        return_train_score=False,
-                    )
+                    cv_splits = list(cv.split(self.X_raw, self.y_processed, groups=self.groups))
                     logger.info(f"  Applied StratifiedGroupKFold on PATNO across {n_folds} folds (0 patient leakage)")
                 else:
                     cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
-                    cv_results = cross_validate(
-                        pipeline,
-                        self.X_raw,
-                        self.y_processed,
-                        cv=cv,
-                        scoring=scoring,
-                        return_train_score=False,
-                    )
+                    cv_splits = list(cv.split(self.X_raw, self.y_processed))
+
+                # Collect out-of-fold predictions across all validation folds
+                oof_true = np.zeros(len(self.y_processed))
+                oof_prob = np.zeros(len(self.y_processed))
+                oof_pred = np.zeros(len(self.y_processed))
+                fold_accs, fold_baccs, fold_f1s = [], [], []
+
+                for fold, (train_idx, val_idx) in enumerate(cv_splits):
+                    fold_pipe = Pipeline([
+                        ("preprocessor", self._build_preprocessor(self.X_raw.iloc[train_idx])),
+                        ("classifier", model),
+                    ])
+                    fold_pipe.fit(self.X_raw.iloc[train_idx], self.y_processed[train_idx])
+                    
+                    val_preds = fold_pipe.predict(self.X_raw.iloc[val_idx])
+                    if hasattr(fold_pipe, "predict_proba"):
+                        val_probs = fold_pipe.predict_proba(self.X_raw.iloc[val_idx])[:, 1]
+                    else:
+                        val_probs = val_preds.astype(float)
+
+                    oof_true[val_idx] = self.y_processed[val_idx]
+                    oof_prob[val_idx] = val_probs
+                    oof_pred[val_idx] = val_preds
+
+                    fold_accs.append(accuracy_score(self.y_processed[val_idx], val_preds))
+                    fold_baccs.append(balanced_accuracy_score(self.y_processed[val_idx], val_preds))
+                    fold_f1s.append(f1_score(self.y_processed[val_idx], val_preds, average="macro"))
+
+                # Out-of-fold overall metrics
+                oof_auc = roc_auc_score(oof_true, oof_prob)
+                oof_pr_auc = average_precision_score(oof_true, oof_prob)
+                oof_brier = brier_score_loss(oof_true, oof_prob)
+
+                # Compute 95% Bootstrap Confidence Intervals (1,000 resamples)
+                auc_ci_lower, auc_ci_upper = compute_bootstrap_ci(oof_true, oof_prob, roc_auc_score)
+                pr_ci_lower, pr_ci_upper = compute_bootstrap_ci(oof_true, oof_prob, average_precision_score)
+                brier_ci_lower, brier_ci_upper = compute_bootstrap_ci(oof_true, oof_prob, brier_score_loss)
+
+                # Sensitivity and Specificity at decision threshold 0.5
+                tn, fp, fn, tp = confusion_matrix(oof_true, oof_pred).ravel()
+                sens = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+                spec = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
+                # Probability calibration curve
+                prob_true, prob_pred = calibration_curve(oof_true, oof_prob, n_bins=5)
 
                 results[name] = {
-                    "accuracy_mean": cv_results["test_accuracy"].mean(),
-                    "accuracy_std": cv_results["test_accuracy"].std(),
-                    "balanced_accuracy_mean": cv_results["test_balanced_accuracy"].mean(),
-                    "balanced_accuracy_std": cv_results["test_balanced_accuracy"].std(),
-                    "f1_macro_mean": cv_results["test_f1_macro"].mean(),
-                    "f1_macro_std": cv_results["test_f1_macro"].std(),
-                    "roc_auc_mean": cv_results["test_roc_auc"].mean(),
-                    "roc_auc_std": cv_results["test_roc_auc"].std(),
+                    "accuracy_mean": float(np.mean(fold_accs)),
+                    "accuracy_std": float(np.std(fold_accs)),
+                    "balanced_accuracy_mean": float(np.mean(fold_baccs)),
+                    "balanced_accuracy_std": float(np.std(fold_baccs)),
+                    "f1_macro_mean": float(np.mean(fold_f1s)),
+                    "f1_macro_std": float(np.std(fold_f1s)),
+                    "roc_auc_mean": float(oof_auc),
+                    "roc_auc_ci_95": [auc_ci_lower, auc_ci_upper],
+                    "pr_auc_mean": float(oof_pr_auc),
+                    "pr_auc_ci_95": [pr_ci_lower, pr_ci_upper],
+                    "brier_score": float(oof_brier),
+                    "brier_score_ci_95": [brier_ci_lower, brier_ci_upper],
+                    "sensitivity": float(sens),
+                    "specificity": float(spec),
+                    "calibration_curve": {
+                        "prob_true": [float(p) for p in prob_true],
+                        "prob_pred": [float(p) for p in prob_pred],
+                    },
                 }
 
                 # Train final pipeline on full dataset
-                pipeline.fit(self.X_raw, self.y_processed)
+                final_pipeline = Pipeline([
+                    ("preprocessor", self._build_preprocessor(self.X_raw)),
+                    ("classifier", model),
+                ])
+                final_pipeline.fit(self.X_raw, self.y_processed)
 
                 # Save model
                 model_path = (
                     self.output_dir / "models" / f"{name.replace(' ', '_').lower()}_model.pkl"
                 )
                 with open(model_path, "wb") as f:
-                    pickle.dump(pipeline, f)
+                    pickle.dump(final_pipeline, f)
 
                 logger.info(
-                    f"{name} - Accuracy: {results[name]['accuracy_mean']:.3f} (±{results[name]['accuracy_std']:.3f}) | "
-                    f"ROC-AUC: {results[name]['roc_auc_mean']:.3f}"
+                    f"{name} - Acc: {results[name]['accuracy_mean']:.3f} | "
+                    f"ROC-AUC: {results[name]['roc_auc_mean']:.3f} [95% CI: {auc_ci_lower:.3f}-{auc_ci_upper:.3f}] | "
+                    f"PR-AUC: {results[name]['pr_auc_mean']:.3f} [95% CI: {pr_ci_lower:.3f}-{pr_ci_upper:.3f}] | "
+                    f"Brier: {results[name]['brier_score']:.3f}"
                 )
 
             except Exception as e:
@@ -896,8 +970,26 @@ class ParkinsonsTrainingPipeline:
                         f"  F1 Score: {metrics['f1_macro_mean']:.3f} (±{metrics['f1_macro_std']:.3f})\n"
                     )
                     f.write(
-                        f"  ROC AUC: {metrics['roc_auc_mean']:.3f} (±{metrics['roc_auc_std']:.3f})\n\n"
+                        f"  ROC AUC: {metrics['roc_auc_mean']:.3f}"
                     )
+                    if "roc_auc_ci_95" in metrics and metrics["roc_auc_ci_95"][0] > 0:
+                        f.write(f" [95% CI: {metrics['roc_auc_ci_95'][0]:.3f} - {metrics['roc_auc_ci_95'][1]:.3f}]")
+                    f.write("\n")
+                    if "pr_auc_mean" in metrics:
+                        f.write(f"  PR AUC:  {metrics['pr_auc_mean']:.3f}")
+                        if "pr_auc_ci_95" in metrics and metrics["pr_auc_ci_95"][0] > 0:
+                            f.write(f" [95% CI: {metrics['pr_auc_ci_95'][0]:.3f} - {metrics['pr_auc_ci_95'][1]:.3f}]")
+                        f.write("\n")
+                    if "brier_score" in metrics:
+                        f.write(f"  Brier Score (Calibration): {metrics['brier_score']:.3f}\n")
+                    if "sensitivity" in metrics and "specificity" in metrics:
+                        f.write(f"  Sensitivity: {metrics['sensitivity']:.3f} | Specificity: {metrics['specificity']:.3f}\n")
+                    f.write("\n")
+
+            # Also persist dedicated metrics JSON
+            metrics_json_path = self.output_dir / "metrics" / "ppmi_metrics.json"
+            with open(metrics_json_path, "w") as mf:
+                json.dump(report["classical_results"], mf, indent=2)
 
             if report["neural_results"]:
                 f.write("Neural Network Results:\n")
@@ -915,6 +1007,7 @@ class ParkinsonsTrainingPipeline:
     def run_full_pipeline(
         self,
         data_path: str = None,
+        target_column: str = None,
         epochs: int = 100,
         n_folds: int = 5,
         dataset_choice: str = "vikasukani",
@@ -924,6 +1017,7 @@ class ParkinsonsTrainingPipeline:
 
         Args:
             data_path: Path to dataset CSV (optional)
+            target_column: Specific target column name (e.g. motor_progression_label)
             epochs: Number of epochs for neural network
             n_folds: Number of folds for cross-validation
             dataset_choice: Which Kaggle dataset to use
@@ -938,7 +1032,7 @@ class ParkinsonsTrainingPipeline:
             self.load_data(data_path, dataset_choice)
 
             # Preprocess data
-            self.preprocess_data()
+            self.preprocess_data(target_column=target_column)
 
             # Train classical models
             classical_results = self.train_classical_models(n_folds)
@@ -1024,6 +1118,19 @@ def main():
         logger.error(f"Training failed: {e}")
         sys.exit(1)
 
+
+# Aliases for backward compatibility and clean naming
+ParkinsonTrainingPipeline = ParkinsonsTrainingPipeline
+ParkinsonMLPClassifier = ParkinsonsMLPClassifier
+
+__all__ = [
+    "ParkinsonsTrainingPipeline",
+    "ParkinsonTrainingPipeline",
+    "ParkinsonsMLPClassifier",
+    "ParkinsonMLPClassifier",
+    "compute_bootstrap_ci",
+    "main",
+]
 
 if __name__ == "__main__":
     main()

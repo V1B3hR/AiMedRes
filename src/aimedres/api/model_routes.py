@@ -14,7 +14,6 @@ from typing import Any, Dict, Optional
 from flask import Blueprint, jsonify, request
 
 from ..security.auth import require_auth
-from ..training.model_validation import ModelValidator
 
 logger = logging.getLogger(__name__)
 

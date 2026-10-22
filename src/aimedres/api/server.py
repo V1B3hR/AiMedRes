@@ -16,7 +16,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Dict, Optional
 
-import redis
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from werkzeug.exceptions import TooManyRequests

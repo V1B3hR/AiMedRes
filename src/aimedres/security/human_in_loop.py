@@ -158,7 +158,13 @@ class HumanInLoopGatekeeper:
             require_approval_for: Risk levels requiring approval (default: HIGH, CRITICAL)
             allow_admin_override: Whether to allow admin overrides
         """
-        self.audit_log_path = audit_log_path or Path("./audit_logs")
+        if isinstance(audit_log_path, dict):
+            path_val = audit_log_path.get("audit_log_path")
+            self.audit_log_path = Path(path_val) if path_val else Path("./audit_logs")
+        elif audit_log_path is not None:
+            self.audit_log_path = Path(audit_log_path)
+        else:
+            self.audit_log_path = Path("./audit_logs")
         self.audit_log_path.mkdir(parents=True, exist_ok=True)
 
         # Default to requiring approval for HIGH and CRITICAL
@@ -617,3 +623,8 @@ if __name__ == "__main__":
     # Verify audit chain
     verification = gatekeeper.verify_audit_chain()
     print(f"\nAudit chain verification: {verification}")
+
+
+# Compatibility alias
+HumanInLoopGating = HumanInLoopGatekeeper
+
