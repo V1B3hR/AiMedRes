@@ -27,13 +27,15 @@ In accordance with our [Consolidated Roadmap](docs/roadmap.md) and [Known Limita
 Working code, training pipelines, and interfaces developed as research scaffolding:
 | Capability | Location | Reality & Notes |
 |---|---|---|
-| Training Pipeline Scaffolding | `src/aimedres/training/` | Classical ML & PyTorch scripts; leak-safe PPMI pipeline |
+| Parkinson's Research Package | `src/aimedres/research/parkinsons/` | Modularized, typed Pydantic config, leakage-safe cross-validation, and cryptographic provenance manifest (`provenance_manifest.json`) |
+| Training Pipeline Scaffolding | `src/aimedres/training/` | Classical ML & PyTorch scripts; leak-safe PPMI pipeline with participant grouping on `PATNO` |
+| Registered Model Serving API | `src/aimedres/api/server.py` | Serves registered, calibrated models (`ppmi_parkinsons_v1`) from disk; registered FHIR R4 (`/api/v1/fhir`), case review (`/api/v1/cases`), and explainability (`/api/v1/explain`) |
 | Clinical CDS & Imaging Web UI | `frontend/` | React + Vite + Three.js viewer; prototype CDS dashboards |
 | Mobile Companion UI | `mobile/` | Expo/React Native prototype interface |
 | Pattern-Based PHI Scrubbing | `src/aimedres/security/` | Regex-based detection; technical safeguard (not a formal HIPAA certification) |
 | DICOM Header Anonymization | `src/aimedres/integration/` | Strips specified tags; requires institutional review before PHI exposure |
 | Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Declarative K8s manifests, Helm charts, Prometheus configs (not live production) |
-| Unit & Integration Tests | `tests/` | Pytest and Vitest test suites (including PPMI zero-leakage test suite) |
+| Unit & Integration Tests | `tests/` | 41 automated unit tests passing across research configuration, PPMI zero-leakage, open-access connectors, and clinical security |
 
 ### 🔬 Tier 2: Partially Implemented or Heuristic Simulations
 Components operating via heuristics, mock data, or simulation loops (not evidence-based clinical models):
@@ -44,7 +46,6 @@ Components operating via heuristics, mock data, or simulation loops (not evidenc
 | EHR Ingress / Sync | `src/aimedres/integration/` | Synthetic FHIR/HL7 converters; sync methods are simulated mocks |
 | Multi-Hospital Network | `src/aimedres/clinical/` | In-memory simulation framework, not an active multi-site clinical network |
 | Post-Quantum Hybrid Crypto | `src/aimedres/security/` | Experimental Kyber768 prototype; research evaluation only |
-| Prediction API Endpoint | `src/aimedres/api/server.py` | Instantiates generic architecture on-the-fly; transitioning to registered models |
 
 ### 📄 Tier 3: Documentation & Planning Artifacts Only
 Declarative documentation, templates, and roadmap specifications (not completed deliverables):

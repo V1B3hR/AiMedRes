@@ -12,6 +12,12 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 
 ## 🚂 Training & Usage
 
+### Scientific Research & Reproducibility
+- [Parkinson's Research Package](../src/aimedres/research/parkinsons/README.md) - Decoupled, typed research pipeline & cryptographic provenance manifest
+- [PPMI Benchmark Reproduction Script](../scripts/reproduce_ppmi_benchmark.py) - One-command PPMI reproducibility runner
+- [Model Card - PPMI Parkinson's Progression](MODEL_CARD_PPMI_PARKINSONS.md) - GMLP & TRIPOD-AI compliant research model card
+- [PPMI Data Governance](../ParkinsonDatasets/DATA_GOVERNANCE.md) - DUA compliance and restricted data protocols
+
 ### Training Guides
 - [Training Usage Guide](TRAINING_USAGE.md) - Comprehensive training documentation
 - [Training Scripts Reference](../src/aimedres/training/README.md) - Training script documentation
