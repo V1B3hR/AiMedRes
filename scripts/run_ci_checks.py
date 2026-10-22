@@ -53,11 +53,12 @@ def main() -> int:
 
     steps = [
         (
-            "1. Core Unit Tests (Research, Security, Service, Open Datasets, CI/CD)",
+            "1. Core Unit Tests (Research, Security, Service, Open Datasets, Compliance, CI/CD)",
             [
                 sys.executable,
                 "-m",
                 "pytest",
+                "tests/unit/test_clinical_and_compliance.py",
                 "tests/unit/test_cicd_and_deployment.py",
                 "tests/unit/test_security_and_architecture.py",
                 "tests/unit/test_research_parkinsons.py",
