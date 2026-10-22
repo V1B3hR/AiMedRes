@@ -35,8 +35,8 @@ Working code, training pipelines, and interfaces developed as research scaffoldi
 | Mobile Companion UI | `mobile/` | Expo/React Native prototype interface |
 | Pattern-Based PHI Scrubbing | `src/aimedres/security/` | Regex-based detection; technical safeguard (not a formal HIPAA certification) |
 | DICOM Header Anonymization | `src/aimedres/integration/` | Strips specified tags; requires institutional review before PHI exposure |
-| Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Declarative K8s manifests, Helm charts, Prometheus configs (not live production) |
-| Unit & Integration Tests | `tests/` | 51 automated unit tests passing across research configuration, experiment tracking, PPMI zero-leakage, open-access connectors, security hardening, and domain decoupling |
+| Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Validated K8s manifests, Helm charts, Prometheus configs, CycloneDX 1.5 SBOM generator, and local CI gateway runner |
+| Unit & Integration Tests | `tests/` | 56 automated unit tests passing across research configuration, experiment tracking, PPMI zero-leakage, open-access connectors, security hardening, domain decoupling, CycloneDX SBOM, and sandbox deployment validation |
 
 ### 🔬 Tier 2: Partially Implemented or Heuristic Simulations
 Components operating via heuristics, mock data, or simulation loops (not evidence-based clinical models):

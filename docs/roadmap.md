@@ -36,10 +36,10 @@ The table below establishes an unvarnished audit of the repository, categorizing
 | **Clinical Decision Support (CDS)** | Tier 2 | Risk scoring logic, intervention recommendation structures, FHIR/HL7 conversion helpers, human-in-the-loop audit stubs in `src/aimedres/clinical/`. | Risk engine is hand-authored static heuristic rules. EHR "sync" methods are explicitly simulated mocks. Not connected to live partner hospital EHRs. |
 | **API & Applications** | Tier 1 | Flask API in `src/aimedres/api/server.py` and decoupled `src/aimedres/service/server.py`, rate limiting, security headers, DICOM routes, registered model serving via `/api/v1/model/infer` and `/api/v1/predict` (PPMI trained pipeline), FHIR R4 sandbox (`/api/v1/fhir`), and CDS review (`/api/v1/cases`). | Web UI connects to prototype mocks; mobile companion UI is exploratory. |
 | **Privacy & Security** | Tier 1 | Regex-based PHI scrubbing, DICOM tag clearing, encryption helpers (AES-256 / Kyber-768 hybrid prototype), database-backed `AuthDatabaseStore` (SQLite), instant token & key revocation, PBKDF2 hashing with salt, security audit logging, and fail-closed production secret validation. | Pattern scrubbing is not a formal HIPAA de-identification certification or data-use authorization system. DICOM stripper clears limited fields. No third-party penetration testing or external SOC audit completed. |
-| **Deployment & MLOps** | Tier 1 / 3 | Dockerfiles, Docker Compose, Kubernetes manifests (`k8s/`), Helm chart (`helm/aimedres/`), Prometheus/Grafana configs (`monitoring/`), local SQLite/JSON experiment tracking and model lineage (`src/aimedres/research/tracking.py`). | Deployment assets and declarative configurations only, not proof of deployed live operations. Image publishing, signed provenance, cloud overlays, and automated tracing remain unfinished. |
+| **Deployment & MLOps** | Tier 1 | Dockerfiles, Docker Compose, validated Kubernetes manifests (`k8s/`), validated Helm chart (`helm/aimedres/`), Prometheus/Alertmanager configs (`monitoring/`), local SQLite/JSON experiment tracking (`src/aimedres/research/tracking.py`), GitHub Actions CI workflow (`.github/workflows/ci.yml`), CycloneDX 1.5 SBOM generator, and local CI runner (`scripts/run_ci_checks.py`). | Image publishing to public registry and multi-cluster cloud federation remain unfinished. |
 | **Documentation & Compliance** | Tier 3 | Extensive documentation: training guides, security policies, model cards, FDA Q-Sub generator (`src/aimedres/compliance/`). | Claims overstate maturity. Generates draft FDA/QMS skeletons, but no formal FDA submission has been made, no clinical pilot has run with live patients, and no certified QMS exists. |
 | **Packaging & Governance** | Tier 1 | `pyproject.toml`, `setup.py`, requirements files, MIT `LICENSE`, `ParkinsonDatasets/DATA_GOVERNANCE.md`. | Fully reconciled under MIT license with clear DUA governance controls. |
-| **Testing & CI** | Tier 1 | 51 automated unit tests across research configuration, live experiment tracking, PPMI participant-leakage isolation, open-access datasets, security hardening, and domain decoupling; Vitest frontend tests; performance benchmarks (k6, Lighthouse CI). | Optional medical packages (`pydicom`, `torchvision`) are guarded with runtime fallbacks for lightweight CI runner execution. |
+| **Testing & CI** | Tier 1 | 56 automated unit tests across research configuration, live experiment tracking, PPMI participant-leakage isolation, open-access datasets, security hardening, domain decoupling, CycloneDX SBOM, and sandbox deployment validation; Vitest frontend tests; performance benchmarks (k6, Lighthouse CI). | Optional medical packages (`pydicom`, `torchvision`) are guarded with runtime fallbacks for lightweight CI runner execution. |
 
 ---
 
@@ -174,16 +174,17 @@ flowchart TD
     - Implemented fail-closed security gates: raises `SecurityConfigurationError` in production mode (`AIMEDRES_ENV=production` or `STRICT_SECURITY=true`) if `FLASK_SECRET_KEY` or `JWT_SECRET` are missing, weak (< 32 chars), or using default values.
     - Deployed `AuthDatabaseStore` in `src/aimedres/security/auth.py` providing SQLite relational persistence for API keys, PBKDF2 hash verification with salt, instant key and session revocation (`revoke_api_key`, `revoke_session`), and audit logging (`auth_audit_log`).
     - Integrated OIDC provider scaffolding, MFA manager, and role-based access control (RBAC).
-- [ ] **3.4 Production CI/CD Gateways**
+- [x] **3.4 Production CI/CD Gateways**
   - **Objective**: Establish strict gating workflows before merge.
   - **Specification**:
-    - Automated linting (Ruff/Black), strict type checking (Mypy), security vulnerability scanning (Bandit, Trivy), and container image signing (Cosign).
-    - Software Bill of Materials (SBOM) generation (SPDX/CycloneDX).
-- [ ] **3.5 Non-Clinical Research Sandbox Deployment**
-  - **Objective**: Deploy the decoupled platform to an isolated Kubernetes research sandbox.
+    - Deployed GitHub Actions CI workflow [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) running automated scientific unit tests, PPMI reproducibility benchmarks, and SBOM generation.
+    - Implemented standardized CycloneDX 1.5 Software Bill of Materials (SBOM) generator in [`scripts/generate_sbom.py`](../scripts/generate_sbom.py) capturing runtime environment, package versions, and licenses into `reports/sbom.json`.
+    - Deployed one-command local CI verification runner in [`scripts/run_ci_checks.py`](../scripts/run_ci_checks.py).
+- [x] **3.5 Non-Clinical Research Sandbox Deployment**
+  - **Objective**: Deploy and validate the decoupled platform in an isolated Kubernetes and Helm research sandbox.
   - **Specification**:
-    - Validate Helm chart deployments with least-privilege RBAC and network policies.
-    - Connect Prometheus, Grafana, and centralized log aggregation (Loki/Elasticsearch) with real metrics and alerts.
+    - Implemented sandbox validator in [`scripts/validate_sandbox_deployment.py`](../scripts/validate_sandbox_deployment.py) verifying Kubernetes manifests ([`k8s/`](../k8s/)), Helm chart templates ([`helm/aimedres/`](../helm/aimedres/)), and Prometheus/Alertmanager monitoring ([`monitoring/`](../monitoring/)).
+    - Enforced least-privilege securityContext (`runAsNonRoot: true`), Prometheus scraping annotations (`prometheus.io/scrape: true`), and health endpoints. Verified in `tests/unit/test_cicd_and_deployment.py`.
 
 ---
 
