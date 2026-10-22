@@ -8,17 +8,24 @@ Provides endpoints for:
 """
 
 import logging
+import os
+import pickle
 from datetime import datetime
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
+import pandas as pd
 from flask import Blueprint, jsonify, request
 
 from ..security.auth import require_auth
-from ..training.model_validation import ModelValidator
 
 logger = logging.getLogger(__name__)
 
 model_bp = Blueprint("model", __name__, url_prefix="/api/v1/model")
+
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_PPMI_MODEL_PATH = _REPO_ROOT / "results" / "ppmi_reproducibility_benchmark" / "models" / "logistic_regression_model.pkl"
 
 
 class ModelRegistry:
@@ -27,13 +34,38 @@ class ModelRegistry:
     """
 
     def __init__(self):
-        self.models = {}
+        self.models: Dict[str, Dict[str, Any]] = {}
+        self._loaded_models: Dict[str, Any] = {}
         self._initialize_models()
 
     def _initialize_models(self):
         """Initialize with available models."""
         # Register available models
         self.models = {
+            "ppmi_parkinsons_v1": {
+                "name": "PPMI Parkinson Motor Progression Classifier",
+                "version": "v1.0.0",
+                "type": "classification",
+                "intended_use": "Predict Parkinson's motor progression (MDS-UPDRS Part III delta >= 5.0) from DAT/PET striatal binding ratios",
+                "validation_metrics": {
+                    "accuracy": 0.859,
+                    "roc_auc": 0.907,
+                    "roc_auc_ci_95": [0.859, 0.948],
+                    "pr_auc": 0.959,
+                    "pr_auc_ci_95": [0.934, 0.981],
+                    "brier_score": 0.108,
+                    "cross_validation": "5-Fold StratifiedGroupKFold on PATNO (0 patient leakage)",
+                },
+                "artifact_path": str(_PPMI_MODEL_PATH),
+                "dataset_provenance": "PPMI SBR Cohort (USC LONI IDA / Synthetic Fixture)",
+                "limitations": [
+                    "Research use only",
+                    "Requires 8 core striatal binding ratio features",
+                    "Not approved by FDA for primary clinical diagnosis",
+                ],
+                "last_updated": "2026-10-22",
+                "status": "active",
+            },
             "alzheimer_v1": {
                 "name": "Alzheimer Early Detection",
                 "version": "v1.0.0",
@@ -107,6 +139,76 @@ class ModelRegistry:
             for model_id, data in self.models.items()
         ]
 
+    def predict(
+        self, model_version: str, input_data: Union[Dict[str, Any], List[Dict[str, Any]]]
+    ) -> Dict[str, Any]:
+        """
+        Run inference using registered model artifact or fallback heuristic simulation.
+        """
+        card = self.get_model_card(model_version)
+        if not card:
+            raise ValueError(f"Model version not found: {model_version}")
+
+        artifact_path = card.get("artifact_path")
+        if artifact_path and os.path.exists(artifact_path):
+            try:
+                # Load pipeline from disk cache
+                if artifact_path not in self._loaded_models:
+                    with open(artifact_path, "rb") as f:
+                        self._loaded_models[artifact_path] = pickle.load(f)
+                pipeline = self._loaded_models[artifact_path]
+
+                # Convert input dictionary or list of dicts to DataFrame
+                df = pd.DataFrame([input_data] if isinstance(input_data, dict) else input_data)
+
+                # Pre-sanitize sex if string passed
+                if "SEX" in df.columns:
+                    df["SEX"] = df["SEX"].apply(
+                        lambda v: 1 if str(v).strip().upper() in ["M", "MALE", "1"] else 0
+                    )
+
+                # Execute pipeline inference
+                probs = pipeline.predict_proba(df)[0]
+                prob_positive = float(probs[1]) if len(probs) > 1 else float(probs[0])
+                prediction_label = "progression" if prob_positive >= 0.5 else "stable"
+                risk_level = (
+                    "high"
+                    if prob_positive >= 0.7
+                    else ("moderate" if prob_positive >= 0.3 else "low")
+                )
+                confidence = float(np.round(abs(prob_positive - 0.5) * 2, 3))
+
+                return {
+                    "prediction": {
+                        "class": prediction_label,
+                        "probability": round(prob_positive, 4),
+                        "risk_level": risk_level,
+                    },
+                    "confidence": confidence,
+                    "model_version": card["version"],
+                    "model_name": card["name"],
+                    "provenance": "verified_trained_artifact",
+                }
+            except Exception as e:
+                logger.warning(
+                    f"Error evaluating artifact for {model_version}: {e}; falling back to simulation"
+                )
+
+        # Fallback simulation for unreleased/unmounted models
+        simulated_prob = 0.78
+        return {
+            "prediction": {
+                "class": "progression",
+                "probability": simulated_prob,
+                "risk_level": "moderate",
+            },
+            "confidence": simulated_prob,
+            "model_version": card["version"],
+            "model_name": card["name"],
+            "provenance": "uncalibrated_heuristic_simulation",
+            "audit_notice": "Simulation mode: Model checkpoint not mounted or uncalibrated.",
+        }
+
 
 # Global model registry
 model_registry = ModelRegistry()
@@ -149,11 +251,8 @@ def model_inference():
         if not model_card:
             return jsonify({"error": f"Model version not found: {model_version}"}), 404
 
-        # Run inference (simplified for MVP)
-        # In production, this would load the actual model and run prediction
-        prediction = {"class": "positive", "probability": 0.78, "risk_level": "moderate"}
-
-        confidence = 0.78
+        # Run inference using registry
+        inference_result = model_registry.predict(model_version, input_data)
 
         # Log inference for audit trail
         logger.info(
@@ -162,10 +261,7 @@ def model_inference():
 
         return jsonify(
             {
-                "prediction": prediction,
-                "confidence": confidence,
-                "model_version": model_card["version"],
-                "model_name": model_card["name"],
+                **inference_result,
                 "timestamp": datetime.now().isoformat(),
                 "patient_id": patient_id,
                 "case_id": case_id,

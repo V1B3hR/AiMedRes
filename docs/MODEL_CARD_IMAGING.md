@@ -1,5 +1,9 @@
 # Medical Imaging Model Card - AiMedRes
 
+> **⚠️ RESEARCH PROTOTYPE — NOT CLINICALLY VALIDATED**  
+> **Status**: Development & Synthetic Benchmark Prototype.  
+> Performance metrics reported below reflect evaluation on synthetic benchmarks and development pipelines. They do **not** represent verified clinical diagnostic performance, an institutional clinical trial, or regulatory clearance. See [`docs/KNOWN_LIMITATIONS.md`](KNOWN_LIMITATIONS.md) and [`docs/roadmap.md`](roadmap.md).
+
 ## Model Overview
 
 **Model Name**: AiMedRes Brain MRI Classifier  

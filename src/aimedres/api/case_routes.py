@@ -173,6 +173,7 @@ case_manager = CaseManager()
 
 
 @cases_bp.route("", methods=["GET"])
+@cases_bp.route("/list", methods=["GET"])
 @require_auth()
 def list_cases():
     """

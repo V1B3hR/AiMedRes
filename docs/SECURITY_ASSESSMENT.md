@@ -1,10 +1,13 @@
-# Security Assessment and Compliance Report
+# Security Assessment and Technical Controls Report
 
-**Version**: 1.0.0 | **Last Updated**: November 2025
+> **⚠️ AUDIT CLASSIFICATION: INTERNAL TECHNICAL CONTROLS ASSESSMENT (PROTOTYPE)**  
+> **Status**: Technical safeguards implemented in code; **formal third-party HIPAA/GDPR audit and external penetration testing remain pending** (scheduled under Phase 3 of the [Consolidated Roadmap](roadmap.md)). This document reflects internal architectural capabilities, not an external compliance certification.
+
+**Version**: 1.0.0 | **Last Updated**: October 2026
 
 ## Executive Summary
 
-AiMedRes has been successfully enhanced with comprehensive enterprise-grade security measures to address all requirements specified in the security audit. The system now implements robust security controls, privacy protection, and compliance measures suitable for handling sensitive medical data.
+AiMedRes implements layered technical security mechanisms (API key generation, rate limiting, regex-based PHI scrubbing, and TLS headers) designed for research environments. While these controls establish foundational data safety, institutional clinical deployment requires formal third-party compliance verification.
 
 ## Security Improvements Implemented
 

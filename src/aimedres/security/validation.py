@@ -95,6 +95,64 @@ class InputValidator:
             return False
         return True
 
+    def validate_json(
+        self, data: Any, max_depth: int = 10, current_depth: int = 0
+    ) -> bool:
+        """
+        Validate JSON structure and contents against injection attacks, prohibited keys, and excessive nesting.
+
+        Args:
+            data: Parsed JSON data (dict, list, string, number, bool, None)
+            max_depth: Maximum allowed nesting depth
+            current_depth: Current recursion depth
+
+        Returns:
+            True if valid and safe, False otherwise
+        """
+        if current_depth > max_depth:
+            security_logger.warning("JSON validation failed: maximum nesting depth exceeded")
+            return False
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if not isinstance(key, str):
+                    security_logger.warning("JSON validation failed: key is not a string")
+                    return False
+
+                # Prevent prototype pollution or special attribute injection
+                if key in {"__proto__", "constructor", "prototype", "__class__"}:
+                    security_logger.warning(f"JSON validation failed: prohibited key '{key}'")
+                    return False
+
+                if not self.validate_sql_injection(key) or not self.validate_xss(key):
+                    return False
+
+                if not self.validate_json(value, max_depth=max_depth, current_depth=current_depth + 1):
+                    return False
+            return True
+
+        elif isinstance(data, list):
+            for item in data:
+                if not self.validate_json(item, max_depth=max_depth, current_depth=current_depth + 1):
+                    return False
+            return True
+
+        elif isinstance(data, str):
+            if not self.validate_sql_injection(data) or not self.validate_xss(data):
+                return False
+            return True
+
+        elif isinstance(data, (int, float, bool)) or data is None:
+            if isinstance(data, float) and (data != data or abs(data) == float("inf")):
+                security_logger.warning("JSON validation failed: invalid float value (NaN or Inf)")
+                return False
+            return True
+
+        else:
+            security_logger.warning(f"JSON validation failed: unsupported type {type(data)}")
+            return False
+
+
     def validate_medical_data(self, data: Dict[str, Any]) -> Tuple[bool, List[str]]:
         """
         Validate medical data format and values.

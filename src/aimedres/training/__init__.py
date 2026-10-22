@@ -5,9 +5,12 @@ Secure training pipelines for neural networks and agents, plus structured
 Alzheimer's disease prediction models and disease-specific training pipelines.
 """
 
-from .pipeline import TrainingPipeline
-from .structured_alz_trainer import EarlyStoppingMLP, StructuredAlzTrainer
-from .trainer import SecureTrainer
+try:
+    from .pipeline import TrainingPipeline
+    from .structured_alz_trainer import EarlyStoppingMLP, StructuredAlzTrainer
+    from .trainer import SecureTrainer
+except ImportError:
+    pass
 
 # Disease-specific training pipelines
 try:

@@ -22,9 +22,9 @@ from typing import List
 # ==============================================================================
 NAME = "aimedres"
 DESCRIPTION = "AiMedRes - AI Medical Research Assistant for advanced healthcare analytics"
-AUTHOR = "VIBEHR"  # Or your GitHub username/organization
-AUTHOR_EMAIL = "your-email@example.com"  # A contact email
-URL = "https://github.com/V1B3hR/aimedres"
+AUTHOR = "V1B3hR"
+AUTHOR_EMAIL = "contact@aimedres.org"
+URL = "https://github.com/V1B3hR/AiMedRes"
 LICENSE = "MIT"
 
 # ==============================================================================

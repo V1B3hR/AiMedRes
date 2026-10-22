@@ -15,20 +15,20 @@ Main Components:
 __version__ = "1.0.0"
 __author__ = "AiMedRes Team"
 
-from .core.agent import DuetMindAgent
-from .core.config import DuetMindConfig
+try:
+    from .core.agent import DuetMindAgent
+    from .core.config import DuetMindConfig
+    from .core.neural_network import AdaptiveNeuralNetwork
+    from .security.auth import SecureAuthManager
+    from .security.validation import InputValidator
 
-# Core imports for external use
-from .core.neural_network import AdaptiveNeuralNetwork
-
-# Security imports
-from .security.auth import SecureAuthManager
-from .security.validation import InputValidator
-
-__all__ = [
-    "AdaptiveNeuralNetwork",
-    "DuetMindAgent",
-    "DuetMindConfig",
-    "SecureAuthManager",
-    "InputValidator",
-]
+    __all__ = [
+        "AdaptiveNeuralNetwork",
+        "DuetMindAgent",
+        "DuetMindConfig",
+        "SecureAuthManager",
+        "InputValidator",
+    ]
+except ImportError:
+    # Graceful fallback when web/api dependencies (like Flask) are not installed in pure ML environments
+    __all__ = []

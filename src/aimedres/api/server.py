@@ -16,15 +16,14 @@ from datetime import datetime, timedelta
 from functools import wraps
 from typing import Any, Dict, Optional
 
-import redis
 from flask import Flask, g, jsonify, request
-from flask_cors import CORS
+from flask_cors import CORS  # type: ignore
 from werkzeug.exceptions import TooManyRequests
 
 from ..core.agent import DuetMindAgent
 from ..core.config import DuetMindConfig
 from ..core.neural_network import AdaptiveNeuralNetwork
-from ..security.auth import SecureAuthManager, require_auth
+from ..security.auth import SecureAuthManager, SecurityConfigurationError, require_auth
 from ..security.validation import InputValidator
 from ..utils.safety import SafetyMonitor
 
@@ -137,23 +136,32 @@ class SecureAPIServer:
         self.app = Flask(__name__)
 
         # Security components
-        self.auth_manager = SecureAuthManager(self.config)
+        config_dict = vars(self.config) if hasattr(self.config, "__dict__") else self.config
+        self.auth_manager = SecureAuthManager(config_dict)
         self.input_validator = InputValidator()
         self.safety_monitor = SafetyMonitor()
 
         # Rate limiting
         try:
+            import redis  # type: ignore
+
             redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
             redis_client.ping()  # Test connection
             self.rate_limiter = RateLimiter(redis_client)
             logger.info("Redis rate limiting enabled")
-        except:
+        except Exception:
             self.rate_limiter = RateLimiter()  # Local fallback
             logger.warning("Using local rate limiting (Redis unavailable)")
 
         # AI components
         self.agents: Dict[str, DuetMindAgent] = {}
         self.neural_networks: Dict[str, AdaptiveNeuralNetwork] = {}
+        try:
+            from .model_routes import model_registry
+
+            self.model_registry = model_registry
+        except Exception:
+            self.model_registry = None
 
         # Configure Flask app
         self._configure_app()
@@ -163,11 +171,24 @@ class SecureAPIServer:
         logger.info("Secure API server initialized")
 
     def _configure_app(self):
-        """Configure Flask application settings"""
+        """Configure Flask application settings with fail-closed production security"""
+        flask_secret = self.config.get_secret("FLASK_SECRET_KEY") or os.environ.get("FLASK_SECRET_KEY")
+        env = os.environ.get("AIMEDRES_ENV", "").lower()
+        strict_sec = os.environ.get("STRICT_SECURITY", "false").lower() in ("true", "1")
+
+        if env == "production" or strict_sec:
+            if not flask_secret or flask_secret == "dev-secret-change-in-production" or len(flask_secret) < 32:
+                raise SecurityConfigurationError(
+                    "CRITICAL SECURITY CONFIGURATION ERROR: Production environment requires an explicitly "
+                    "configured, high-entropy FLASK_SECRET_KEY (minimum 32 characters). Insecure default fallback "
+                    "secrets are strictly prohibited."
+                )
+
+        final_secret = flask_secret or "dev-secret-change-in-production"
+
         self.app.config.update(
             {
-                "SECRET_KEY": self.config.get_secret("FLASK_SECRET_KEY")
-                or "dev-secret-change-in-production",
+                "SECRET_KEY": final_secret,
                 # Increased cap to accommodate multi-slice DICOM CT series uploads
                 "MAX_CONTENT_LENGTH": max(
                     self.config.api.max_request_size, DICOM_CT_MAX_CONTENT_LENGTH
@@ -255,6 +276,39 @@ class SecureAPIServer:
     def _register_routes(self):
         """Register API routes with security"""
 
+        # Register core clinical & model serving blueprints
+        try:
+            from .model_routes import model_bp
+
+            self.app.register_blueprint(model_bp)
+            logger.info("Model serving routes registered (/api/v1/model)")
+        except Exception as e:
+            logger.warning(f"Failed to register model routes: {e}")
+
+        try:
+            from .fhir_routes import fhir_bp
+
+            self.app.register_blueprint(fhir_bp)
+            logger.info("FHIR integration routes registered (/api/v1/fhir)")
+        except Exception as e:
+            logger.warning(f"Failed to register FHIR routes: {e}")
+
+        try:
+            from .case_routes import cases_bp
+
+            self.app.register_blueprint(cases_bp)
+            logger.info("Case management routes registered (/api/v1/cases)")
+        except Exception as e:
+            logger.warning(f"Failed to register case routes: {e}")
+
+        try:
+            from .explain_routes import explain_bp
+
+            self.app.register_blueprint(explain_bp)
+            logger.info("Explainability routes registered (/api/v1/explain)")
+        except Exception as e:
+            logger.warning(f"Failed to register explainability routes: {e}")
+
         # Register P3 blueprints for advanced features
         try:
             from .visualization_routes import visualization_bp
@@ -308,7 +362,7 @@ class SecureAPIServer:
         @rate_limit(limit=60, window=60)  # 60 requests per minute
         @require_auth
         def predict():
-            """Secure prediction endpoint"""
+            """Secure prediction endpoint supporting both registered models and adaptive networks"""
             try:
                 # Validate input
                 data = request.get_json()
@@ -319,7 +373,16 @@ class SecureAPIServer:
                 if not self.input_validator.validate_json(data):
                     return jsonify({"error": "Invalid input data"}), 400
 
-                # Get or create neural network
+                # Check if requesting a registered model
+                model_id = data.get("model_id") or data.get("model_version")
+                if self.model_registry and model_id and model_id in self.model_registry.models:
+                    res = self.model_registry.predict(model_id, data["input"])
+                    self.safety_monitor.record_operation(
+                        operation="prediction", duration=0.05, success=True
+                    )
+                    return jsonify(res)
+
+                # Get or create adaptive neural network
                 network_id = data.get("network_id", "default")
                 if network_id not in self.neural_networks:
                     self.neural_networks[network_id] = AdaptiveNeuralNetwork()
