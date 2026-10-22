@@ -5,7 +5,7 @@
 > **Safety‑aware, explainable AI for neurological and mental health research**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/V1B3hR/AiMedRes)
 [![Status](https://img.shields.io/badge/status-research%20prototype-orange.svg)](https://github.com/V1B3hR/AiMedRes)
 
@@ -19,55 +19,54 @@
 
 ---
 
-## 📊 Implementation Status
+## 📊 Implementation Status & Capability Classification
 
-AiMedRes is an actively developed research platform. The table below separates what is **actually implemented and tested** in this codebase from items that are **documentation/planning artifacts** or **not yet implemented**.
+In accordance with our [Consolidated Roadmap](docs/roadmap.md) and [Known Limitations](docs/KNOWN_LIMITATIONS.md), AiMedRes classifies all components into three transparent capability tiers:
 
-### ✅ Implemented & Tested in This Codebase
-
-| Capability | Location | Notes |
+### 🛠️ Tier 1: Implemented Prototype Code
+Working code, training pipelines, and interfaces developed as research scaffolding:
+| Capability | Location | Reality & Notes |
 |---|---|---|
-| Core adaptive neural architecture | `src/aimedres/core/` | Tested |
-| Multi-agent consultation system | `src/aimedres/agents/` | Tested |
-| HIPAA audit logging & PHI scrubbing | `src/aimedres/security/`, `src/aimedres/compliance/` | Tested |
-| FHIR/HL7 EHR integration | `src/aimedres/integration/ehr.py` | Tested |
-| Clinical Decision Support | `src/aimedres/clinical/decision_support.py` | Tested |
-| 3D Brain Visualization (P15) | Frontend viewer | Prototype tested |
-| Multi-modal AI integration (P16) | `src/aimedres/core/multimodal_integration.py` | Tested |
-| Predictive healthcare analytics (P17) | `src/aimedres/clinical/` | Tested |
-| Multi-hospital network framework (P12) | `src/aimedres/clinical/multi_hospital_network.py` | Tested |
-| Quantum-safe cryptography (Kyber768/AES-256) | `src/aimedres/security/` | Hybrid implementation |
-| Rate limiting & CORS hardening | `src/aimedres/api/server.py` | Configurable per endpoint |
-| Training pipeline (7 disease models) | `src/aimedres/training/` | ALS, Alzheimer's, Parkinson's, CVD, Diabetes, Brain MRI, Agents |
-| Container orchestration (K8s + Helm) | `k8s/`, `helm/aimedres/` | Deployment manifests and chart present |
-| Observability stack | `monitoring/` | Prometheus, Grafana, Alertmanager configs present |
-| AI security monitoring enhancement | `src/aimedres/security/ai_security_monitoring.py` | Threat detection, analytics, incident response tested |
-| Drug discovery & clinical trial support | `src/aimedres/clinical/drug_discovery.py` | Screening, trial design, safety workflows tested |
-| Frontend unit tests (Vitest) | `frontend/src/__tests__/` | API-focused unit coverage present |
+| Training Pipeline Scaffolding | `src/aimedres/training/` | Classical ML & PyTorch scripts; leak-safe PPMI pipeline |
+| Clinical CDS & Imaging Web UI | `frontend/` | React + Vite + Three.js viewer; prototype CDS dashboards |
+| Mobile Companion UI | `mobile/` | Expo/React Native prototype interface |
+| Pattern-Based PHI Scrubbing | `src/aimedres/security/` | Regex-based detection; technical safeguard (not a formal HIPAA certification) |
+| DICOM Header Anonymization | `src/aimedres/integration/` | Strips specified tags; requires institutional review before PHI exposure |
+| Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Declarative K8s manifests, Helm charts, Prometheus configs (not live production) |
+| Unit & Integration Tests | `tests/` | Pytest and Vitest test suites (including PPMI zero-leakage test suite) |
 
-### 📄 Documentation / Planning Artifacts Only
+### 🔬 Tier 2: Partially Implemented or Heuristic Simulations
+Components operating via heuristics, mock data, or simulation loops (not evidence-based clinical models):
+| Component | Location | Reality & Notes |
+|---|---|---|
+| Multi-Agent Consultation | `src/aimedres/agents/` | Heuristic diagnostic scoring & simulated peer review |
+| Clinical Risk Engine | `src/aimedres/clinical/` | Hand-authored static scoring rules; not linked to verified clinical models |
+| EHR Ingress / Sync | `src/aimedres/integration/` | Synthetic FHIR/HL7 converters; sync methods are simulated mocks |
+| Multi-Hospital Network | `src/aimedres/clinical/` | In-memory simulation framework, not an active multi-site clinical network |
+| Post-Quantum Hybrid Crypto | `src/aimedres/security/` | Experimental Kyber768 prototype; research evaluation only |
+| Prediction API Endpoint | `src/aimedres/api/server.py` | Instantiates generic architecture on-the-fly; transitioning to registered models |
 
-These modules **generate planning documents or scaffold skeletons** — they are **not** regulatory approvals, clinical certifications, or operational deployments.
+### 📄 Tier 3: Documentation & Planning Artifacts Only
+Declarative documentation, templates, and roadmap specifications (not completed deliverables):
+| Item | Location | Reality & Notes |
+|---|---|---|
+| FDA Pre-Submission (Q-Sub) | `src/aimedres/compliance/` | Generates draft question packages; **no FDA submission has been made** |
+| Quality Management System (QMS) | `docs/` | Template SOP skeletons; **not a certified QMS** |
+| Clinical Pilot Programs | `src/aimedres/clinical/` | Study design tracking skeletons; **no live patient trials conducted** |
+| Third-Party HIPAA/GDPR Audits | `docs/` | Internal technical controls; **formal third-party audit pending** |
+| External Penetration Testing | `docs/` | Documented security posture; **external testing pending** |
 
-| Item | Reality |
-|---|---|
-| FDA Q-Sub package generator (P9) | Generates pre-submission *draft documents*; **no FDA submission has been made** |
-| QMS documentation skeleton (P9) | Provides SOP templates; **not a certified Quality Management System** |
-| Clinical pilot programs framework (P8B) | Provides tracking/study-design structure; **no confirmed live patient data collected** |
-| HIPAA compliance scaffolding | Implements technical safeguards; **formal third-party audit not yet completed** |
-| International healthcare systems (P18) | Framework implemented; **no regulatory validation in non-US jurisdictions** |
+### 🔜 Production-Ready AI/ML Roadmap
 
-### 🔜 Not Yet Implemented — Roadmap Items
+See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) and the newly introduced **[`docs/roadmap.md`](docs/roadmap.md)** for our consolidated 5-Phase Roadmap:
+- **Phase 0 (Weeks 0–2)**: Immediate containment, data governance, and claim truthfulness.
+- **Phase 1 (Months 1–2)**: Research-grade, leakage-safe PPMI pipeline with participant grouping.
+- **Phase 2 (Months 2–4)**: Reproducibility, typed configs, live experiment tracking, and model card.
+- **Phase 3 (Months 4–8)**: Software hardening, architecture decoupling, and secure API serving.
+- **Phase 4 (Months 8–15)**: Institutional pilot readiness, external validation, and SaMD quality management.
 
-See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) for the full list. Key gaps:
-
-| Item | Status |
-|---|---|
-| Load tests (k6) and Lighthouse CI baseline | Implemented |
-| Formal third-party HIPAA/GDPR audit & penetration test | Future |
-| FDA regulatory submission | Future (currently only planning documentation exists) |
-
-**See:** [healthcaredeploymentplan.md](healthcaredeploymentplan.md) for deployment planning details and [docs/roadmap.md](docs/roadmap.md) for full roadmap.
+**Primary Milestone**: The **PPMI Parkinson's Research Reproducibility Pack** (see [docs/roadmap.md](docs/roadmap.md)).  
+**Deployment Plan**: [healthcaredeploymentplan.md](healthcaredeploymentplan.md).
 
 ## 🎯 Mission
 
@@ -253,7 +252,7 @@ Multi-model, parallel, or agent-based workflows: see “Run ALL Medical AI Model
 
 ## ⚖️ License
 
-**GNU General Public License v3.0 (GPL-3.0)**  
+**MIT License**  
 See [LICENSE](LICENSE) for details.
 
 ---
@@ -584,20 +583,16 @@ By using this software, you acknowledge and agree to these limitations and discl
 
 ## 📜 License
 
-AiMedRes is licensed under the **GNU General Public License v3.0 (GPL-3.0)**.
+AiMedRes is licensed under the **MIT License**.
 
 This means:
-- ✅ You are free to use, study, modify, and share this software
-- ✅ You can use it for commercial purposes
-- ⚠️ Any derivative works must also be released under GPL-3.0
-- ⚠️ You must disclose source code when distributing
-- ⚠️ You must state significant changes made to the software
+- ✅ You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+- ✅ Commercial and non-commercial research use are permitted
+- ✅ Simple attribution requirement (include the copyright notice and permission notice in copies)
 
 See the [LICENSE](LICENSE) file for full legal terms.
 
-**Important**: The GPL-3.0 license comes with NO WARRANTY. See LICENSE sections 15-16 for details.
-
-For questions about licensing or alternative licensing arrangements, please open an issue or contact the maintainers.
+For research collaboration or data-sharing inquiries, please open an issue or contact the maintainers.
 
 ---
 

@@ -45,7 +45,14 @@ from sklearn.metrics import (
 )
 
 # ML Libraries
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.model_selection import (
+    GroupShuffleSplit,
+    StratifiedGroupKFold,
+    StratifiedKFold,
+    StratifiedShuffleSplit,
+    cross_validate,
+    train_test_split,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.svm import SVC
@@ -179,9 +186,37 @@ class ParkinsonsTrainingPipeline:
         self.data = None
         self.preprocessor = None
         self.label_encoder = None
+        self.X_raw = None
         self.X_processed = None
         self.y_processed = None
+        self.groups = None
         self.feature_names = None
+
+    def _build_preprocessor(self, X: pd.DataFrame) -> ColumnTransformer:
+        """
+        Construct a fresh ColumnTransformer to fit within cross-validation folds,
+        ensuring zero leakage between training and validation data.
+        """
+        categorical_features = X.select_dtypes(include=["object", "category"]).columns.tolist()
+        numerical_features = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
+        preprocessors = []
+
+        if numerical_features:
+            numerical_transformer = Pipeline(
+                [("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
+            )
+            preprocessors.append(("num", numerical_transformer, numerical_features))
+
+        if categorical_features:
+            categorical_transformer = Pipeline(
+                [
+                    ("imputer", SimpleImputer(strategy="constant", fill_value="missing")),
+                    ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+                ]
+            )
+            preprocessors.append(("cat", categorical_transformer, categorical_features))
+
+        return ColumnTransformer(transformers=preprocessors, remainder="drop")
 
         # Results storage
         self.classical_results = {}
@@ -281,62 +316,89 @@ class ParkinsonsTrainingPipeline:
         dir_path = Path(dir_path)
         logger.info(f"Scanning directory for Parkinson's datasets: {dir_path}")
 
-        # Look for PET SBR Analysis file (most relevant for PD classification)
-        pet_sbr_file = None
-        for file in dir_path.glob("*PET_SBR*.csv"):
-            pet_sbr_file = file
-            break
+        # Prioritize synthetic PPMI benchmark fixture for open-source / CI, or PET SBR Analysis
+        selected_file = None
+        for pattern in ["*synthetic*pet_sbr*.csv", "*PET_SBR*.csv", "*.csv"]:
+            matches = list(dir_path.glob(pattern))
+            if matches:
+                selected_file = matches[0]
+                break
 
-        if pet_sbr_file:
-            logger.info(f"Loading PET SBR Analysis dataset: {pet_sbr_file.name}")
-            df = pd.read_csv(pet_sbr_file)
+        if selected_file:
+            logger.info(f"Loading Parkinson's dataset: {selected_file.name}")
+            df = pd.read_csv(selected_file)
 
-            # Select numerical features related to striatal binding ratios
+            # Check if independent clinical progression outcome is already present
+            independent_target_cols = [
+                "motor_progression_label",
+                "progression_label",
+                "clinical_progression",
+                "diagnosis",
+                "status",
+                "label",
+            ]
+            found_target = None
+            for col in independent_target_cols:
+                if col in df.columns:
+                    found_target = col
+                    break
+
+            # Select numerical features related to striatal binding ratios & covariates
             sbr_columns = [
                 col
                 for col in df.columns
-                if col.startswith("PET_")
-                and any(region in col for region in ["CAUD", "PUT", "CBM", "OCCIP"])
+                if (col.startswith("PET_") and any(region in col for region in ["CAUD", "PUT", "CBM", "OCCIP"]))
+                or col in ["AGE", "SEX", "age", "sex"]
             ]
 
-            # Keep patient ID and relevant columns
-            keep_cols = ["PATNO"] + sbr_columns
-            keep_cols = [col for col in keep_cols if col in df.columns]
+            # Keep patient ID, visit codes, target, and feature columns
+            keep_cols = []
+            for id_col in ["PATNO", "patno", "EVENT_ID", "VISIT_ID"]:
+                if id_col in df.columns:
+                    keep_cols.append(id_col)
+            if found_target:
+                keep_cols.append(found_target)
+            keep_cols.extend([col for col in sbr_columns if col not in keep_cols])
 
-            df = df[keep_cols].copy()
+            # If no SBR columns identified, keep all numeric columns
+            if not sbr_columns:
+                sbr_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+                keep_cols = list(df.columns)
 
-            # Remove rows with all NaN values in SBR columns
-            df = df.dropna(subset=sbr_columns, how="all")
+            df = df[[col for col in keep_cols if col in df.columns]].copy()
+            df = df.dropna(subset=[col for col in sbr_columns if col in df.columns], how="all")
 
-            # Fill remaining NaNs with median (common practice for medical data)
+            # Fill remaining NaNs with column median
             for col in sbr_columns:
                 if col in df.columns and df[col].notna().sum() > 0:
                     median_val = df[col].median()
                     df.loc[:, col] = df[col].fillna(median_val)
 
-            # Create classification target based on striatal binding ratios
-            # Since this appears to be a PD patient cohort, we'll use median split
-            # to create binary classification (lower SBR = more severe PD, higher SBR = less severe)
-            caudate_cols = [col for col in sbr_columns if "CAUD" in col]
-            putamen_cols = [col for col in sbr_columns if "PUT" in col]
-
-            if caudate_cols and putamen_cols:
-                df["avg_sbr"] = df[caudate_cols + putamen_cols].mean(axis=1)
-                # Use median split for classification: below median = 1 (more severe), above = 0 (less severe)
-                median_sbr = df["avg_sbr"].median()
-                df["status"] = (df["avg_sbr"] < median_sbr).astype(int)
+            # Assign or derive classification target
+            if found_target:
+                df["status"] = df[found_target].astype(int)
                 logger.info(
-                    f"Created target variable 'status' based on median SBR split (median={median_sbr:.3f})"
+                    f"Using independent clinical target variable '{found_target}' (status distribution: {dict(df['status'].value_counts())})"
                 )
-                logger.info(f"  More severe PD (status=1): {(df['status']==1).sum()}")
-                logger.info(f"  Less severe PD (status=0): {(df['status']==0).sum()}")
             else:
-                logger.warning("Could not find sufficient SBR columns for classification")
-                # Fallback: create balanced random target
-                df["status"] = np.random.randint(0, 2, size=len(df))
+                caudate_cols = [col for col in sbr_columns if "CAUD" in col]
+                putamen_cols = [col for col in sbr_columns if "PUT" in col]
 
-            # Add patient ID as name for consistency with other datasets
-            df["name"] = df["PATNO"].astype(str)
+                if caudate_cols and putamen_cols:
+                    df["avg_sbr"] = df[caudate_cols + putamen_cols].mean(axis=1)
+                    median_sbr = df["avg_sbr"].median()
+                    df["status"] = (df["avg_sbr"] < median_sbr).astype(int)
+                    logger.warning(
+                        f"AUDIT NOTICE: Derived target 'status' from median SBR split (median={median_sbr:.3f}). "
+                        "This causes circular prediction (predicting inputs). Use an independent clinical endpoint for valid research."
+                    )
+                else:
+                    logger.warning("Could not find sufficient SBR columns for classification; using fallback binary target.")
+                    df["status"] = np.random.randint(0, 2, size=len(df))
+
+            # Add patient ID as name for consistency
+            if "PATNO" in df.columns:
+                df["name"] = df["PATNO"].astype(str)
 
             logger.info(f"Loaded and processed {len(df)} samples with {len(sbr_columns)} features")
             return df
@@ -451,11 +513,31 @@ class ParkinsonsTrainingPipeline:
 
         logger.info(f"Using target column: {target_column}")
 
-        # Remove non-feature columns (like name, id)
-        feature_df = self.data.copy()
+        # Identify participant grouping identifier to guarantee leakage-safe cross-validation
+        self.groups = None
+        for group_col in ["PATNO", "patno", "patient_id", "subject_id"]:
+            if group_col in self.data.columns:
+                self.groups = self.data[group_col].values
+                logger.info(
+                    f"Identified participant grouping identifier: '{group_col}' "
+                    f"({len(np.unique(self.groups))} unique participants)"
+                )
+                break
 
-        # Common non-feature columns to remove
-        non_feature_cols = ["name", "id", "patient_id", "subject_id"]
+        # Remove non-feature columns (like name, id, visit codes, raw patient numbers)
+        feature_df = self.data.copy()
+        non_feature_cols = [
+            "name",
+            "id",
+            "patient_id",
+            "subject_id",
+            "PATNO",
+            "patno",
+            "EVENT_ID",
+            "VISIT_ID",
+            "visit_id",
+            "avg_sbr",
+        ]
         for col in non_feature_cols:
             if col in feature_df.columns:
                 feature_df = feature_df.drop(columns=[col])
@@ -465,7 +547,8 @@ class ParkinsonsTrainingPipeline:
         X = feature_df.drop(columns=[target_column])
         y = feature_df[target_column]
 
-        # Store feature names
+        # Store raw features and feature names
+        self.X_raw = X.copy()
         self.feature_names = list(X.columns)
 
         # Handle target encoding
@@ -479,36 +562,10 @@ class ParkinsonsTrainingPipeline:
             y_processed = y.values
             self.label_encoder = None
 
-        # Identify categorical and numerical columns
-        categorical_features = X.select_dtypes(include=["object", "category"]).columns.tolist()
-        numerical_features = X.select_dtypes(include=["int64", "float64"]).columns.tolist()
+        # Build column transformer
+        self.preprocessor = self._build_preprocessor(X)
 
-        logger.info(
-            f"Found {len(categorical_features)} categorical and {len(numerical_features)} numerical features"
-        )
-
-        # Create preprocessing pipeline
-        preprocessors = []
-
-        if numerical_features:
-            numerical_transformer = Pipeline(
-                [("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
-            )
-            preprocessors.append(("num", numerical_transformer, numerical_features))
-
-        if categorical_features:
-            categorical_transformer = Pipeline(
-                [
-                    ("imputer", SimpleImputer(strategy="constant", fill_value="missing")),
-                    ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
-                ]
-            )
-            preprocessors.append(("cat", categorical_transformer, categorical_features))
-
-        # Create column transformer
-        self.preprocessor = ColumnTransformer(transformers=preprocessors, remainder="drop")
-
-        # Fit and transform the data
+        # Fit and transform the data (saved for neural network fallback / inspection)
         X_processed = self.preprocessor.fit_transform(X)
 
         # Store processed data
@@ -522,7 +579,9 @@ class ParkinsonsTrainingPipeline:
 
     def train_classical_models(self, n_folds: int = 5) -> Dict[str, Dict[str, float]]:
         """
-        Train classical machine learning models with cross-validation
+        Train classical machine learning models with leakage-safe cross-validation.
+        Encapsulates preprocessing inside Pipeline to fit only on training folds,
+        and groups by participant ID (PATNO) when available.
 
         Args:
             n_folds: Number of folds for cross-validation
@@ -530,10 +589,10 @@ class ParkinsonsTrainingPipeline:
         Returns:
             Dictionary with model results
         """
-        if self.X_processed is None or self.y_processed is None:
+        if self.X_raw is None or self.y_processed is None:
             raise ValueError("Data must be preprocessed first. Call preprocess_data().")
 
-        logger.info("Training classical models...")
+        logger.info("Training classical models with leakage-safe cross-validation...")
 
         # Define models
         models = {
@@ -550,20 +609,40 @@ class ParkinsonsTrainingPipeline:
         scoring = ["accuracy", "balanced_accuracy", "f1_macro", "roc_auc"]
 
         results = {}
-        cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
 
         for name, model in models.items():
-            logger.info(f"Training {name}...")
+            logger.info(f"Training {name} with leakage-safe pipeline...")
 
             try:
-                cv_results = cross_validate(
-                    model,
-                    self.X_processed,
-                    self.y_processed,
-                    cv=cv,
-                    scoring=scoring,
-                    return_train_score=False,
-                )
+                # Build end-to-end Pipeline: preprocessing fitted strictly within training folds
+                pipeline = Pipeline([
+                    ("preprocessor", self._build_preprocessor(self.X_raw)),
+                    ("classifier", model),
+                ])
+
+                # Use StratifiedGroupKFold if participant groups are present
+                if self.groups is not None and len(np.unique(self.groups)) >= n_folds:
+                    cv = StratifiedGroupKFold(n_splits=n_folds, shuffle=True, random_state=42)
+                    cv_results = cross_validate(
+                        pipeline,
+                        self.X_raw,
+                        self.y_processed,
+                        cv=cv,
+                        groups=self.groups,
+                        scoring=scoring,
+                        return_train_score=False,
+                    )
+                    logger.info(f"  Applied StratifiedGroupKFold on PATNO across {n_folds} folds (0 patient leakage)")
+                else:
+                    cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+                    cv_results = cross_validate(
+                        pipeline,
+                        self.X_raw,
+                        self.y_processed,
+                        cv=cv,
+                        scoring=scoring,
+                        return_train_score=False,
+                    )
 
                 results[name] = {
                     "accuracy_mean": cv_results["test_accuracy"].mean(),
@@ -576,18 +655,19 @@ class ParkinsonsTrainingPipeline:
                     "roc_auc_std": cv_results["test_roc_auc"].std(),
                 }
 
-                # Train final model on full dataset
-                model.fit(self.X_processed, self.y_processed)
+                # Train final pipeline on full dataset
+                pipeline.fit(self.X_raw, self.y_processed)
 
                 # Save model
                 model_path = (
                     self.output_dir / "models" / f"{name.replace(' ', '_').lower()}_model.pkl"
                 )
                 with open(model_path, "wb") as f:
-                    pickle.dump(model, f)
+                    pickle.dump(pipeline, f)
 
                 logger.info(
-                    f"{name} - Accuracy: {results[name]['accuracy_mean']:.3f} (±{results[name]['accuracy_std']:.3f})"
+                    f"{name} - Accuracy: {results[name]['accuracy_mean']:.3f} (±{results[name]['accuracy_std']:.3f}) | "
+                    f"ROC-AUC: {results[name]['roc_auc_mean']:.3f}"
                 )
 
             except Exception as e:
@@ -611,19 +691,38 @@ class ParkinsonsTrainingPipeline:
             logger.warning("PyTorch not available, skipping neural network training")
             return {}
 
-        if self.X_processed is None or self.y_processed is None:
+        if self.X_raw is None or self.y_processed is None:
             raise ValueError("Data must be preprocessed first. Call preprocess_data().")
 
-        logger.info("Training neural network...")
+        logger.info("Training neural network with leakage-safe participant split...")
+
+        # Leakage-safe train/val split for neural network
+        if self.groups is not None and len(np.unique(self.groups)) > 1:
+            gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+            train_idx, val_idx = next(gss.split(self.X_raw, self.y_processed, groups=self.groups))
+            logger.info(
+                f"Neural Network: GroupShuffleSplit on participant ID "
+                f"(train: {len(train_idx)} visits, val: {len(val_idx)} visits; 0 patient leakage)"
+            )
+        else:
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+            train_idx, val_idx = next(sss.split(self.X_raw, self.y_processed))
+
+        # Fit preprocessor strictly on training split
+        nn_preprocessor = self._build_preprocessor(self.X_raw)
+        X_train_raw = self.X_raw.iloc[train_idx]
+        X_val_raw = self.X_raw.iloc[val_idx]
+        y_train_arr = self.y_processed[train_idx]
+        y_val_arr = self.y_processed[val_idx]
+
+        X_train_proc = nn_preprocessor.fit_transform(X_train_raw)
+        X_val_proc = nn_preprocessor.transform(X_val_raw)
 
         # Convert to PyTorch tensors
-        X_tensor = torch.FloatTensor(self.X_processed)
-        y_tensor = torch.LongTensor(self.y_processed.astype(int))
-
-        # Split data
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_tensor, y_tensor, test_size=0.2, random_state=42, stratify=y_tensor
-        )
+        X_train = torch.FloatTensor(X_train_proc)
+        X_val = torch.FloatTensor(X_val_proc)
+        y_train = torch.LongTensor(y_train_arr.astype(int))
+        y_val = torch.LongTensor(y_val_arr.astype(int))
 
         # Create data loaders
         train_dataset = TensorDataset(X_train, y_train)
@@ -632,7 +731,7 @@ class ParkinsonsTrainingPipeline:
         val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
         # Initialize model
-        input_size = X_tensor.shape[1]
+        input_size = X_train.shape[1]
         num_classes = len(np.unique(self.y_processed))
         model = ParkinsonsMLPClassifier(input_size, num_classes)
 
