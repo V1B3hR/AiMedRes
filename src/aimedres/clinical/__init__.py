@@ -10,4 +10,5 @@ __all__ = [
     "parkinsons_als",
     "medical_processor",
     "drug_discovery",
+    "usability",
 ]

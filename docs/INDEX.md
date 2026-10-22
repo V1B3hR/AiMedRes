@@ -12,6 +12,14 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 
 ## 🚂 Training & Usage
 
+### Scientific Research & Reproducibility
+- [Parkinson's Research Package](../src/aimedres/research/parkinsons/README.md) - Decoupled, typed research pipeline & cryptographic provenance manifest
+- [Local Experiment Tracker](../src/aimedres/research/tracking.py) - SQLite & JSON experiment lineage, parameter logging, and metric tracking
+- [Domain Decoupled Architecture](../src/aimedres/service/) - Production inference API (`service/`), research pipelines (`research/`), and quarantined simulations (`simulation/`)
+- [PPMI Benchmark Reproduction Script](../scripts/reproduce_ppmi_benchmark.py) - One-command PPMI reproducibility runner
+- [Model Card - PPMI Parkinson's Progression](MODEL_CARD_PPMI_PARKINSONS.md) - GMLP & TRIPOD-AI compliant research model card
+- [PPMI Data Governance](../ParkinsonDatasets/DATA_GOVERNANCE.md) - DUA compliance and restricted data protocols
+
 ### Training Guides
 - [Training Usage Guide](TRAINING_USAGE.md) - Comprehensive training documentation
 - [Training Scripts Reference](../src/aimedres/training/README.md) - Training script documentation
@@ -43,6 +51,7 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 - [Parkinson & ALS Clinical Support](PARKINSON_ALS_CLINICAL_DECISION_SUPPORT_README.md) - Parkinson's and ALS support
 - [Clinical Validation Framework](CLINICAL_VALIDATION_FRAMEWORK.md) - Clinical validation procedures
 - [Data Handling Procedures](DATA_HANDLING_PROCEDURES.md) - Data management and handling
+- [Dataset Catalog & Acquisition Guide](DATASET_CATALOG.md) - USC LONI IDA (PPMI, ADNI, MarkVCID) and open-access public dataset guide
 
 ## 🔒 Security & Privacy
 
@@ -63,6 +72,7 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 - [Data Imbalance Resolution](DATA_IMBALANCE_RESOLUTION.md) - Handling imbalanced datasets
 - [Imaging De-identification Guide](IMAGING_DEIDENTIFICATION_GUIDE.md) - Medical imaging privacy
 - [Model Card - Imaging](MODEL_CARD_IMAGING.md) - Imaging model documentation
+- [Model Card - PPMI Parkinson's Progression](MODEL_CARD_PPMI_PARKINSONS.md) - Research model card for PPMI Parkinson's motor progression benchmark
 
 ## 🔄 Training Systems
 
@@ -74,9 +84,9 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 
 ## 🗺️ Roadmap & Planning
 
-- [Roadmap](roadmap.md) - Product roadmap
-- [Future Roadmap](roadmapfuture.md) - Future plans
-- [Security Roadmap](roadmapsecurity.md) - Security roadmap
+- [Consolidated Production Roadmap](roadmap.md) - Living master roadmap: scientific rigor, PPMI reproducibility wedge, and 5-phase production roadmap
+- [Known Limitations](KNOWN_LIMITATIONS.md) - Technical constraints, audit gaps, and future improvements
+- [PPMI Data Governance](../ParkinsonDatasets/DATA_GOVERNANCE.md) - Compliance policy and access requirements
 - [Requirements](requirements.md) - System requirements
 
 ## 📝 Additional Resources

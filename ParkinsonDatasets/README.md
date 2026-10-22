@@ -1,71 +1,48 @@
-# Parkinson's Datasets Integration
+# Parkinson's Datasets & Benchmarking Resources
 
-This directory contains Parkinson's Progression Markers Initiative (PPMI) datasets that are now integrated with the AiMedRes training pipeline.
+> **Governance Notice**: Real participant-level clinical and imaging data from the Parkinson's Progression Markers Initiative (PPMI) is subject to the PPMI Data Use Agreement (DUA) and must not be distributed publicly. See [`DATA_GOVERNANCE.md`](DATA_GOVERNANCE.md) for full compliance protocols and data access registration procedures.
 
-## Dataset Overview
+---
 
-The directory contains 16 CSV files with various imaging and clinical data:
-- **PET SBR Analysis** (Primary dataset for classification)
-- MRI acquisition metadata
-- CT Scans
-- DTI Regions of Interest
-- Various PET imaging substudies
-- Tau and SV2A imaging data
+## 1. Directory Overview
 
-## Integration Details
+This directory provides data loading hooks, schema definitions, and synthetic fixtures for the **AiMedRes Parkinson's Research Pipeline**:
 
-The training pipeline (`src/aimedres/training/train_parkinsons.py`) automatically:
+- **`DATA_GOVERNANCE.md`**: Official compliance policy and procedures for authorized PPMI access.
+- **`synthetic_pet_sbr_fixture.csv`**: A 100% synthetic, non-PHI benchmark dataset for automated CI/CD and open-source reproducibility testing (170 longitudinal records across 60 simulated participants).
+- **`PPMI_*.pdf`**: Reference documentation detailing imaging acquisition protocols and SBR calculation methods.
 
-1. **Detects the directory**: When `--data-path ParkinsonDatasets` is passed
-2. **Loads PET SBR Analysis data**: Uses `PET_SBR_Analysis_01Oct2025.csv` as the primary dataset
-3. **Extracts features**: Focuses on striatal binding ratios (SBR) from caudate and putamen regions
-4. **Creates classification target**: Uses median split of average SBR values
-   - Below median (< 0.401) → More severe PD (status=1)
-   - Above median (≥ 0.401) → Less severe PD (status=0)
+---
 
-## Usage
+## 2. Scientific Methodology & Audit Notes
 
-### Direct training script:
+A scientific audit of historical Parkinson’s scripts in this repository noted that earlier iterations utilized:
+1. **Circular Target Formulation**: Binary labels split on the median of SBR measurements while using those exact same SBR measurements as inputs, producing artificial 99-100% accuracy.
+2. **Patient-Level Data Leakage**: Random row splitting instead of grouping repeated visits by participant ID (`PATNO`), resulting in cross-fold data leakage.
+3. **Pre-Split Data Transformation**: Fitting imputers and scalers prior to cross-validation splits.
+
+### Current Architecture (Phase 1 Compliant):
+- **Participant Grouping**: Cross-validation uses `GroupKFold` grouped strictly on `PATNO`.
+- **Fold-Internal Preprocessing**: All scaling and imputation operations are encapsulated within an `sklearn.pipeline.Pipeline` fitted solely on training folds.
+- **Non-Circular Clinical Outcomes**: Models evaluate independent clinical motor endpoints (e.g., `motor_progression_label`) rather than predicting functions of input features.
+
+---
+
+## 3. Usage & Execution
+
+### Running on the Synthetic Fixture (Open Source & CI/CD)
 ```bash
-python src/aimedres/training/train_parkinsons.py --data-path ParkinsonDatasets --epochs 100 --folds 5
+python src/aimedres/training/train_parkinsons.py \
+  --data-path ParkinsonDatasets/synthetic_pet_sbr_fixture.csv \
+  --output-dir results/parkinsons_synthetic \
+  --folds 5
 ```
 
-### Via run_all_training.py:
+### Running in an Authorized Institutional Environment
 ```bash
-python run_all_training.py --only parkinsons --epochs 100 --folds 5
+# Point to your authorized, restricted local PPMI data directory:
+python src/aimedres/training/train_parkinsons.py \
+  --data-path /secure/restricted/PPMI_Data/ \
+  --output-dir results/parkinsons_official \
+  --folds 5
 ```
-
-The `run_all_training.py` script is already configured to use this local dataset by default.
-
-## Dataset Statistics
-
-- **Samples**: 211 patients
-- **Features**: 20 PET SBR measurements
-- **Target**: Binary classification (more/less severe PD)
-- **Balance**: ~50/50 split (105 vs 106)
-
-## Model Performance
-
-With this dataset, the training achieves:
-- **Random Forest**: ~99-100% accuracy
-- **Logistic Regression**: ~97-99% accuracy
-- **SVM**: ~95-97% accuracy
-
-Note: High accuracy is expected as this is a homogeneous PD patient cohort with good quality imaging biomarkers.
-
-## Files Used
-
-Primary: `PET_SBR_Analysis_01Oct2025.csv`
-- Contains striatal binding ratio (SBR) measurements
-- 214 initial rows, 211 after removing incomplete records
-- 28 columns total, 20 SBR feature columns extracted
-
-## Features Extracted
-
-All PET SBR measurements including:
-- Right/Left Caudate (CAUD)
-- Right/Left Putamen anterior/posterior (PUT)
-- Cerebellum (CBM)
-- Occipital cortex (OCCIP)
-
-These are validated Parkinson's disease biomarkers used in clinical research and diagnosis.

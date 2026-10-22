@@ -8,7 +8,7 @@ Provides endpoints for:
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from flask import Blueprint, jsonify, request
@@ -74,18 +74,22 @@ class FHIRMockServer:
 
     def _initialize_consent_records(self) -> Dict[str, Any]:
         """Initialize mock consent records."""
+        now = datetime.now(timezone.utc)
+        expires = (now + timedelta(days=365)).isoformat()
+        granted = (now - timedelta(days=30)).isoformat()
+
         return {
             "patient-001": {
                 "consent_given": True,
                 "scope": ["research", "ai_analysis"],
-                "granted_date": "2024-12-01T10:00:00Z",
-                "expires_date": "2025-12-01T10:00:00Z",
+                "granted_date": granted,
+                "expires_date": expires,
             },
             "patient-002": {
                 "consent_given": True,
                 "scope": ["research"],
-                "granted_date": "2024-11-15T14:30:00Z",
-                "expires_date": "2025-11-15T14:30:00Z",
+                "granted_date": granted,
+                "expires_date": expires,
             },
             "patient-003": {
                 "consent_given": False,
@@ -146,6 +150,7 @@ fhir_server = FHIRMockServer()
 
 
 @fhir_bp.route("/patients", methods=["GET"])
+@fhir_bp.route("/Patient", methods=["GET"])
 @require_auth()
 def list_fhir_patients():
     """
@@ -182,6 +187,7 @@ def list_fhir_patients():
 
 
 @fhir_bp.route("/patients/<patient_id>", methods=["GET"])
+@fhir_bp.route("/Patient/<patient_id>", methods=["GET"])
 @require_auth()
 def get_fhir_patient(patient_id: str):
     """
