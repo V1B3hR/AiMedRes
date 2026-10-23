@@ -33,6 +33,12 @@ SYNTH-A1B2C3,75,0,24,0.5,16,MCI,2023
 SYNTH-D4E5F6,82,1,18,1.0,12,Mild_AD,2023
 ```
 
+### synthetic_parkinsons_telemonitoring.csv
+Deterministic, synthetic longitudinal Parkinson's vocal telemonitoring fixture for
+offline loader and participant-level leakage tests. It contains synthetic subject
+identifiers, repeated visits, motor scores, and acoustic biomarkers; it is not a
+copy of the UCI cohort and contains no real patient records.
+
 ### synthetic_fhir_observations.json
 Synthetic FHIR-format observations for integration testing.
 
