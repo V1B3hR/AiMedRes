@@ -53,8 +53,10 @@ services:
       AWS_ACCESS_KEY_ID: duetmind
       AWS_SECRET_ACCESS_KEY: duetmind_secret_key
       MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    # The MLflow AI Gateway advisory has no patched upstream release yet.
+    # Do not expose this development service beyond the local host.
     ports:
-      - "5001:5000"
+      - "127.0.0.1:5001:5000"
     networks:
       - mlops-network
     depends_on:

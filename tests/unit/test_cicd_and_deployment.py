@@ -6,6 +6,7 @@ and Kubernetes / Helm Sandbox Deployment (Phase 3.5).
 import json
 from pathlib import Path
 import pytest
+import yaml
 
 from scripts.generate_sbom import generate_cyclonedx_sbom
 from scripts.validate_sandbox_deployment import (
@@ -63,6 +64,19 @@ class TestSandboxDeploymentValidation:
         assert results["k8s"]["valid"] is True
         assert results["helm"]["valid"] is True
         assert results["observability"]["valid"] is True
+
+    def test_mlflow_compose_services_are_not_publicly_bound(self):
+        """Keep the MLflow service behind the local host or a reverse proxy."""
+        root_dir = Path(__file__).resolve().parent.parent.parent
+        compose_paths = (
+            root_dir / "deployment" / "technical" / "docker-compose.yml",
+            root_dir / "mlops" / "infra" / "docker-compose.yml",
+        )
+
+        for compose_path in compose_paths:
+            compose = yaml.safe_load(compose_path.read_text(encoding="utf-8"))
+            ports = compose["services"]["mlflow"]["ports"]
+            assert all(str(port).startswith("127.0.0.1:") for port in ports)
 
     def test_k8s_deployment_validator_flags_missing_run_as_non_root(self, tmp_path):
         k8s_dir = tmp_path / "k8s"

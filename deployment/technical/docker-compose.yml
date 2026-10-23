@@ -70,8 +70,10 @@ services:
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-aimedres}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    # Keep MLflow off the public interface. Publish it through an authenticated
+    # reverse proxy only when remote access is required.
     ports:
-      - "${MLFLOW_PORT:-5001}:5000"
+      - "127.0.0.1:${MLFLOW_PORT:-5001}:5000"
     networks:
       - aimedres_network
     depends_on:
