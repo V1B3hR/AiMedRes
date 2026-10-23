@@ -258,6 +258,16 @@ See [docs/SECURITY_CONFIGURATION.md](docs/SECURITY_CONFIGURATION.md) for detaile
 
 ## Known Security Considerations
 
+### MLflow AI Gateway advisory (GHSA-h7x2-h6g9-p789)
+
+The pinned MLflow release range is affected by an SSRF advisory in the optional
+AI Gateway feature. No patched MLflow release is currently available. The
+provided Compose deployments therefore bind MLflow to `127.0.0.1` only; do not
+publish the MLflow port directly to untrusted networks. If remote access is
+required, place it behind an authenticated reverse proxy with network egress
+controls. Track the upstream advisory and update MLflow as soon as a patched
+release is published.
+
 ### Medical AI Specific Risks
 
 As medical AI software, AiMedRes has unique security considerations:
