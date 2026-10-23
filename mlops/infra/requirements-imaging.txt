@@ -33,7 +33,7 @@ pynetdicom>=2.0.0       # DICOM networking protocol
 dicomweb-client>=0.59.0 # DICOMweb client for PACS integration
 
 # Image processing utilities
-scikit-image>=0.21.0    # General image processing
+scikit-image>=0.26.0    # General image processing
 opencv-python>=4.8.0    # Computer vision utilities
 pillow>=10.0.0          # Python Imaging Library
 
