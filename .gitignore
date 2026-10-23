@@ -91,6 +91,7 @@ diabetes_training.log
 build/
 dist/
 .test_env/
+.test-tmp/
 
 # Training outputs
 summaries/

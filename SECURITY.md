@@ -1,6 +1,6 @@
 # Security Policy
 
-**Version**: 1.0.0 | **Last Updated**: November 2025
+**Version**: 1.0.0 | **Last Updated**: October 2026
 
 ## 🔒 Reporting Security Vulnerabilities
 
@@ -76,7 +76,7 @@ What an attacker could achieve by exploiting this vulnerability.
 **Environment**:
 - OS: Ubuntu 20.04
 - Python: 3.10.0
-- AiMedRes version: 0.1.0
+- AiMedRes version: 1.0.0
 ```
 
 ## Response Timeline
@@ -285,8 +285,8 @@ We provide security updates for the following versions:
 
 | Version | Supported          | Status |
 | ------- | ------------------ | ------ |
-| 0.1.x   | :white_check_mark: | Current development version |
-| < 0.1   | :x:                | Pre-release, not supported |
+| 1.0.x   | :white_check_mark: | Current research-development version |
+| < 1.0   | :x:                | Unsupported pre-release versions |
 
 **Note**: As AiMedRes is in active development, we recommend using the latest version from the main branch.
 
@@ -355,5 +355,5 @@ If you have questions about this security policy or the reporting process:
 
 **Thank you for helping keep AiMedRes and its users secure!** 🔒
 
-*Last Updated: 2025-10-24*  
+*Last Updated: 2026-10-23*
 *Version: 1.0*

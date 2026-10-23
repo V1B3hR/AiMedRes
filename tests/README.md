@@ -9,7 +9,7 @@ The tests are organized into three main categories:
 ### Unit Tests (`unit/`)
 Tests for individual components in isolation:
 - `test_data_loaders.py` - Tests for data loader abstractions (MockDataLoader, CSVDataLoader, KaggleDataLoader)
-- `test_training.py` - Tests for training module components (AlzheimerTrainer, TrainingConfig)
+- `unit/test_legacy_training.py` - Tests for legacy training module components (AlzheimerTrainer, TrainingConfig)
 
 ### Integration Tests (`integration/`)
 Tests for component interactions and end-to-end workflows:
