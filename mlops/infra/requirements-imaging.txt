@@ -46,7 +46,7 @@ pydicom-data>=1.1.0    # DICOM anonymization tools
 cryptography>=41.0.0   # Additional encryption for medical data
 
 # Performance and parallel processing
-joblib>=1.3.0          # Parallel processing for large datasets
+joblib>=1.6.0          # Parallel processing for large datasets
 dask>=2023.9.0         # Distributed computing for imaging pipelines
 numba>=0.58.0          # JIT compilation for numerical computation
 
