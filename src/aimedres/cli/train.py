@@ -399,6 +399,7 @@ SKIP_DIR_NAMES = {
     "venv",
     "env",
     ".venv",
+    ".test-tmp",
     "build",
     "dist",
     ".mypy_cache",
