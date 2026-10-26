@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import tempfile
 
-from aimedres.training.training import AlzheimerTrainer
+from training.training import AlzheimerTrainer
 from scripts.data_loaders import MockDataLoader
 
 

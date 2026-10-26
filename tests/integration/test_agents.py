@@ -91,15 +91,18 @@ def test_actual_training():
         'Diagnosis': np.random.choice(['Nondemented', 'Demented'], n, p=[0.6, 0.4])
     }
     df = pd.DataFrame(data)
-    test_data_path = Path("/tmp/test_specialized_agents_data.csv")
+    import tempfile
+    tmp_base = Path(tempfile.gettempdir())
+    test_data_path = tmp_base / "test_specialized_agents_data.csv"
     df.to_csv(test_data_path, index=False)
     
     # Run training with minimal parameters for speed
+    output_dir = tmp_base / "test_specialized_agents_output"
     result = subprocess.run(
         [
             sys.executable, "src/aimedres/training/train_specialized_agents.py",
             "--data-path", str(test_data_path),
-            "--output-dir", "/tmp/test_specialized_agents_output",
+            "--output-dir", str(output_dir),
             "--folds", "2",
             "--epochs", "3"
         ],
@@ -113,7 +116,6 @@ def test_actual_training():
     assert "TRAINING COMPLETED SUCCESSFULLY" in output, "Training did not complete"
     
     # Verify outputs
-    output_dir = Path("/tmp/test_specialized_agents_output")
     assert (output_dir / "agent_models").exists(), "agent_models directory not created"
     assert (output_dir / "metrics").exists(), "metrics directory not created"
     
