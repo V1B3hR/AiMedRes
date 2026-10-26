@@ -82,16 +82,6 @@ services:
       timeout: 10s
       retries: 5
 
-  # Optional: Adminer for database management
-  adminer:
-    image: adminer:latest
-    container_name: duetmind_adminer
-    ports:
-      - "8080:8080"
-    networks:
-      - mlops-network
-    restart: unless-stopped
-
 volumes:
   postgres_data:
     driver: local

@@ -1,8 +1,10 @@
 # AiMedRes API Reference
 
+> **Status (25 October 2026): historical draft API reference.** The maintained API exposes only a health endpoint and research-model metadata; online inference and the FHIR, case, explainability, DICOM, and P3 routes described below are not supported deployment surfaces. Verify any endpoint against the running maintained API and [Known Limitations](KNOWN_LIMITATIONS.md).
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
-This document provides comprehensive documentation for all API endpoints available in the AiMedRes system.
+This document is a legacy inventory of prototype endpoint designs. It does not describe a clinically deployable or fully supported API surface.
 
 ## Base URL and Authentication
 

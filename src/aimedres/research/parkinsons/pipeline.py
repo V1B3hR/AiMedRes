@@ -85,6 +85,11 @@ class ParkinsonsResearchPipeline:
                 epochs=self.config.epochs,
                 n_folds=self.config.n_folds,
                 dataset_choice=self.config.dataset_choice,
+                random_state=self.config.random_state,
+                n_bootstraps=self.config.n_bootstraps,
+                alpha=self.config.alpha,
+                batch_size=self.config.batch_size,
+                learning_rate=self.config.learning_rate,
             )
 
             # Log metrics to tracker

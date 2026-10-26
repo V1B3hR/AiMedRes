@@ -1,11 +1,13 @@
 openapi: 3.0.3
 info:
-  title: AiMedRes Medical AI API
+  title: AiMedRes Research API (draft contract)
   description: |
-    API for AI-driven medical research and clinical decision support.
+    Draft contract for research scaffolding. The maintained API exposes research-model metadata only;
+    online model inference, heuristic agents, FHIR, case-management, DICOM, explainability, and P3
+    endpoints are not supported deployment surfaces.
     
-    **Security:** All endpoints require authentication via API key or OAuth2 token.
-    **Compliance:** HIPAA/GDPR compliant with PHI de-identification and audit logging.
+    **Security:** Controls described here require environment-specific verification.
+    **Compliance:** This contract does not assert HIPAA/GDPR compliance, certification, or PHI readiness.
   version: 1.0.0
   contact:
     name: AiMedRes Support

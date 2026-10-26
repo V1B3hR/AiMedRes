@@ -1,5 +1,7 @@
 # Run All Training - Quick Start Guide
 
+> **Status (25 October 2026): historical orchestration reference.** It does not validate the listed training jobs, their datasets, metrics, model artifacts, or clinical suitability. Use the synthetic PPMI runner in [roadmap.md](roadmap.md) for the maintained reproducibility path.
+
 ## Overview
 
 The AiMedRes training orchestrator provides a powerful "**run all**" capability that automatically discovers and executes all medical AI training scripts in the repository.

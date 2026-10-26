@@ -13,7 +13,9 @@ New-Item -ItemType Directory -Force -Path $env:TEMP | Out-Null
 python -m pytest tests/unit/ -q
 
 # Runs the leakage-safe PPMI pipeline against the versioned synthetic fixture.
-python scripts/reproduce_ppmi_benchmark.py --output-dir .test-tmp/ppmi_benchmark
+python scripts/reproduce_ppmi_benchmark.py `
+  --config configs/parkinsons_ppmi_study.yml `
+  --output-dir .test-tmp/ppmi_benchmark
 ```
 
 The test gate covers the maintained research, security, packaging, deployment,
@@ -31,7 +33,7 @@ performance or as results from an external validation cohort.
 Authorized holders of real PPMI data may provide a local dataset path:
 
 ```powershell
-python scripts/reproduce_ppmi_benchmark.py --data-path data/ppmi/ppmi_sbr_longitudinal.csv
+python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml --data-path data/ppmi/ppmi_sbr_longitudinal.csv
 ```
 
 Follow the data-governance requirements in

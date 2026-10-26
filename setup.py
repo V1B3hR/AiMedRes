@@ -143,7 +143,7 @@ setup(
         'console_scripts': [
             'aimedres=aimedres.cli.commands:main',
             'aimedres-train=aimedres.cli.train:main',
-            'aimedres-serve=aimedres.cli.serve:main',
+            'aimedres-serve=aimedres.cli.secure_serve:main',
         ],
     },
     

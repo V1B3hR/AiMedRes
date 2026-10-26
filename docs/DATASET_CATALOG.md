@@ -1,7 +1,7 @@
 # AiMedRes Dataset Catalog & Acquisition Guide
 
 > **Important Notice on Data Governance & Compliance**  
-> In accordance with HIPAA, GDPR, and international data sharing agreements, **real patient data must never be committed to this repository**. All CI/CD pipelines, automated testing, and development environments use synthetic benchmark fixtures located in `ParkinsonDatasets/` or generated on the fly. Real clinical datasets acquired via the repositories detailed below must reside strictly in an untracked local directory (e.g., `data/`) and follow their respective Data Use Agreements (DUA).
+> This repository's data-governance rules are designed to support DUA, privacy, and institutional requirements; they do **not** establish HIPAA or GDPR compliance. **Real patient data must never be committed to this repository.** CI/CD, automated testing, and development use synthetic fixtures located in `ParkinsonDatasets/` or generated on the fly. Real clinical datasets must remain in an untracked, authorised local environment and follow their DUA and institutional controls.
 
 ---
 
@@ -190,9 +190,9 @@ cv = get_leakage_safe_cv(dataset.groups, n_splits=5, y=dataset.target.values)
 
 ---
 
-### 3.5 Real-World Open-Access Empirical Benchmarks (Verified 2026)
+### 3.5 Historical real-world benchmark claims — not active evidence
 
-AiMedRes includes an automated pipeline for acquiring real clinical cohorts and training leakage-safe models tracked via `LocalExperimentTracker`.
+The repository contains scripts and historical notes for open-access cohort work. They are **not** the maintained PPMI evidence path, and the historical run records do not provide the complete data hashes, environment, protocol, and independent rerun required for an external claim. Do not cite the values formerly listed here as verified clinical-cohort performance.
 
 #### One-Command Acquisition & Training
 ```bash
@@ -203,17 +203,7 @@ python scripts/download_real_world_datasets.py
 python scripts/train_real_world_datasets.py
 ```
 
-#### Empirical Benchmark Results on Real Clinical Cohorts
-
-| Cohort | Sample Size & Subjects | Target Endpoint | Model | ROC-AUC [95% CI] | PR-AUC | Brier Score |
-| :--- | :--- | :--- | :--- | :---: | :---: | :---: |
-| **OASIS-2 Dementia MRI** | 373 visits<br>(150 human subjects) | Clinical Dementia Diagnosis (`Group` $\in$ {Demented, Converted}) | **Logistic Regression** | **0.856** [0.818 – 0.893] | **0.879** | **0.150** |
-| **OASIS-2 Dementia MRI** | 373 visits<br>(150 human subjects) | Clinical Dementia Diagnosis (`Group` $\in$ {Demented, Converted}) | **Random Forest** | **0.795** [0.752 – 0.840] | **0.826** | **0.180** |
-| **UCI Parkinson's Telemetry** | 5,875 recordings<br>(42 human patients) | Longitudinal Motor Progression ($\Delta\text{motor\_UPDRS} \ge 3.0$) | **Logistic Regression** | **0.751** [0.737 – 0.764] | **0.484** | **0.181** |
-| **UCI Parkinson's Telemetry** | 5,875 recordings<br>(42 human patients) | Longitudinal Motor Progression ($\Delta\text{motor\_UPDRS} \ge 3.0$) | **Random Forest** | **0.766** [0.753 – 0.779] | **0.511** | **0.171** |
-
-> [!NOTE]
-> All results above are evaluated using `StratifiedGroupKFold` on participant IDs (100% holdout isolation). Preprocessing (median imputation, standard scaling) is strictly fitted within each fold to prevent data leakage. Audit trails and run cards are persisted in `results/real_world_training/experiments.db`.
+No empirical metric table is maintained in this catalog until a rerun has a frozen protocol, source/version/DUA record, dataset hash, environment, code commit, complete artefacts, and independent review.
 
 ---
 
@@ -257,15 +247,11 @@ AiMedRes/
 Once your PPMI CSV files are downloaded to `data/ppmi/ppmi_sbr_longitudinal.csv`:
 
 ```bash
-# Execute the leakage-safe pipeline pointing to your real local data:
-python -m aimedres.training.train_parkinsons \
+# Execute the maintained research runner against an authorised local export:
+python scripts/reproduce_ppmi_benchmark.py \
+  --config configs/parkinsons_ppmi_study.yml \
   --data-path data/ppmi/ppmi_sbr_longitudinal.csv \
-  --output-dir models/ppmi_validated \
-  --target motor_progression_label \
-  --n-splits 5
+  --output-dir .local-results/ppmi_research_run
 ```
 
-The pipeline will automatically:
-1. Enforce participant-level grouping (`PATNO`) via `StratifiedGroupKFold` so no participant spans both train and validation splits.
-2. Encapsulate scaling and imputation inside each fold's `sklearn.pipeline.Pipeline` to guarantee zero preprocessing contamination.
-3. Validate independent endpoints and compute cross-validated ROC-AUC, PR-AUC, Sensitivity, and Specificity with 95% bootstrap confidence intervals.
+The researcher must verify that the controlled export contains `PATNO`, a preregistered independent endpoint, and sufficient group/class support before interpreting an output. When those conditions hold, the maintained training path uses participant grouping and fold-contained preprocessing; the run still requires independent methodological review before any external claim.

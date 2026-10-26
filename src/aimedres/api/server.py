@@ -10,6 +10,7 @@ Production-ready Flask server with comprehensive security features:
 """
 
 import logging
+import os
 import ssl
 import time
 from datetime import datetime, timedelta
@@ -204,7 +205,7 @@ class SecureAPIServer:
                 self.app,
                 origins=self.config.security.allowed_origins,
                 methods=["GET", "POST", "PUT", "DELETE"],
-                allow_headers=["Content-Type", "Authorization"],
+                allow_headers=["Content-Type", "Authorization", "X-API-Key"],
             )
 
     def _setup_security(self):
@@ -276,71 +277,22 @@ class SecureAPIServer:
     def _register_routes(self):
         """Register API routes with security"""
 
-        # Register core clinical & model serving blueprints
+        # The maintained API exposes only research-model metadata.  The other
+        # blueprints in this repository are mock, simulation, or prototype
+        # integrations and must not be reachable through the supported server.
         try:
             from .model_routes import model_bp
 
             self.app.register_blueprint(model_bp)
-            logger.info("Model serving routes registered (/api/v1/model)")
+            logger.info("Research model metadata routes registered (/api/v1/model)")
         except Exception as e:
             logger.warning(f"Failed to register model routes: {e}")
 
-        try:
-            from .fhir_routes import fhir_bp
-
-            self.app.register_blueprint(fhir_bp)
-            logger.info("FHIR integration routes registered (/api/v1/fhir)")
-        except Exception as e:
-            logger.warning(f"Failed to register FHIR routes: {e}")
-
-        try:
-            from .case_routes import cases_bp
-
-            self.app.register_blueprint(cases_bp)
-            logger.info("Case management routes registered (/api/v1/cases)")
-        except Exception as e:
-            logger.warning(f"Failed to register case routes: {e}")
-
-        try:
-            from .explain_routes import explain_bp
-
-            self.app.register_blueprint(explain_bp)
-            logger.info("Explainability routes registered (/api/v1/explain)")
-        except Exception as e:
-            logger.warning(f"Failed to register explainability routes: {e}")
-
-        # Register P3 blueprints for advanced features
-        try:
-            from .visualization_routes import visualization_bp
-
-            self.app.register_blueprint(visualization_bp)
-            logger.info("Visualization routes registered (P3-1)")
-        except Exception as e:
-            logger.warning(f"Failed to register visualization routes: {e}")
-
-        try:
-            from .canary_routes import canary_bp
-
-            self.app.register_blueprint(canary_bp)
-            logger.info("Canary deployment routes registered (P3-3)")
-        except Exception as e:
-            logger.warning(f"Failed to register canary routes: {e}")
-
-        try:
-            from .quantum_routes import quantum_bp
-
-            self.app.register_blueprint(quantum_bp)
-            logger.info("Quantum crypto routes registered (P3-2)")
-        except Exception as e:
-            logger.warning(f"Failed to register quantum routes: {e}")
-
-        try:
-            from .dicom_routes import dicom_bp
-
-            self.app.register_blueprint(dicom_bp)
-            logger.info("DICOM imaging routes registered")
-        except Exception as e:
-            logger.warning(f"Failed to register DICOM routes: {e}")
+        logger.warning(
+            "FHIR, case-management, explainability, DICOM, and P3 prototype routes are "
+            "deliberately excluded from the maintained API. They remain source-only research "
+            "scaffolding and require separate validation before any deployment."
+        )
 
         @self.app.route("/health", methods=["GET"])
         @rate_limit(limit=30, window=60)  # 30 requests per minute
@@ -362,7 +314,7 @@ class SecureAPIServer:
         @rate_limit(limit=60, window=60)  # 60 requests per minute
         @require_auth
         def predict():
-            """Secure prediction endpoint supporting both registered models and adaptive networks"""
+            """Reject online prediction until a governed research artifact is approved."""
             try:
                 # Validate input
                 data = request.get_json()
@@ -373,41 +325,23 @@ class SecureAPIServer:
                 if not self.input_validator.validate_json(data):
                     return jsonify({"error": "Invalid input data"}), 400
 
-                # Check if requesting a registered model
                 model_id = data.get("model_id") or data.get("model_version")
-                if self.model_registry and model_id and model_id in self.model_registry.models:
+                if not model_id:
+                    return jsonify({"error": "model_id is required for research inference"}), 400
+                if not self.model_registry or model_id not in self.model_registry.models:
+                    return jsonify({"error": "Model version not found"}), 404
+
+                from .model_routes import ModelInferenceUnavailableError
+
+                try:
                     res = self.model_registry.predict(model_id, data["input"])
-                    self.safety_monitor.record_operation(
-                        operation="prediction", duration=0.05, success=True
-                    )
-                    return jsonify(res)
+                except ModelInferenceUnavailableError as exc:
+                    return jsonify({"error": "Model inference unavailable", "detail": str(exc)}), 503
 
-                # Get or create adaptive neural network
-                network_id = data.get("network_id", "default")
-                if network_id not in self.neural_networks:
-                    self.neural_networks[network_id] = AdaptiveNeuralNetwork()
-
-                network = self.neural_networks[network_id]
-
-                # Make prediction
-                import numpy as np
-
-                input_array = np.array(data["input"])
-                prediction = network.predict(input_array)
-
-                # Record operation
                 self.safety_monitor.record_operation(
-                    operation="prediction", duration=0.1, success=True  # Placeholder
+                    operation="prediction", duration=0.05, success=True
                 )
-
-                result = {
-                    "prediction": prediction.tolist(),
-                    "network_id": network_id,
-                    "timestamp": datetime.now().isoformat(),
-                    "network_health": network.get_network_health(),
-                }
-
-                return jsonify(result)
+                return jsonify(res)
 
             except Exception as e:
                 logger.error(f"Prediction error: {e}")
@@ -422,32 +356,17 @@ class SecureAPIServer:
         @rate_limit(limit=30, window=60)  # 30 requests per minute
         @require_auth
         def agent_think():
-            """Secure agent thinking endpoint"""
-            try:
-                data = request.get_json()
-                if not data or "input" not in data:
-                    return jsonify({"error": "Missing 'input' field"}), 400
-
-                # Get or create agent
-                agent_id = data.get("agent_id", "default")
-                if agent_id not in self.agents:
-                    self.agents[agent_id] = DuetMindAgent(
-                        agent_id=agent_id, name=f"Agent-{agent_id}"
-                    )
-
-                agent = self.agents[agent_id]
-
-                # Agent thinking
-                import numpy as np
-
-                input_array = np.array(data["input"])
-                thought = agent.think(input_array)
-
-                return jsonify(thought)
-
-            except Exception as e:
-                logger.error(f"Agent thinking error: {e}")
-                return jsonify({"error": "Agent thinking failed"}), 500
+            """Block heuristic-agent output on the maintained research API."""
+            return (
+                jsonify(
+                    {
+                        "error": "Agent simulation unavailable",
+                        "detail": "Heuristic agent reasoning is quarantined from the maintained API. "
+                        "Use an explicitly labelled local research simulation instead.",
+                    }
+                ),
+                503,
+            )
 
         @self.app.route("/api/v1/status", methods=["GET"])
         @rate_limit(limit=20, window=60)  # 20 requests per minute
@@ -538,6 +457,7 @@ def create_app(config: Optional[DuetMindConfig] = None) -> Flask:
 
 
 if __name__ == "__main__":
-    # Development server
+    # Direct execution is local-development only. Production deployments must
+    # use the supported CLI/WSGI path and must not enable the Flask debugger.
     server = SecureAPIServer()
-    server.run(debug=True)
+    server.run(debug=False)

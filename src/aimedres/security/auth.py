@@ -534,8 +534,9 @@ def require_auth(
             if auth_manager is None:
                 return f(*args, **kwargs)
 
-            # Check API key
-            api_key = request.headers.get("X-API-Key") or request.args.get("api_key")
+            # API keys must never be accepted from URL query parameters: URLs are
+            # commonly retained by access logs, browser history, and referrers.
+            api_key = request.headers.get("X-API-Key")
             is_valid, user_info = auth_manager.validate_api_key(api_key)
 
             if not is_valid:

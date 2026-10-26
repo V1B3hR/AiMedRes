@@ -1,8 +1,10 @@
 # Clinical Validation Framework
 
+> **Status (25 October 2026): planning framework, not an implemented clinical-validation programme.** No clinical study, institutional approval, regulatory pre-submission, or clinical-performance result is represented by this document. The current evidence boundary is in the [research-readiness roadmap](roadmap.md).
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
-This document outlines the comprehensive clinical validation framework implemented in AiMedRes to ensure medical AI models meet clinical standards and regulatory requirements, with specific focus on FDA pre-submission and submission readiness.
+This document outlines a proposed clinical-validation framework for future institutional work. It does not establish that AiMedRes models meet clinical or regulatory standards, and it must not be presented as FDA submission readiness.
 
 ## 🎯 Overview
 

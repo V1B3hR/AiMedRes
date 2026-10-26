@@ -66,9 +66,16 @@ def generate_experiment_manifest(
         "architecture": platform.machine(),
     }
 
-    for pkg_name in ["numpy", "pandas", "scikit-learn", "torch", "pydantic"]:
+    package_modules = {
+        "numpy": "numpy",
+        "pandas": "pandas",
+        "scikit-learn": "sklearn",
+        "torch": "torch",
+        "pydantic": "pydantic",
+    }
+    for pkg_name, module_name in package_modules.items():
         try:
-            mod = __import__(pkg_name.replace("-", "_"))
+            mod = __import__(module_name)
             dependencies[pkg_name] = getattr(mod, "__version__", "unknown")
         except ImportError:
             dependencies[pkg_name] = "not_installed"

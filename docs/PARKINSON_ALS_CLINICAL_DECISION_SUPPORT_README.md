@@ -1,8 +1,10 @@
 # Clinical Decision Support System - Parkinson's & ALS
 
+> **Status (25 October 2026): prototype design reference, not a clinically validated support system.** The module uses research scaffolding and must not be used for patient risk assessment, intervention recommendations, or medical decisions.
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
-The `clinical_decision_support.py` module is the core of the AI-powered clinical decision support system. It provides a robust framework for assessing patient risk across multiple medical conditions and recommending appropriate interventions.
+The `clinical_decision_support.py` module is prototype research scaffolding for exploring risk-score and recommendation interfaces. It is not a clinical decision-support system and must not be used to assess patient risk or recommend interventions.
 
 ## Key Features
 

@@ -83,6 +83,7 @@ class TestProvenanceManifest:
         assert manifest["manifest_version"] == "1.0.0"
         assert "timestamp_utc" in manifest
         assert manifest["governance"]["license"] == "MIT"
+        assert manifest["runtime_environment"]["scikit-learn"] != "not_installed"
         assert "dummy_model.pkl" in manifest["model_artifacts"]
         assert manifest["runtime_environment"]["python"] is not None
 
@@ -112,6 +113,42 @@ class TestParkinsonsResearchPipeline:
         assert pipeline.config.n_folds == 3
         assert pipeline.config.output_dir == str(tmp_path)
         assert pipeline.tracker is not None
+
+    def test_pipeline_forwards_reproducibility_parameters(self, tmp_path, monkeypatch):
+        data_path = tmp_path / "fixture.csv"
+        data_path.write_text("PATNO,motor_progression_label\n1,0\n2,1\n", encoding="utf-8")
+        config = ParkinsonsPipelineConfig(
+            data_path=str(data_path),
+            output_dir=str(tmp_path / "outputs"),
+            n_folds=3,
+            random_state=17,
+            n_bootstraps=200,
+            alpha=0.1,
+            epochs=2,
+            batch_size=4,
+            learning_rate=0.002,
+            track_experiments=False,
+        )
+        pipeline = ParkinsonsResearchPipeline(config)
+        received = {}
+
+        def fake_run_full_pipeline(**kwargs):
+            received.update(kwargs)
+            return {"classical_results": {}}
+
+        monkeypatch.setattr(pipeline.internal_pipeline, "run_full_pipeline", fake_run_full_pipeline)
+        monkeypatch.setattr(
+            "aimedres.research.parkinsons.pipeline.generate_experiment_manifest",
+            lambda **_kwargs: {},
+        )
+
+        pipeline.run()
+
+        assert received["random_state"] == 17
+        assert received["n_bootstraps"] == 200
+        assert received["alpha"] == 0.1
+        assert received["batch_size"] == 4
+        assert received["learning_rate"] == 0.002
 
 
 class TestLocalExperimentTracker:

@@ -2,6 +2,19 @@
 
 **Version**: 1.0.0 | **Last Updated**: October 2026
 
+> This policy describes how to report suspected vulnerabilities. It does **not** certify the software, its deployments, or its data-processing controls as secure, compliant, or clinically ready. Current audit scope and open risks are recorded in [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md).
+
+## Active deployment advisory — eMudhra / Node.js (25 October 2026)
+
+The repository has a source-level response to Render's [eMudhra advisory](https://render.com/docs/advisory-emudhra): `.node-version` pins Node.js `24.22.1`, Python environments require `certifi>=2026.10.19`, and all maintained Dockerfiles explicitly refresh `ca-certificates` during a rebuild. These changes do **not** update or verify an already deployed service.
+
+- **PHP2Shell:** the AiMedRes codebase and maintained Dockerfiles contain no PHP runtime, Composer manifest or PHP base image. The optional third-party `adminer:latest` service was removed from `mlops/infra/docker-compose.yml`, so new local MLOps stacks do not start a PHP service by default. Any already running Adminer container, separately managed PHP service, or custom compose override still needs the procedure in Render's [PHP2Shell advisory](https://render.com/docs/advisory-php2shell): replace it with a vendor image verified to contain a patched PHP branch, then redeploy and confirm its runtime version.
+- **Render native services:** set `NODE_VERSION=24.22.1` (or use the committed `.node-version`), then trigger a new build/deploy for every service that builds or runs Node.js. Render notes that native runtimes can use Node during builds even when the application itself is Python.
+- **Docker services:** build with a fresh base and package layers, for example `docker build --pull --no-cache -t aimedres:security-refresh .`, then redeploy the new image/reference. Compose-managed third-party images must also be refreshed with their vendor-supported pull/rebuild process.
+- **Verification after redeploy:** run the application's own HTTPS client from the deployed service against the two certificate-rejection endpoints listed in the Render advisory. Both requests must fail certificate validation. Do not treat a local workstation `curl` result as evidence for the deployed service.
+
+Record the deployed image digest, runtime Node version, deploy ID/time and verification result with the release. The deployment owner must perform those actions; this repository cannot inspect or redeploy Render services.
+
 ## 🔒 Reporting Security Vulnerabilities
 
 **We take security seriously.** If you discover a security vulnerability in AiMedRes, please report it responsibly.
@@ -25,9 +38,7 @@ GitHub will privately notify the maintainers, and we can discuss the issue secur
 
 If you prefer or cannot use GitHub's private reporting:
 
-**Security Contact:** Open a GitHub issue requesting secure contact information, and a maintainer will provide a secure communication channel.
-
-**Important:** Do not include vulnerability details in the initial public request.
+**Security Contact:** Use a verified maintainer contact published outside public issue content. If no private channel is available, do not disclose vulnerability details in a public issue; request that the maintainer publishes a private reporting channel without including technical details.
 
 ### What to Include in Your Report
 

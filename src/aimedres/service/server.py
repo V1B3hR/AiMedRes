@@ -1,8 +1,8 @@
 """
-Production Inference Service Server.
-Conforms to Phase 3.1 & 3.2 of the Consolidated Roadmap.
+Maintained research API server.
 
-Encapsulates Flask application factory, security middleware, and registered clinical blueprints.
+Encapsulates the Flask application factory and security middleware. It does not
+expose clinical inference, EHR, or prototype integration endpoints.
 """
 
 from typing import Any, Optional

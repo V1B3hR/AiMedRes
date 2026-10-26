@@ -1,8 +1,10 @@
 # Production-Ready MLOps Pipeline Guide
 
+> **Status (25 October 2026): aspirational implementation guide, not evidence of a deployed production MLOps system.** No production serving, monitoring, automated retraining, or A/B testing environment has been validated in this P0 pass. See [Known Limitations](KNOWN_LIMITATIONS.md).
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
-This guide demonstrates the advanced production-ready MLOps features implemented for the AiMedRes system, including automated retraining, A/B testing, and comprehensive monitoring.
+This guide describes proposed MLOps capabilities and repository scaffolding, including automated retraining, A/B testing, and monitoring. It does not demonstrate an active production deployment.
 
 ## 🏗️ Architecture Overview
 

@@ -4,7 +4,7 @@ Tests for P1 API components.
 
 import pytest
 from src.aimedres.security.oidc_auth import OIDCAuthProvider, RoleMapper, MFAManager
-from src.aimedres.api.model_routes import ModelRegistry
+from src.aimedres.api.model_routes import ModelInferenceUnavailableError, ModelRegistry
 from src.aimedres.api.explain_routes import ExplainabilityEngine
 from src.aimedres.api.fhir_routes import FHIRMockServer
 from src.aimedres.api.case_routes import CaseManager
@@ -88,19 +88,25 @@ class TestModelRegistry:
         registry = ModelRegistry()
         
         assert len(registry.models) > 0
-        assert 'alzheimer_v1' in registry.models
+        assert set(registry.models) == {'ppmi_synthetic_fixture_v1'}
     
     def test_get_model_card(self):
         """Test retrieving model card."""
         registry = ModelRegistry()
         
-        card = registry.get_model_card('alzheimer_v1')
+        card = registry.get_model_card('ppmi_synthetic_fixture_v1')
         
         assert card is not None
         assert 'name' in card
         assert 'version' in card
-        assert 'validation_metrics' in card
+        assert card['validation_metrics'] is None
         assert 'intended_use' in card
+
+    def test_inference_is_disabled_without_a_governed_artifact(self):
+        registry = ModelRegistry()
+
+        with pytest.raises(ModelInferenceUnavailableError, match='API inference is disabled'):
+            registry.predict('ppmi_synthetic_fixture_v1', {'AGE': 60})
     
     def test_get_latest_model(self):
         """Test getting latest model."""

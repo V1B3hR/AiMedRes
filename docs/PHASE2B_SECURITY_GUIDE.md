@@ -1,5 +1,7 @@
 # Phase 2B Enhanced Clinical Security - Implementation Guide
 
+> **Status (25 October 2026): prototype/reference material, not a production-security or compliance claim.** These modules are not exposed by the maintained research API, and their security properties have not received external assessment. See [Known Limitations](KNOWN_LIMITATIONS.md).
+
 ## Overview
 
 Phase 2B introduces three major security enhancements to AiMedRes:
@@ -7,7 +9,7 @@ Phase 2B introduces three major security enhancements to AiMedRes:
 2. **Quantum-Safe Cryptography** - Post-quantum encryption with hybrid approach
 3. **Blockchain Medical Records** - Immutable audit trails and smart contracts
 
-All features are fully implemented, tested, and production-ready.
+The described components are implementation prototypes. Their operational security, scalability, compliance and production suitability remain unverified.
 
 ---
 

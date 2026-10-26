@@ -929,7 +929,9 @@ class EnterpriseAPI:
         def _authenticate_request(self) -> Optional[Any]:
             """Authenticate the request and store user info."""
             # Enhanced authentication with security monitoring
-            api_key = request.headers.get("X-API-Key") or request.args.get("api_key")
+            # Do not accept credentials from a URL: query strings are routinely
+            # persisted in proxy logs, browser history, and referrer headers.
+            api_key = request.headers.get("X-API-Key")
             is_valid, user_info = self.auth_manager.validate_api_key(api_key)
 
             if not is_valid:

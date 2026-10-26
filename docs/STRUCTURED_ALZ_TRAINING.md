@@ -1,5 +1,7 @@
 # Structured Alzheimer's Disease Training Pipeline
 
+> **Status (25 October 2026): historical prototype reference.** This material is not evidence that an Alzheimer's model is validated, clinically useful, or production-ready. Use the [research-readiness roadmap](roadmap.md) for the active evidence boundary.
+
 ## Overview
 
 The Structured Alzheimer's Disease Training Pipeline provides a comprehensive, production-ready framework for training machine learning models to predict Alzheimer's disease using structured tabular data. The pipeline supports multiple algorithms, ensemble methods, early stopping, multi-seed reproducible training, and extensive evaluation metrics.

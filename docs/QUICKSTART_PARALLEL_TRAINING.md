@@ -1,10 +1,12 @@
 # Quick Start: Parallel Training with Optimal Configuration
 
+> **Status (25 October 2026): historical prototype reference.** “Production-ready” parameters below are not a verified deployment claim and require rerun, data-governance review, and independent validation.
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
 ## TL;DR
 
-Run all medical AI training jobs in parallel with production-ready parameters:
+Run all configured training jobs in parallel with the stated prototype parameters:
 
 ```bash
 python run_all_training.py --parallel --max-workers 6 --epochs 50 --folds 5
