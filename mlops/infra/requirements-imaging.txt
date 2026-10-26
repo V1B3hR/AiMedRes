@@ -25,7 +25,7 @@ antspyx>=0.4.0          # ANTs registration in Python
 dipy>=1.7.0             # Diffusion imaging processing
 
 # Quality control and visualization
-mriqc>=23.1.0           # MRI quality control metrics
+mriqc>=24.0.2           # MRI quality control metrics
 dmriprep>=0.5.0         # dMRI preprocessing QC
 
 # DICOM networking and server tools
