@@ -12,6 +12,7 @@ Key improvements:
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 import random
@@ -252,8 +253,10 @@ class AliveLoopNode:
             return {"error": "Empty task", "confidence": 0.0}
 
         # The 'temperature' and 'max_tokens' are placeholders for future LLM integration.
-        random.seed(self._time + hash(task) + int(temperature * 100))
-        confidence = random.uniform(0.3, 0.95)
+        # Use an isolated Random generator to avoid mutating global random PRNG state.
+        task_hash = int.from_bytes(hashlib.sha256(task.encode("utf-8")).digest()[:4], "big")
+        rng = random.Random(self._time + task_hash + int(temperature * 100))
+        confidence = rng.uniform(0.3, 0.95)
         if confidence < 0.4:
             self.confusion_level += 0.05
         elif confidence > 0.8:
@@ -274,7 +277,7 @@ class AliveLoopNode:
             importance=confidence,
             timestamp=self._time,
             memory_type="prediction",
-            emotional_valence=random.uniform(-1, 1),
+            emotional_valence=rng.uniform(-1, 1),
             decay_rate=self._memory_config.decay_rate_base,
         )
         self.memory.append(mem)

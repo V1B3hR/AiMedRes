@@ -1,7 +1,7 @@
 # AiMedRes: strategia finansowania — UK jako priorytet, Polska jako drugi tor
 
 > **Status:** aktywna mapa możliwości finansowania badań  
-> **Ostatnia weryfikacja źródeł:** 25 października 2026  
+> **Ostatnia weryfikacja źródeł:** 26 października 2026
 > **Priorytet geograficzny:** England/UK. Polska, w tym województwo kujawsko-pomorskie, jest dodatkową ścieżką partnerską i grantową.
 
 ## 1. Strategia w jednym zdaniu
@@ -106,7 +106,7 @@ Punktem odniesienia może być typowa wartość Parkinson’s UK Project Grant, 
 
 ## 7. Materiały wymagane przed pierwszym wnioskiem
 
-1. Dwu-stronicowy concept note w języku prostym i naukowym.
+1. Zwięzły [Institutional Research Partnership Brief](INSTITUTIONAL_RESEARCH_PARTNERSHIP_BRIEF.md) z tekstem startowym pre-proposal i e-mailem do pierwszego kontaktu.
 2. Evidence Pack opisany w [roadmapie gotowości badawczej](roadmap.md).
 3. Jednostronicowy budżet z wkładem każdego partnera.
 4. Lista partnerów, CV/ról, letters of support oraz plan PPI.
@@ -116,3 +116,10 @@ Punktem odniesienia może być typowa wartość Parkinson’s UK Project Grant, 
 ## 8. Zasada komunikacji
 
 Wniosek finansuje stworzenie dowodu naukowego. Nie obiecuje, że istniejący prototyp jest już bezpieczny, klinicznie skuteczny lub gotowy do wdrożenia. Ta precyzja wzmacnia wiarygodność AiMedRes i chroni przyszłe partnerstwo UK–Polska.
+
+### Aktualizacja decyzji (26 października 2026)
+
+- Parkinson’s UK pozostaje główną ścieżką, ale projekt wymaga najpierw UK PI, PPI, biostatystyka i gospodarza uprawnionego do złożenia wniosku.
+- KPFP jest opcją wyłącznie dla rzeczywiście kwalifikowalnego przedsięwzięcia w Kujawsko-Pomorskiem; PARP wymaga realnego polskiego MŚP i prac B+R w Polsce.
+- ERA4Health JTC10 nie jest automatycznym dopasowaniem: obecny temat dotyczy zaawansowanych/nano narzędzi diagnostycznych i teranostycznych. Nie zmieniamy zakresu AiMedRes, by dopasować się do konkursu.
+- W pierwszym kontakcie należy używać [briefu partnerskiego](INSTITUTIONAL_RESEARCH_PARTNERSHIP_BRIEF.md) oraz syntetycznego Evidence Pack, nigdy nie deklarować metryk fixture jako wyniku PPMI lub klinicznego.

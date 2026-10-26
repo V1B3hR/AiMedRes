@@ -98,6 +98,7 @@ Welcome to the AiMedRes documentation! This index helps you find the right docum
 ### Active Roadmap & Funding
 - [Research-readiness Roadmap](roadmap.md) - Single source of truth for presentation readiness, audit gates, and next actions
 - [Funding Strategy: UK and Poland](FUNDING_STRATEGY_UK_AND_POLAND.md) - UK-first funding routes and conditional Poland/Kujawsko-Pomorskie directions
+- [Institutional Research Partnership Brief](INSTITUTIONAL_RESEARCH_PARTNERSHIP_BRIEF.md) - Shareable, research-only concept note, pre-proposal starter text and first-contact email
 
 ## 📝 Additional Resources
 

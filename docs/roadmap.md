@@ -86,6 +86,7 @@ The table below establishes an unvarnished audit of the repository, categorizing
 
 - **P1 — niezależna replikacja i partnerstwo:** prerejestrowane pytanie, rerun na danych z uprawnionego źródła, niezależna ocena metodyczna, clinical PI, biostatystyk, właściciel danych i PPI.
 - **P2 — wniosek o finansowanie:** concept note, budżet oparty na work packages, demonstracja syntetyczna oraz uzgodnione role, IP i governance danych. Szczegóły konkursów są w [strategii finansowania UK i Polski](FUNDING_STRATEGY_UK_AND_POLAND.md).
+- **P2 — materiał do pozyskania partnera:** istnieje [Institutional Research Partnership Brief](INSTITUTIONAL_RESEARCH_PARTNERSHIP_BRIEF.md) z ograniczonym, research-only opisem, tekstem startowym pre-proposal i pierwszym e-mailem. Nie zastępuje on partnera, zatwierdzonego protokołu ani wniosku.
 - **P3 — walidacja instytucjonalna i decyzja regulacyjna:** intended purpose, wymagania HRA/REC/NHS/MHRA oraz QMS proporcjonalny do rzeczywistego celu użycia — wyłącznie po finansowaniu i wynikach walidacji.
 
 ### Standard Evidence Pack
