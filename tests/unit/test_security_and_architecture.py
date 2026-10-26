@@ -5,12 +5,16 @@ and Enterprise Security Hardening with Database Store & Fail-Closed Gates (Phase
 
 import os
 import pytest
+from flask import Flask, jsonify
 
 from aimedres.security.auth import (
     AuthDatabaseStore,
     SecureAuthManager,
     SecurityConfigurationError,
+    require_auth,
 )
+from aimedres.security.secure_medical_processor import SecureMedicalDataProcessor
+from aimedres.clinical.medical_processor import SecureMedicalDataProcessor as LegacyMedicalDataProcessor
 from aimedres.service import SecureAPIServer, ModelRegistry, create_app
 from aimedres.simulation import (
     SpecializedMedicalAgent,
@@ -113,6 +117,20 @@ class TestEnterpriseSecurityHardening:
         valid_jwt_after, _ = auth.validate_jwt_token(token)
         assert valid_jwt_after is False
 
+    def test_authentication_accepts_header_but_rejects_query_string_key(self, tmp_path):
+        app = Flask(__name__)
+        app.auth_manager = SecureAuthManager({"auth_db_path": tmp_path / "auth.db"})
+        api_key = app.auth_manager._generate_api_key("researcher", ["user"])
+
+        @app.get("/protected")
+        @require_auth
+        def protected():
+            return jsonify({"ok": True})
+
+        client = app.test_client()
+        assert client.get(f"/protected?api_key={api_key}").status_code == 401
+        assert client.get("/protected", headers={"X-API-Key": api_key}).status_code == 200
+
     def test_fail_closed_validation_in_production_mode(self, monkeypatch):
         # Set production environment without required 32-char secret
         monkeypatch.setenv("AIMEDRES_ENV", "production")
@@ -127,3 +145,56 @@ class TestEnterpriseSecurityHardening:
 
         with pytest.raises(SecurityConfigurationError, match="CRITICAL SECURITY CONFIGURATION ERROR"):
             SecureAPIServer()
+
+    def test_prediction_endpoint_disables_unapproved_model_serving(self):
+        server = SecureAPIServer()
+        api_key = next(iter(server.auth_manager.api_keys))
+        client = server.app.test_client()
+
+        missing_model = client.post(
+            "/api/v1/predict",
+            headers={"X-API-Key": api_key},
+            json={"input": {"AGE": 60}},
+        )
+        assert missing_model.status_code == 400
+
+        unavailable_model = client.post(
+            "/api/v1/predict",
+            headers={"X-API-Key": api_key},
+            json={
+                "input": {"AGE": 60},
+                "model_id": "ppmi_synthetic_fixture_v1",
+            },
+        )
+        assert unavailable_model.status_code == 503
+
+        unavailable_agent = client.post(
+            "/api/v1/agent/think",
+            headers={"X-API-Key": api_key},
+            json={"input": [1.0, 2.0]},
+        )
+        assert unavailable_agent.status_code == 503
+
+    def test_maintained_api_does_not_expose_mock_or_prototype_routes(self):
+        server = SecureAPIServer()
+        client = server.app.test_client()
+
+        for path in (
+            "/api/v1/fhir/metadata",
+            "/api/v1/cases",
+            "/api/v1/explain/health",
+            "/api/v1/dicom/health",
+            "/api/v1/visualization/health",
+            "/api/v1/canary/health",
+            "/api/v1/quantum/health",
+        ):
+            assert client.get(path).status_code == 404
+
+    @pytest.mark.parametrize(
+        "processor_type", (SecureMedicalDataProcessor, LegacyMedicalDataProcessor)
+    )
+    def test_legacy_medical_processors_refuse_pickle_backed_inference(self, processor_type):
+        processor = object.__new__(processor_type)
+
+        with pytest.raises(RuntimeError, match="inference is disabled"):
+            processor.secure_inference("untrusted-model", {"AGE": 60}, "researcher")

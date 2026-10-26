@@ -1,50 +1,48 @@
-# Research Model Card: PPMI Parkinson's Motor Progression Classifier
+# Research Model Card: synthetic PPMI-schema reproducibility benchmark
 
-> **Model Card Version**: 1.0.0  
-> **Date**: October 2026  
-> **Evaluation Framework**: TRIPOD-AI / STARD-AI Aligned  
+> **Model Card Version**: 1.1.0
+> **Date**: 25 October 2026
+> **Evaluation Framework**: Internal reproducibility controls informed by TRIPOD-AI/STARD-AI; no external compliance assessment
 > **License**: MIT License  
-> **Status**: Validated Research Benchmark (Investigational Prototype — Not for Clinical Diagnostic Use)
+> **Status**: Local synthetic-fixture benchmark. It is not a validated PPMI result, external validation, clinical-performance estimate, or diagnostic model.
 
 ---
 
 ## 1. Model Details
 
-* **Model Name**: AiMedRes PPMI Motor Progression Classifier (Leakage-Safe DaTscan SBR Ensemble)
+* **Model Name**: AiMedRes synthetic PPMI-schema motor-progression benchmark
 * **Architecture Suite**:
   * Primary Linear Baseline: L2-Regularized Logistic Regression with fold-isolated median imputation and standard scaling.
   * Tree Ensemble: Random Forest Classifier (100 estimators, Gini impurity criterion).
   * Kernel Machine: Support Vector Classifier (RBF kernel with calibrated probability Platt scaling).
   * Tabular Neural Network: 4-layer Multi-Layer Perceptron (MLP) with Batch Normalization, Dropout (0.3), and ReLU activations.
 * **Developer**: AiMedRes Open Source Scientific Working Group (`V1B3hR`)
-* **Repository Path**: [`src/aimedres/training/train_parkinsons.py`](file:///c:/Projekty/AiMedRes/src/aimedres/training/train_parkinsons.py)
-* **Reproduction Script**: [`scripts/reproduce_ppmi_benchmark.py`](file:///c:/Projekty/AiMedRes/scripts/reproduce_ppmi_benchmark.py)
+* **Repository Path**: [`src/aimedres/training/train_parkinsons.py`](../src/aimedres/training/train_parkinsons.py)
+* **Reproduction Script**: [`scripts/reproduce_ppmi_benchmark.py`](../scripts/reproduce_ppmi_benchmark.py)
 
 ---
 
 ## 2. Intended Use & Clinical Scope
 
-### Intended Use Cases
-* **Longitudinal Disease Stratification**: Research risk assessment of rapid motor progression in early Parkinson's disease.
-* **Biomarker Sensitivity Exploration**: Quantifying the prognostic value of asymmetric striatal binding ratios (SBR) in caudate vs. putamen regions.
-* **Clinical Trial Enrichment**: Stratifying clinical trial cohorts based on predicted probability of short-term motor worsening.
+### Current intended use
+* **Reproducibility-control demonstration**: exercising participant-grouped cross-validation, fold-contained preprocessing, provenance generation, and deterministic local reruns on a non-identifiable synthetic fixture.
+* **Method-development input**: providing a starting point for a separately governed, preregistered retrospective study after an authorised data holder and independent methodologist are engaged.
 
 ### Out-of-Scope & Contraindicated Uses
 > [!CAUTION]
-> **Strict Regulatory Disclaimer**: This model is an **investigational research algorithm**. It has **not** received FDA 510(k), De Novo, PMA clearance, or CE-mark certification as Software as a Medical Device (SaMD).
+> **Strict research disclaimer**: This benchmark has not been evaluated on controlled PPMI data in the current evidence pack. It has **not** received FDA 510(k), De Novo, PMA clearance, or CE-mark certification as Software as a Medical Device (SaMD).
 > - **Contraindicated**: Autonomous clinical diagnosis without neurologist confirmation.
 > - **Contraindicated**: Dosing adjustment or discontinuation of dopaminergic therapy (e.g., Levodopa/Carbidopa).
-> - **Contraindicated**: Application to atypical parkinsonian syndromes (PSP, MSA, CBD) or secondary drug-induced parkinsonism without cross-cohort re-calibration.
+> - **Contraindicated**: Clinical-trial enrichment, patient stratification, or any use with patient data outside an approved research protocol.
 
 ---
 
 ## 3. Data, Cohort & Target Definition
 
-### Cohort Specification (PPMI Protocol)
-* **Source Initiative**: Parkinson's Progression Markers Initiative (PPMI; sponsored by The Michael J. Fox Foundation).
-* **Population**: Early, unmedicated (de novo) Parkinson's disease participants and age-matched healthy controls.
-* **Longitudinal Evaluation**: Baseline (`BL`), Year 1 (`V04`), Year 2 (`V06`), Year 3 (`V08`).
-* **Governance**: Controlled access via USC LONI IDA under strict non-redistribution DUA. Automated testing uses verified synthetic benchmark fixture [`ParkinsonDatasets/synthetic_pet_sbr_fixture.csv`](file:///c:/Projekty/AiMedRes/ParkinsonDatasets/synthetic_pet_sbr_fixture.csv).
+### Current evaluation fixture
+* **Source**: [`ParkinsonDatasets/synthetic_pet_sbr_fixture.csv`](../ParkinsonDatasets/synthetic_pet_sbr_fixture.csv), a committed non-identifiable synthetic fixture with 170 observations from 60 synthetic participants.
+* **Purpose**: schema and leakage-control regression testing only. Its covariates, longitudinal visits, and labels are not patient records and do not establish a PPMI population, prevalence, prognosis, or clinical utility.
+* **Future controlled-data work**: PPMI access requires an authorised holder and DUA. The governance requirements are in [`ParkinsonDatasets/DATA_GOVERNANCE.md`](../ParkinsonDatasets/DATA_GOVERNANCE.md).
 
 ### Input Features ($X$)
 1. `PET_CAUDATE_L`: Left caudate striatal binding ratio (SBR)
@@ -57,9 +55,9 @@
 8. `SEX`: Biological sex (0 = Female, 1 = Male)
 
 ### Prediction Target ($y$)
-* **Endpoint**: `motor_progression_label` (Binary, independent clinical milestone).
-* **Clinical Criteria**: Clinically significant motor progression defined as an increase $\ge 5.0$ points on the Movement Disorder Society Unified Parkinson's Disease Rating Scale (MDS-UPDRS) Part III motor exam from baseline to follow-up visit.
-* **Circularity Elimination**: SBR features are strictly input predictors; the target is an independent clinical motor outcome.
+* **Fixture endpoint**: `motor_progression_label`, a synthetic binary label used to test the pipeline's non-circular target interface.
+* **Clinical endpoint not yet evidenced**: a future protocol may define an independent endpoint, such as longitudinal MDS-UPDRS Part III change, before analysis. This repository does not currently demonstrate that definition or outcome on controlled PPMI records.
+* **Circularity control**: the runner separates SBR-like fixture features from the synthetic target and warns on known circular-target patterns. This is a software control, not clinical endpoint validation.
 
 ---
 
@@ -69,15 +67,15 @@ Prior audits of legacy scripts identified severe data leakage. This pipeline enf
 
 | Leakage Dimension | Legacy Vulnerability | AiMedRes Phase 1 Mitigation | Verification Status |
 | :--- | :--- | :--- | :--- |
-| **Participant Leakage** | Random `StratifiedKFold` scattered repeated longitudinal visits (`PATNO`) across train and validation folds. | Enforced **`StratifiedGroupKFold` grouped strictly by `PATNO`**. Zero participant overlap across folds. | Verified in `tests/unit/test_ppmi_reproducibility.py` |
+| **Participant Leakage** | Random `StratifiedKFold` scattered repeated longitudinal visits (`PATNO`) across train and validation folds. | The synthetic benchmark uses **`StratifiedGroupKFold` grouped by `PATNO`** when the identifier is present. | Verified by the focused PPMI configuration/research tests and local synthetic reruns. |
 | **Preprocessing Contamination** | Feature scalers and imputers were fitted on the global dataset prior to splitting. | Fully encapsulated in `sklearn.pipeline.Pipeline`, fitting strictly on training partitions per fold. | Verified in unit tests |
-| **Target Circularity** | Target was generated from median split of `avg_sbr` while `avg_sbr` was in the input matrix. | Replaced by independent clinical endpoint (`motor_progression_label`). Pipeline warns if circular target is detected. | Automated warning system active |
+| **Target Circularity** | Target was generated from median split of `avg_sbr` while `avg_sbr` was in the input matrix. | The fixture exposes a separate synthetic target interface; a real independent endpoint still requires protocol and source-data review. | Software warning/control only. |
 
 ---
 
-## 5. Quantitative Benchmark Performance
+## 5. Synthetic-fixture execution metrics
 
-Results evaluated across 5-fold participant-isolated cross-validation (`StratifiedGroupKFold` on 60 unique participants, 170 longitudinal observations):
+The values below were produced locally on the synthetic fixture with 5-fold participant-grouped cross-validation (60 synthetic participants, 170 observations). They are regression-test outputs only and **must not** be cited as PPMI, patient, clinical, external-validation, or clinical-trial-enrichment performance.
 
 | Model Architecture | Out-of-Fold ROC-AUC [95% CI] | Out-of-Fold PR-AUC [95% CI] | Brier Score (Calibration) | Sensitivity | Specificity |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -88,15 +86,15 @@ Results evaluated across 5-fold participant-isolated cross-validation (`Stratifi
 *95% Confidence Intervals computed via 1,000 non-parametric bootstrap iterations.*
 
 ### Probability Calibration
-* **Brier Score**: 0.108 (Logistic Regression demonstrates low mean squared probability error).
-* **Reliability**: Platt scaling and regularized log-odds preserve monotonic alignment between predicted risk scores and empirical progression rates.
+* **Brier Score**: 0.108 for this fixture and seed.
+* **Interpretation limit**: calibration has not been assessed on a clinical cohort; no statement about patient risk or reliability is justified.
 
 ---
 
 ## 6. Demographic & Ethical Considerations
 
-* **Selection & Demographic Bias**: The PPMI observational cohort predominantly represents individuals of European ancestry with above-average health literacy and socioeconomic access. Generalizability across underrepresented ethnic groups remains unvalidated.
-* **Hardware & Acquisition Heterogeneity**: DaTscan SPECT reconstruction algorithms and camera gamma collimators vary between acquisition sites. Multi-site harmonization (e.g., ComBat or phantom standardization) must be evaluated prior to multi-center deployment.
+* **Selection & Demographic Bias**: demographic performance has not been assessed because the active evidence is synthetic. A future controlled-data study must define subgroup reporting before modelling.
+* **Hardware & Acquisition Heterogeneity**: the fixture does not represent scanner/site heterogeneity. Multi-site harmonisation and external validation would be required before any clinical or multi-centre claim.
 
 ---
 
@@ -105,9 +103,9 @@ Results evaluated across 5-fold participant-isolated cross-validation (`Stratifi
 Execute the official reproduction runner in your terminal:
 
 ```bash
-# Run against the validated synthetic fixture:
-python scripts/reproduce_ppmi_benchmark.py
+# Run the versioned synthetic fixture (research reproducibility only):
+python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml
 
-# Run against real local PPMI data (authorized DUA holders):
-python scripts/reproduce_ppmi_benchmark.py --data-path data/ppmi/ppmi_sbr_longitudinal.csv
+# Authorised PPMI DUA holders may run a local research experiment after protocol review:
+python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml --data-path data/ppmi/ppmi_sbr_longitudinal.csv --output-dir .local-results/ppmi_research_run
 ```

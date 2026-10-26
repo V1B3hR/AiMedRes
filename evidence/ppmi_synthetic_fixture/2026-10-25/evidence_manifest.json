@@ -1,0 +1,99 @@
+{
+  "benchmark_summary": {
+    "dataset": "ParkinsonDatasets/synthetic_pet_sbr_fixture.csv",
+    "execution_seconds": 11.209663152694702,
+    "n_folds": 5,
+    "summary": [
+      {
+        "brier_score": 0.10843175653971061,
+        "model": "Logistic Regression",
+        "pr_auc": 0.9594555198030049,
+        "pr_auc_ci_95": [
+          0.9336893475662588,
+          0.9811609628515301
+        ],
+        "roc_auc": 0.907066959015011,
+        "roc_auc_ci_95": [
+          0.8586282608695652,
+          0.9479206730769231
+        ],
+        "sensitivity": 0.9338842975206612,
+        "specificity": 0.673469387755102
+      },
+      {
+        "brier_score": 0.14210705882352942,
+        "model": "Random Forest",
+        "pr_auc": 0.9276364915219827,
+        "pr_auc_ci_95": [
+          0.8856156061653728,
+          0.9615542960873912
+        ],
+        "roc_auc": 0.8426378815989205,
+        "roc_auc_ci_95": [
+          0.7764184397163121,
+          0.9029588863977902
+        ],
+        "sensitivity": 0.8512396694214877,
+        "specificity": 0.5714285714285714
+      },
+      {
+        "brier_score": 0.13194626707298168,
+        "model": "SVM",
+        "pr_auc": 0.9052604802943346,
+        "pr_auc_ci_95": [
+          0.8446572494511956,
+          0.9573019863471025
+        ],
+        "roc_auc": 0.8353853938269523,
+        "roc_auc_ci_95": [
+          0.753294324161037,
+          0.9042584462183518
+        ],
+        "sensitivity": 0.9090909090909091,
+        "specificity": 0.6938775510204082
+      }
+    ],
+    "target": "motor_progression_label",
+    "timestamp": "2026-10-25T06:10:52.808155"
+  },
+  "command": "python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml --evidence-dir <directory>",
+  "created_at_utc": "2026-10-25T06:10:53.511898+00:00",
+  "evidence_pack_version": "1.0.0",
+  "git": {
+    "head": "404a65b86fc1a5a75e48385133b5c31a48efc9a3",
+    "worktree_clean": false,
+    "worktree_status_sha256": "1f877291ef69c4f3138abe00caa1aacfc166d63ea040950ee5041923ec6e6dae"
+  },
+  "limitations": [
+    "Synthetic data only; no PPMI, patient-level, external-cohort, or clinical-performance claim.",
+    "Local repeatability does not establish independent, cross-platform, or institutional reproducibility.",
+    "This pack contains no model artifact, participant-level data, or controlled dataset metadata."
+  ],
+  "scope": "Synthetic-fixture reproducibility evidence only; not clinical validation.",
+  "source_snapshot_sha256": {
+    "configs/parkinsons_ppmi_study.yml": "9e303ec951d88632793aa12c8deb81d9eb627775ed7aba60de12b3062a40fe01",
+    "scripts/reproduce_ppmi_benchmark.py": "2d0544ded718e2fb1ab59b2d97b222171dcba9385faec420173358782105e949",
+    "src/aimedres/research/parkinsons/config.py": "9b4fd3190f8f674e16397a9ad4378f20b19733488a13feb8dd0fcbafef1790f8",
+    "src/aimedres/research/parkinsons/manifest.py": "0bd4f74756a7f1fc58626f8a7bc8440869b8cfe9ce264c099bc60c1e65a8d307",
+    "src/aimedres/research/parkinsons/pipeline.py": "f92d3bd55efd2d8a2ebbebe00fa68818098747abc1eeab6793c35a2e84bbe9e5",
+    "src/aimedres/training/train_parkinsons.py": "58d9a28c719b3f00b91010cf86c28d9105eb04b773aba10b14bc6caf5a76b132"
+  },
+  "study_configuration": {
+    "path": "configs/parkinsons_ppmi_study.yml",
+    "sha256": "9e303ec951d88632793aa12c8deb81d9eb627775ed7aba60de12b3062a40fe01",
+    "values": {
+      "alpha": 0.05,
+      "batch_size": 16,
+      "epochs": 25,
+      "learning_rate": 0.001,
+      "n_bootstraps": 1000,
+      "n_folds": 5,
+      "random_state": 42,
+      "target_column": "motor_progression_label"
+    }
+  },
+  "synthetic_input": {
+    "path": "ParkinsonDatasets/synthetic_pet_sbr_fixture.csv",
+    "sha256": "e803e33abbaea34197e5506e5b73111d0766edc54bc898883926ccb2e44687ae"
+  }
+}

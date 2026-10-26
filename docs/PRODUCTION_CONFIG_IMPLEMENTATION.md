@@ -1,5 +1,7 @@
 # Production-Ready Configuration Implementation
 
+> **Status (25 October 2026): historical configuration reference.** This command and any performance assertions have not been re-verified in the P0 pass and must not be presented as production readiness or clinical-model evidence.
+
 ## Command Implemented
 ```bash
 aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128

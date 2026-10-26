@@ -402,74 +402,17 @@ class SecureMedicalDataProcessor:
         self, model_id: str, input_data: Dict[str, Any], user_id: str
     ) -> Dict[str, Any]:
         """
-        Perform secure inference with privacy protection.
+        Refuse prototype model inference.
 
-        Args:
-            model_id: ID of the model to use
-            input_data: Input data for prediction
-            user_id: User requesting inference
-
-        Returns:
-            Prediction results
+        This legacy processor is not part of the maintained API. Encrypted
+        storage does not make a Python pickle trustworthy; loading one could
+        execute attacker-controlled code. A future serving path must use a
+        reviewed artifact format plus a signed provenance manifest.
         """
-        if model_id not in self.model_registry:
-            raise ValueError(f"Model {model_id} not found")
-
-        model_info = self.model_registry[model_id]
-
-        # Validate medical input data
-        from security import InputValidator
-
-        validator = InputValidator()
-        is_valid, errors = validator.validate_medical_data(input_data)
-
-        if not is_valid:
-            raise ValueError(f"Invalid medical data: {errors}")
-
-        # Log inference request
-        self.privacy_manager.log_data_access(
-            user_id=user_id,
-            data_type="model_inference",
-            action="predict",
-            data_id=f"inference_{model_id}_{int(datetime.now().timestamp())}",
-            purpose="medical_prediction",
-            legal_basis="healthcare_provision",
+        raise RuntimeError(
+            "SecureMedicalDataProcessor inference is disabled: no reviewed, signed model artifact "
+            "or supported clinical inference path is available."
         )
-
-        try:
-            # Load and decrypt model
-            with open(model_info["model_path"], "r") as f:
-                encrypted_model = f.read()
-
-            model_data = self.data_encryption.decrypt_data(encrypted_model)
-
-            # Deserialize model from base64
-            import base64
-
-            model_bytes = base64.b64decode(model_data["model_data"])
-            model_results = pickle.loads(model_bytes)
-
-            # Perform secure inference (placeholder - would use actual model)
-            prediction_result = {
-                "prediction": 0,  # Would use actual model: model_results['model'].predict([input_data])[0]
-                "confidence": 0.85,
-                "model_id": model_id,
-                "timestamp": datetime.now().isoformat(),
-                "privacy_protected": True,
-            }
-
-            medical_logger.info(f"Secure inference completed for model {model_id}")
-            return prediction_result
-
-        except Exception as e:
-            medical_logger.error(f"Secure inference failed: {e}")
-            self.security_monitor.log_security_event(
-                "inference_error",
-                {"model_id": model_id, "error": str(e)},
-                severity="warning",
-                user_id=user_id,
-            )
-            raise
 
     def cleanup_expired_data(self) -> Dict[str, int]:
         """

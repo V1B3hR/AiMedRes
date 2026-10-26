@@ -1,7 +1,7 @@
 # 🧠 AiMedRes
 
 > **Advanced AI Medical Research Assistant**  
-> **Adaptive neural architectures + multi-agent clinical reasoning**  
+> **Adaptive neural architectures + multi-agent research simulations**
 > **Safety‑aware, explainable AI for neurological and mental health research**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -28,18 +28,18 @@ Working code, training pipelines, and interfaces developed as research scaffoldi
 | Capability | Location | Reality & Notes |
 |---|---|---|
 | Parkinson's & Open Research Package | `src/aimedres/research/` | Modularized, typed Pydantic config, `LocalExperimentTracker` (SQLite/JSON), leakage-safe cross-validation, open dataset connectors (OASIS-2, PRO-ACT, PTB-XL, UCI Telemonitoring), and cryptographic provenance manifest (`provenance_manifest.json`) |
-| Real-World Clinical Benchmarks | `scripts/`, `results/` | Automated downloader and participant-isolated evaluation on genuine clinical cohorts: OASIS-2 Dementia (AUC: 0.856 [0.818 – 0.893]) and UCI Parkinson's Telemonitoring (AUC: 0.766 [0.753 – 0.779]) |
-| Decoupled Production Service API | `src/aimedres/service/` | Production application factory (`create_app`), registered model serving (`ppmi_parkinsons_v1`), FHIR R4 sandbox (`/api/v1/fhir`), case review (`/api/v1/cases`), and explainability (`/api/v1/explain`) |
-| Clinician Usability & Human Factors | `src/aimedres/clinical/usability.py` | Model-driven feature attributions (linear log-odds & tree importances), MDS guideline concordance, turnaround time tracking, SUS scoring ($\ge 80/100$), and sub-second latency SLO (< 200 ms) |
-| Clinical Governance & Intended Use | `docs/clinical/` | Formal Intended Use & IFU specification (`INTENDED_USE_SPECIFICATION.md`) under FDA 21st Century Cures Act § 3060 and Institutional Review Board protocol (`IRB_CLINICAL_STUDY_PROTOCOL.md`) |
-| SaMD Traceability & Risk Controls | `docs/compliance/` | Software as a Medical Device Traceability Matrix (`SAMD_TRACEABILITY_MATRIX.md`) under IEC 62304 Class B & ISO 14971, with automated AST verification in CI |
-| Quarantined Simulation Agents | `src/aimedres/simulation/` | Heuristic multi-agent prototypes quarantined with runtime gates (`assert_simulation_allowed()`) preventing unvalidated simulation in production |
+| Dataset evaluation tooling | `scripts/`, `results/` | Download and participant-isolated evaluation utilities; any recorded metrics require independent replication and are not clinical validation |
+| Maintained research API | `src/aimedres/service/` | Application factory (`create_app`) exposing research-model metadata only. Online inference is disabled; FHIR, case-review, explainability, DICOM, and P3 route modules are retained as unexposed research scaffolding until separately validated. |
+| Usability-supporting code | `src/aimedres/clinical/usability.py` | Feature-attribution, guideline-concordance, turnaround-time, and survey helpers; no completed clinician usability study is claimed |
+| Clinical governance templates | `docs/clinical/` | Intended-use and protocol documents for institutional adaptation; they are not an IRB approval or a regulatory determination |
+| SaMD traceability templates | `docs/compliance/` | Traceability and risk-management scaffolding for future quality work; not a certified QMS or device classification |
+| Quarantined Simulation Agents | `src/aimedres/simulation/` | Heuristic multi-agent prototypes are unavailable through the maintained API and must be explicitly labelled when run locally for research. |
 | Database-Backed Auth & Security | `src/aimedres/security/auth.py` | `AuthDatabaseStore` (SQLite), PBKDF2 hashing with salt, instant API key & JWT session revocation, audit logging, and fail-closed production secret validation |
 | Clinical CDS & Imaging Web UI | `frontend/` | React + Vite + Three.js viewer; prototype CDS dashboards |
 | Mobile Companion UI | `mobile/` | Expo/React Native prototype interface |
 | Pattern-Based PHI Scrubbing | `src/aimedres/security/` | Regex-based detection; technical safeguard (not a formal HIPAA certification) |
 | DICOM Header Anonymization | `src/aimedres/integration/` | Strips specified tags; requires institutional review before PHI exposure |
-| Container & Deployment Assets | `k8s/`, `helm/`, `monitoring/` | Validated K8s manifests, Helm charts, Prometheus configs, CycloneDX 1.5 SBOM generator, and local CI gateway runner |
+| Container & deployment assets | `k8s/`, `helm/`, `monitoring/` | Configuration assets, Prometheus material, a CycloneDX 1.5 SBOM generator, and a local CI runner; not an operated production environment |
 | Maintained Unit-Test Gate | `tests/unit/` | Runs the supported research, security, deployment, and selected training checks. See [`debug/README.md`](debug/README.md) for the current command, scope, and clean-environment procedure; it is not evidence that every historical test or prototype module remains supported. |
 
 ### 🔬 Tier 2: Partially Implemented or Heuristic Simulations
@@ -65,40 +65,46 @@ Declarative documentation, templates, and roadmap specifications (not completed 
 ### 🧭 Research Roadmap Status
 
 See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) and **[`docs/roadmap.md`](docs/roadmap.md)** for implemented research artefacts and outstanding validation work. Completion of an in-repository roadmap item is not clinical or production readiness:
-- **Phase 0 (Immediate Containment)**: Data governance, single Parkinson's research focus, claim truthfulness, MIT license alignment. `[COMPLETED]`
-- **Phase 1 (Research-Grade Pipeline)**: Participant-grouped `StratifiedGroupKFold` on PPMI PATNO with zero data leakage. `[COMPLETED]`
-- **Phase 2 (Scientific Reproducibility)**: Typed Pydantic configs, `LocalExperimentTracker` (SQLite/JSON), and honest model card. `[COMPLETED]`
-- **Phase 3 (Software Hardening & Decoupling)**: Domain-driven architectural decoupling, secure API serving, PBKDF2 database auth, CycloneDX SBOM, and Helm sandbox. `[COMPLETED]`
-- **Phase 4 (Institutional Pilot Readiness)**: FDA § 3060 non-device CDS Intended Use, IRB study protocol, real-world cohort training (OASIS-2 & UCI Telemetry), clinician human factors usability (< 200 ms latency), and SaMD traceability matrix under IEC 62304 / ISO 14971. `[COMPLETED]`
+- **P0 (Presentation readiness and audit)**: In progress. A synthetic-fixture [Evidence Pack](evidence/ppmi_synthetic_fixture/2026-10-25/EVIDENCE_PACK.md) now records one local control run, but the claim review, independent rerun, external security assurance and methodological review remain incomplete.
+- **P1 (Independent replication and partnership)**: Future gate. The repository contains participant-grouped evaluation controls and synthetic-fixture tooling, but no independently reproduced controlled-data result.
+- **P2 (Research funding application)**: Future gate. A concept note may request funding for validation only after P0/P1 evidence and partner roles are in place.
+- **P3 (Institutional validation and regulatory decision)**: Future gate. Protocol, intended-use, usability, and traceability artefacts are planning inputs, not institutional approval, clinical validation, or a certified QMS.
 
 **Primary Milestone**: The **PPMI Parkinson's Research Reproducibility Pack** (see [docs/roadmap.md](docs/roadmap.md)).  
 **Deployment Plan**: [healthcaredeploymentplan.md](healthcaredeploymentplan.md).
 
 ## 🎯 Mission
 
-AiMedRes accelerates AI-driven discovery and decision support for **neurodegenerative and mental health conditions**. It combines:
+AiMedRes supports reproducible research experiments in neurological health. The
+active focus is retrospective Parkinson's/PPMI analysis; other components are
+exploratory scaffolding. It combines:
 - Adaptive neural network topologies
 - Multi-agent medical reasoning
 - Biological state + memory simulation
-- Clinically aligned explainability & auditability
+- Explainability & auditability prototypes
 
 ---
 
-## 🏥 Core Clinical Focus
+## 🏥 Current Research Focus
 
-- **Alzheimer's Disease** – Early detection, progression risk modeling  
-- **Stroke / Cerebrovascular** – Risk stratification & recovery trajectory scoring  
-- **Neurocognitive Disorders** – Expansion toward broader spectrum  
-- **Mental Health State Modeling** – Early research modules  
-- **Parkinson's & ALS** – Dataset integration and pilot modules added
+- **Parkinson's disease / PPMI** — maintained reproducibility and
+  leakage-control work.
+- **Open research datasets** — connector and evaluation utilities, subject to
+  their own access terms and independent validation.
+- **Other disease models, simulations, and UI concepts** — retained as legacy
+  or experimental code, not active clinical-model work.
 
 ---
 
-## 🚀 Key Features (v1.0.0)
+## 🚀 Exploratory feature inventory
+
+> The following inventory identifies code and documentation in the repository.
+> It does not assert clinical validation, regulatory compliance, production
+> operation, or live health-system integration.
 
 ### 🧩 Intelligence & Architecture
 
-  **Enterprise-grade security, auditing, and explainability for regulated deployment**
+  **Research prototypes for security, auditing, and explainability**
   
 - Adaptive neural evolution engine (dynamic layer & pathway adjustment)
 - Multi-agent consultation & consensus system
@@ -110,14 +116,12 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 
 ### 📊 Clinical AI
 
-  **Clinical integrations and security:**
+  **Clinical-integration and security scaffolding:**
 
-- FHIR/HL7 integration and real-time EHR ingestion (Epic, Cerner, Allscripts, and more)
-- Full PHI scrubbing pipeline (HIPAA/GDPR), blockchain audit logging, immutable audit trails
-- Quantum-safe cryptography (Kyber/AES hybrid)
-- RBAC, SSO/LDAP/Active Directory
-- Complete vulnerability management and continuous monitoring
-- Fully automated, documented backup & disaster recovery
+- FHIR/HL7 conversion helpers and integration scaffolding; no live EHR connector is validated
+- Pattern-based PHI detection and audit helpers; not HIPAA/GDPR certification
+- Experimental cryptography and access-control components
+- Documentation and partial prototypes for monitoring, backup, and recovery
 - Risk scoring & uncertainty estimates
 - Explainable prediction frames (feature attributions + causal hints)
 - Configurable safety thresholds & override gating
@@ -128,30 +132,33 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 
 ### 🏥 Integration Layer
 
-- Real-time EHR streaming hooks (event-driven ingestion)
-- Immutable audit log & trace provenance tagging
+- EHR and event-streaming integration scaffolding; no live connector is validated
+- Audit and provenance-tagging helpers; operational guarantees require deployment review
 - Compliance scaffolding (HIPAA/FDA alignment docs)
-- FDA Regulatory Pathway in progress
+- Regulatory and deployment planning material
 
 ### 🔒 Security & Cryptography (P3-2)
-- **Quantum-Safe Cryptography** - Hybrid Kyber768/AES-256 encryption
-- **Production Key Management** - Automated rotation, KMS integration
-- Zero-Trust Architecture
-- Blockchain Medical Records
-- HIPAA/GDPR compliance built-in
+
+- Experimental cryptographic and key-management helpers
+- Security architecture and audit-log prototypes
+- Privacy and compliance documentation for institutional adaptation
 
 ### 🚢 MLOps & Deployment (P3-3)
-- **Canary Deployment Pipeline** - Shadow mode with continuous validation (implementation in `mlops/`)
-- **Automated Testing** - Accuracy, fairness, performance, drift detection
-- **Auto-Rollback** - Intelligent rollback on failures
-- A/B testing for model comparison
-- Production monitoring and alerting
 
-> ⚠️ **Note:** K8s/Helm deployment assets, Prometheus/Grafana/Alertmanager observability configs, and baseline k6/Lighthouse performance validation are implemented in-repo. Remaining roadmap work focuses on CI/CD expansion and formal external audits/certifications. See [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+- CI, SBOM, and deployment configuration scaffolding
+- Experiment tracking, model-comparison, and monitoring prototypes
+- Planning material for rollback, canary, and operations workflows
 
-  **Validated model performance & workflow:**
-- Alzheimer’s Detection (AUC 0.93), Parkinson’s, ALS, MRI, CVD, and more
-- CLI/API/GUI validated in real-world scenarios according to healthcaredeploymentplan.md
+> ⚠️ **Note:** K8s/Helm deployment assets, Prometheus/Grafana/Alertmanager
+> configurations, and baseline k6/Lighthouse artefacts are included in-repo.
+> They require environment-specific validation and formal external review. See
+> [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+
+  **Evidence boundary:**
+- Model metrics must be tied to a versioned dataset, protocol, and independent
+  validation report before being used as a performance claim.
+- CLI, API, and UI code are research and prototype surfaces, not validated
+  real-world clinical workflows.
 
 **Deployment planning stack (see KNOWN_LIMITATIONS for remaining gaps):**
 - Deployment assets: Docker (root `Dockerfile`), K8s manifests (`k8s/`), Helm chart (`helm/aimedres/`), blue/green/canary strategies documented
@@ -159,33 +166,24 @@ AiMedRes accelerates AI-driven discovery and decision support for **neurodegener
 
 ---
 
-## 🔁 Recent Training Progress (Updated)
+## 🔁 Legacy training labels (not production status)
 
 | Model / Variant          | Dataset(s)             | Target Task                    | Status          | Notes                      |
 |------------------------- |-----------------------|-------------------------------|-----------------|----------------------------|
-| AD_EARLY_V2              | ADNI + INTERNAL_SET_V1| MCI→AD conversion (12–24m)     | Production      | Improved temporal embeddings|
-| AD_SCREEN_V1             | ADNI subset           | Screening classifier           | Production      | Class imbalance reweighting|
-| MULTI_AGENT_CONSENSUS_V3 | Simulated + Expert    | Agreement score                | Production      | Enhanced conflict resolver |
-| MEMORY_CONSOLIDATION_V4  | Synthetic episodic    | Retention @24h                 | Production      | Synaptic tagging decay     |
-| LATENCY_OPT_BATCH_OPT    | Live inference        | p95 latency optimization       | Production      | CUDA graphs + fused ops    |
+| AD_EARLY_V2              | ADNI + INTERNAL_SET_V1| MCI→AD conversion (12–24m)     | Legacy experiment | Requires independent validation |
+| AD_SCREEN_V1             | ADNI subset           | Screening classifier           | Legacy experiment | Requires independent validation |
+| MULTI_AGENT_CONSENSUS_V3 | Simulated + Expert    | Agreement score                | Simulation | Not a clinical model |
+| MEMORY_CONSOLIDATION_V4  | Synthetic episodic    | Retention @24h                 | Simulation | Not a clinical model |
+| LATENCY_OPT_BATCH_OPT    | Prototype benchmark   | Latency experiment             | Exploratory | Hardware- and workload-specific |
 
 ---
 
-## 📈 Current Performance Snapshot
+## 📈 Performance evidence
 
-*Note: Detailed performance metrics are environment and dataset-specific. The following represents typical performance on reference datasets with standard configurations.*
-
-- **Response Time**: 
-  - p50 = 45-65 ms | p95 = 85-120 ms (target <100ms for p95)
-- **Alzheimer's Early Detection** (ADNI dataset):
-  - Sensitivity: 88-92%  (target ≥92%)
-  - Specificity: 85-89%  (target ≥87%)
-  - AUC: 0.89-0.93
-- **Multi-Agent Consensus Agreement**: 85-92%
-- **Memory Retention** (24h simulated): 78-85%
-- **EHR Stream Throughput**: 500-1000 events/sec sustained
-
-*Performance varies based on hardware, configuration, and data characteristics. See individual model documentation for detailed benchmarks.*
+The repository does not publish a single current performance snapshot for
+clinical use. Reproduce the maintained synthetic PPMI check locally and review
+the generated artefacts, model card, dataset provenance, and validation
+protocol before making any research-performance statement.
 
 ---
 
@@ -224,65 +222,27 @@ See “Deployment” section below for healthcare deployment workflow.
 
 ---
 
-## 🤖 Basic Usage & Model Training
+## 🤖 Supported research usage
 
-Examples for research and dev environments (see “Clinical Integration” for production):
+The maintained command path is the leakage-safe Parkinson's research runner:
 
-```python
-from aimedres.training.alzheimer_training_system import (
-    load_alzheimer_data, train_model, evaluate_model
-)
-
-df = load_alzheimer_data("data/adni_processed.csv")
-model = train_model(df, epochs=10, adaptive=True)
-metrics = evaluate_model(model, df)
-print(metrics)
+```bash
+python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml --output-dir .test-tmp/ppmi_benchmark
 ```
 
-Multi-model, parallel, or agent-based workflows: see “Run ALL Medical AI Models” in [README.md](README.md).
+To create a safe-to-commit public Evidence Pack from the committed synthetic fixture, add `--evidence-dir evidence/ppmi_synthetic_fixture/<new-empty-directory>`. The runner rejects this option for controlled or patient-level data.
+
+See [debug/README.md](debug/README.md) for its scope, synthetic fixture, data
+governance requirements, and clean-environment validation procedure. The
+legacy multi-model and agent workflows below are exploratory only.
 
 ---
 
-## 📋 Documentation & Deployment Resources
+## 🚂 Legacy multi-model training workflows
 
-- **Comprehensive clinical deployment, security, validation, monitoring, audit, incident, and governance documentation:**  
-  [healthcaredeploymentplan.md](healthcaredeploymentplan.md)
-- **Sub-guides for every phase (scripts, templates, configs, compliance):**  
-  See the `deployment/` directory  
-- **Model documentation/model cards:**  
-  See individual model output in `/results/` and `/var/aimedres/models`
-- **Research/developer docs:**  
-  See [docs/](docs/), [examples/](examples/), and script docstrings
-
----
-
-## ⚖️ License
-
-**MIT License**  
-See [LICENSE](LICENSE) for details.
-
----
-
-## 👨‍⚕️ Clinical Safety Note
-
-**This software is a research prototype. Before any clinical deployment, institutional validation, regulatory compliance review, and sign-off are mandatory.**  
-It is **NOT** approved for patient-facing decisions without proper clinical validation.  
-By using this system, you agree to all legal and compliance disclaimers in this README and [healthcaredeploymentplan.md](healthcaredeploymentplan.md).
-
----
-
-## 📞 Contact & Support
-
-- Lead: [V1B3hR](https://github.com/V1B3hR)
-- Discuss: https://github.com/V1B3hR/AiMedRes/discussions
-- Issues: https://github.com/V1B3hR/AiMedRes/issues
-
----
-
-*Advancing responsible AI for neurological health – from research to real clinical impact.* 🧠
-## 🚂 Run Training for ALL Medical AI Models
-
-AiMedRes includes **7 comprehensive medical AI models** that can be trained using the unified orchestrator:
+AiMedRes retains seven exploratory training jobs behind a unified orchestrator.
+They are not comprehensive medical models and do not represent validated
+clinical capabilities:
 
 1. **ALS** (Amyotrophic Lateral Sclerosis)
 2. **Alzheimer's Disease**
@@ -313,7 +273,7 @@ aimedres train --epochs 20 --folds 5
 # Parallel execution for faster training
 aimedres train --parallel --max-workers 4
 
-# Production-ready configuration
+# Larger experimental run; this is not a production configuration
 aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 ```
 
@@ -336,7 +296,7 @@ aimedres train --parallel --max-workers 6 --epochs 50 --folds 5 --batch 128
 ### Run Single Model
 
 ```bash
-# Alzheimer's model
+# Legacy exploratory Alzheimer's training script
 python src/aimedres/training/train_alzheimers.py
 
 # Custom parameters
@@ -361,18 +321,18 @@ For comprehensive documentation on running all models, see:
 
 ### Output & Results
 
-Training outputs to `results/`:
+Training writes experiment artefacts to `results/`:
 - Trained models (`.pkl`, `.pth`)
 - Metrics (CSV, JSON)
 - Logs, plots
 
-### Run Examples
+### Run exploratory examples
 
 ```bash
 python examples/basic/run_all_demo.py
 python examples/clinical/alzheimer_demo.py
 python examples/advanced/parallel_mode.py
-python examples/enterprise/production_demo.py
+python examples/enterprise/production_demo.py  # demonstration code only
 ```
 See [examples/README.md](examples/README.md) for more.
 
@@ -399,12 +359,12 @@ aimedres train --allow-partial-success
 
 ---
 
-## 🧪 Model Zoo (Emerging)
+## 🧪 Model Zoo (legacy and exploratory)
 
 | Name                 | Task                  | Status           | Checkpoint | Notes                               |
 |----------------------|-----------------------|------------------|------------|-------------------------------------|
-| ad_early_v2          | 12–24m conversion     | Stable Candidate | (planned)  | Temporal embedding + adaptive pruning|
-| ad_screen_v1         | Screening classifier  | Beta             | (planned)  | High sensitivity emphasis           |
+| ad_early_v2          | 12–24m conversion     | Exploratory | (planned)  | Requires independent validation |
+| ad_screen_v1         | Screening classifier  | Exploratory | (planned)  | Requires independent validation |
 | consensus_v3         | Multi-agent aggregator| Experimental     | (planned)  | Weighted disagreement resolution    |
 | memory_v4            | Consolidation kernel  | Experimental     | (planned)  | Synaptic tagging + decay curves     |
 
@@ -451,27 +411,26 @@ data/
 
 ---
 
-## 🛡️ Safety & Compliance
+## 🛡️ Safety and compliance scaffolding
 
-### Human-in-Loop Gating (P0-5) ✅
-- **Mandatory human approval** for HIGH and CRITICAL risk recommendations
-- **Immutable audit logging** with cryptographic verification (blockchain-like chaining)
-- **Rationale requirements**: Every approval/rejection requires documented clinical rationale
-- **Review time tracking**: Audit logs capture review duration for oversight
-- **Admin override capability**: Emergency overrides logged with detailed justification
-- **Audit chain verification**: Tamper-evident audit trail with hash verification
+The following components are technical controls and templates. They do not
+establish legal compliance, clinical safety, or formal certification.
 
-### PHI Protection (P0-3) ✅
-- **Automated PHI detection**: Comprehensive scrubber detecting 18 HIPAA Safe Harbor identifiers
-- **CI enforcement**: Automated tests prevent PHI from entering repository
-- **De-identification pipeline**: Safe Harbor compliant data sanitization
-- **Clinical term whitelist**: Preserves medical terminology while removing identifiers
-- **Dataset validation**: Batch processing with detailed PHI detection reports
+### Human-in-the-loop components
+
+- Approval, rationale, audit, and override mechanisms in prototype code
+- Tamper-evident logging helpers that require deployment-specific review
+
+### PHI-protection components
+
+- Pattern-based PHI detection and de-identification helpers
+- Repository checks for known data-handling risks
+- No Safe Harbor certification or guarantee of complete de-identification
 
 ### Additional Security Features
 - Configurable risk thresholds
 - Bias & drift monitoring (dashboards in progress)
-- FDA regulatory pathway planning underway
+- Regulatory pathway planning material
 - Vulnerability disclosure process (see [SECURITY.md](SECURITY.md))
 
 ---
@@ -493,35 +452,12 @@ data/
 
 ---
 
-## 🛣️ Roadmap (v1.0.0 - November 2025)
+## 🛣️ Roadmap
 
-### Recently Implemented
-- Core adaptive architecture
-- Multi-agent baseline
-- Memory dual-store prototype
-- Latency optimization (CUDA, kernel fusion)
-- Expanded evaluation harness (uncertainty, calibration)
-- FHIR ingestion pipeline hardened
-- Explainability dashboard backend
-- EHR connectivity
-- Clinical Decision Support
-- 3D Brain Visualization
-- Multi-Modal AI Integration
-- Predictive Analytics
-- Multi-Hospital Network
-- Population-Level Insights
-- FDA Regulatory Pathway (in progress)
-- Clinical Pilot Programs (in progress)
-
-### Upcoming
-- Formal clinical pilot onboarding
-- Advanced safety monitor (causal anomaly detection)
-- Model card auto-generation
-- Deployment orchestrator (K8s + streaming inference)
-- Adversarial robustness suite
-
-> For full roadmap and documentation, see [docs/roadmap.md](docs/roadmap.md) and [architecture docs](docs/architecture.md).  
-> Recent PRs: [Implement P15-P17: 3D Brain Visualization, Multi-Modal AI Integration, and Predictive Healthcare Analytics](https://github.com/V1B3hR/AiMedRes/pull/162), [Implement P8B Clinical Pilot Programs and P9 FDA Regulatory Pathway Planning](https://github.com/V1B3hR/AiMedRes/pull/161), [Implement P12, P13, P14 roadmap phases](https://github.com/V1B3hR/AiMedRes/pull/160), [more...](https://github.com/V1B3hR/AiMedRes/pulls?q=is%3Apr+is%3Aclosed)
+The [consolidated roadmap](docs/roadmap.md) is the source of truth. Prior
+roadmap snapshots and historical PR titles are not current capability claims.
+The next research gates are independent replication, documented external
+validation, and institutional review—not feature-count expansion.
 
 ---
 
@@ -529,26 +465,28 @@ data/
 
 | Dataset                | Usage                             | Access                    |
 |------------------------|-----------------------------------|---------------------------|
+| PPMI                   | Parkinson's research workflow     | Controlled; authorized users only |
 | ADNI                   | Alzheimer's progression           | Licensed / user-supplied  |
 | INTERNAL_SIM_V1        | Synthetic multimodal cases        | Generated                 |
 | CLINICAL_NOTES_PROTOTYPE| Context enrichment (planned)     | Pending de-ID pipeline    |
 
 Ethics:
-- No raw PHI stored in repo
-- Synthetic augmentation to reduce demographic skew
-- Fairness reporting: stratified sensitivity/specificity (planned)
+- Do not commit raw PHI or controlled data to the public repository
+- Use synthetic fixtures for public tests and examples
+- Treat fairness analysis and de-identification as protocol-specific work, not
+  automatic properties of the code
 
 ---
 
 ## 🤝 Contributing
 
 Focus areas:
-- Clinical validation scenarios
-- Safety / auditing modules
-- Latency + systems optimization
-- Advanced memory & continual learning
+- reproducible Parkinson's research and validation tooling;
+- safety, security, and dependency maintenance;
+- synthetic-data and provenance safeguards;
+- documentation that distinguishes prototypes from verified evidence.
 
-See CONTRIBUTING.md (coming: new code style + testing matrix).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the current contribution process.
 
 ---
 

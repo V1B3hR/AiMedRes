@@ -631,7 +631,13 @@ class ParkinsonsTrainingPipeline:
 
         return X_processed, y_processed
 
-    def train_classical_models(self, n_folds: int = 5) -> Dict[str, Dict[str, Any]]:
+    def train_classical_models(
+        self,
+        n_folds: int = 5,
+        random_state: int = 42,
+        n_bootstraps: int = 1000,
+        alpha: float = 0.05,
+    ) -> Dict[str, Dict[str, Any]]:
         """
         Train classical machine learning models with leakage-safe cross-validation.
         Encapsulates preprocessing inside Pipeline to fit only on training folds,
@@ -650,14 +656,16 @@ class ParkinsonsTrainingPipeline:
 
         # Define models
         models = {
-            "Logistic Regression": LogisticRegression(random_state=42, max_iter=1000),
-            "Random Forest": RandomForestClassifier(n_estimators=100, random_state=42),
-            "SVM": SVC(random_state=42, probability=True),
+            "Logistic Regression": LogisticRegression(random_state=random_state, max_iter=1000),
+            "Random Forest": RandomForestClassifier(n_estimators=100, random_state=random_state),
+            "SVM": SVC(random_state=random_state, probability=True),
         }
 
         # Add XGBoost if available
         if XGBOOST_AVAILABLE:
-            models["XGBoost"] = xgb.XGBClassifier(random_state=42, eval_metric="logloss")
+            models["XGBoost"] = xgb.XGBClassifier(
+                random_state=random_state, eval_metric="logloss"
+            )
 
         # Scoring metrics
         scoring = ["accuracy", "balanced_accuracy", "f1_macro", "roc_auc"]
@@ -670,11 +678,15 @@ class ParkinsonsTrainingPipeline:
             try:
                 # Use StratifiedGroupKFold if participant groups are present
                 if self.groups is not None and len(np.unique(self.groups)) >= n_folds:
-                    cv = StratifiedGroupKFold(n_splits=n_folds, shuffle=True, random_state=42)
+                    cv = StratifiedGroupKFold(
+                        n_splits=n_folds, shuffle=True, random_state=random_state
+                    )
                     cv_splits = list(cv.split(self.X_raw, self.y_processed, groups=self.groups))
                     logger.info(f"  Applied StratifiedGroupKFold on PATNO across {n_folds} folds (0 patient leakage)")
                 else:
-                    cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+                    cv = StratifiedKFold(
+                        n_splits=n_folds, shuffle=True, random_state=random_state
+                    )
                     cv_splits = list(cv.split(self.X_raw, self.y_processed))
 
                 # Collect out-of-fold predictions across all validation folds
@@ -710,9 +722,30 @@ class ParkinsonsTrainingPipeline:
                 oof_brier = brier_score_loss(oof_true, oof_prob)
 
                 # Compute 95% Bootstrap Confidence Intervals (1,000 resamples)
-                auc_ci_lower, auc_ci_upper = compute_bootstrap_ci(oof_true, oof_prob, roc_auc_score)
-                pr_ci_lower, pr_ci_upper = compute_bootstrap_ci(oof_true, oof_prob, average_precision_score)
-                brier_ci_lower, brier_ci_upper = compute_bootstrap_ci(oof_true, oof_prob, brier_score_loss)
+                auc_ci_lower, auc_ci_upper = compute_bootstrap_ci(
+                    oof_true,
+                    oof_prob,
+                    roc_auc_score,
+                    n_bootstraps=n_bootstraps,
+                    alpha=alpha,
+                    seed=random_state,
+                )
+                pr_ci_lower, pr_ci_upper = compute_bootstrap_ci(
+                    oof_true,
+                    oof_prob,
+                    average_precision_score,
+                    n_bootstraps=n_bootstraps,
+                    alpha=alpha,
+                    seed=random_state,
+                )
+                brier_ci_lower, brier_ci_upper = compute_bootstrap_ci(
+                    oof_true,
+                    oof_prob,
+                    brier_score_loss,
+                    n_bootstraps=n_bootstraps,
+                    alpha=alpha,
+                    seed=random_state,
+                )
 
                 # Sensitivity and Specificity at decision threshold 0.5
                 tn, fp, fn, tp = confusion_matrix(oof_true, oof_pred).ravel()
@@ -770,7 +803,13 @@ class ParkinsonsTrainingPipeline:
         self.classical_results = results
         return results
 
-    def train_neural_network(self, epochs: int = 100, batch_size: int = 32) -> Dict[str, float]:
+    def train_neural_network(
+        self,
+        epochs: int = 100,
+        batch_size: int = 32,
+        learning_rate: float = 0.001,
+        random_state: int = 42,
+    ) -> Dict[str, float]:
         """
         Train neural network classifier
 
@@ -789,17 +828,23 @@ class ParkinsonsTrainingPipeline:
             raise ValueError("Data must be preprocessed first. Call preprocess_data().")
 
         logger.info("Training neural network with leakage-safe participant split...")
+        np.random.seed(random_state)
+        torch.manual_seed(random_state)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(random_state)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
 
         # Leakage-safe train/val split for neural network
         if self.groups is not None and len(np.unique(self.groups)) > 1:
-            gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+            gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=random_state)
             train_idx, val_idx = next(gss.split(self.X_raw, self.y_processed, groups=self.groups))
             logger.info(
                 f"Neural Network: GroupShuffleSplit on participant ID "
                 f"(train: {len(train_idx)} visits, val: {len(val_idx)} visits; 0 patient leakage)"
             )
         else:
-            sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+            sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=random_state)
             train_idx, val_idx = next(sss.split(self.X_raw, self.y_processed))
 
         # Fit preprocessor strictly on training split
@@ -821,7 +866,10 @@ class ParkinsonsTrainingPipeline:
         # Create data loaders
         train_dataset = TensorDataset(X_train, y_train)
         val_dataset = TensorDataset(X_val, y_val)
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        loader_generator = torch.Generator().manual_seed(random_state)
+        train_loader = DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=True, generator=loader_generator
+        )
         val_loader = DataLoader(val_dataset, batch_size=batch_size)
 
         # Initialize model
@@ -831,7 +879,7 @@ class ParkinsonsTrainingPipeline:
 
         # Loss and optimizer
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
 
         # Training loop
@@ -1031,6 +1079,11 @@ class ParkinsonsTrainingPipeline:
         epochs: int = 100,
         n_folds: int = 5,
         dataset_choice: str = "vikasukani",
+        random_state: int = 42,
+        n_bootstraps: int = 1000,
+        alpha: float = 0.05,
+        batch_size: int = 32,
+        learning_rate: float = 0.001,
     ) -> Dict[str, Any]:
         """
         Run the complete training pipeline
@@ -1041,6 +1094,11 @@ class ParkinsonsTrainingPipeline:
             epochs: Number of epochs for neural network
             n_folds: Number of folds for cross-validation
             dataset_choice: Which Kaggle dataset to use
+            random_state: Seed for randomized splits, models, and neural training
+            n_bootstraps: Number of confidence-interval bootstrap resamples
+            alpha: Confidence-interval significance level
+            batch_size: Neural-network training batch size
+            learning_rate: Neural-network optimizer learning rate
 
         Returns:
             Dictionary containing all results
@@ -1055,10 +1113,20 @@ class ParkinsonsTrainingPipeline:
             self.preprocess_data(target_column=target_column)
 
             # Train classical models
-            classical_results = self.train_classical_models(n_folds)
+            classical_results = self.train_classical_models(
+                n_folds=n_folds,
+                random_state=random_state,
+                n_bootstraps=n_bootstraps,
+                alpha=alpha,
+            )
 
             # Train neural network
-            neural_results = self.train_neural_network(epochs)
+            neural_results = self.train_neural_network(
+                epochs=epochs,
+                batch_size=batch_size,
+                learning_rate=learning_rate,
+                random_state=random_state,
+            )
 
             # Save preprocessors
             self.save_preprocessor()

@@ -157,28 +157,18 @@ Examples:
         return result.returncode
 
     elif args.command == "serve":
-        # Run serve module directly
-        import subprocess
+        # Use the maintained service entry point directly so the CLI, Docker
+        # image, and API all exercise the same security gates.
+        from .secure_serve import main as serve_main
 
-        serve_path = os.path.join(os.path.dirname(__file__), "serve.py")
-        # Convert args to argv format for serve_cli
-        serve_argv = [
-            sys.executable,
-            serve_path,
-            "--host",
-            args.host,
-            "--port",
-            str(args.port),
-        ]
+        serve_argv = ["--host", args.host, "--port", str(args.port)]
         if args.debug:
             serve_argv.append("--debug")
         if args.ssl_cert:
             serve_argv.extend(["--ssl-cert", args.ssl_cert])
         if args.ssl_key:
             serve_argv.extend(["--ssl-key", args.ssl_key])
-
-        result = subprocess.run(serve_argv)
-        return result.returncode
+        return serve_main(serve_argv)
 
     elif args.command == "interactive":
         # Run the legacy interactive mode from __main__

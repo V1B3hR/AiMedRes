@@ -4,6 +4,10 @@
 
 FROM python:3.11-slim
 
+# Bump this only with a security review; it intentionally invalidates the
+# certificate-store layer on rebuild after the 2026-10-19 eMudhra compromise.
+ARG CA_CERTIFICATES_REFRESH=2026-10-25
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -15,8 +19,9 @@ ENV PYTHONUNBUFFERED=1 \
 RUN groupadd -r aimedres && \
     useradd -r -g aimedres -s /bin/bash -d /app aimedres
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies. Rebuild with --pull so the base image and this
+# CA bundle are refreshed; Docker does not inherit Render's native CA store.
+RUN test -n "$CA_CERTIFICATES_REFRESH" && apt-get update && apt-get install -y --no-install-recommends \
     # Build dependencies
     build-essential \
     gcc \

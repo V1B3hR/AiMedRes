@@ -18,6 +18,9 @@ torch>=2.0.0
 # System utilities
 psutil>=5.9.0
 
+# TLS trust bundle. Required by the 2026-10-19 eMudhra CA-compromise response.
+certifi>=2026.10.19
+
 # Data visualization
 matplotlib>=3.5.0
 seaborn>=0.12.0

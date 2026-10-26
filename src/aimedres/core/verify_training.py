@@ -7,17 +7,20 @@ Tests that full training can be run from /core directory
 import subprocess
 import sys
 from pathlib import Path
+from typing import Optional, Sequence
 
 
-def run_test(description, command, check_output=None):
+def run_test(
+    description: str, command: Sequence[str], check_output: Optional[Sequence[str]] = None
+) -> bool:
     """Run a test command and verify output"""
     print(f"\n{'='*70}")
     print(f"TEST: {description}")
     print(f"{'='*70}")
-    print(f"Command: {command}")
+    print(f"Command: {subprocess.list2cmdline(list(command))}")
     print()
 
-    result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=60)
+    result = subprocess.run(list(command), shell=False, capture_output=True, text=True, timeout=60)
 
     output = result.stdout + result.stderr
     print(output[:1000] if len(output) > 1000 else output)
@@ -57,7 +60,7 @@ def main():
     tests.append(
         run_test(
             "List all 6 core models",
-            "python run_all_training.py --list --no-auto-discover",
+            [sys.executable, "run_all_training.py", "--list", "--no-auto-discover"],
             check_output=[
                 "als: ALS",
                 "alzheimers: Alzheimer",
@@ -73,7 +76,18 @@ def main():
     tests.append(
         run_test(
             "Dry run with custom epochs and folds",
-            "python run_all_training.py --dry-run --epochs 50 --folds 5 --only als --no-auto-discover",
+            [
+                sys.executable,
+                "run_all_training.py",
+                "--dry-run",
+                "--epochs",
+                "50",
+                "--folds",
+                "5",
+                "--only",
+                "als",
+                "--no-auto-discover",
+            ],
             check_output=["dry-run", "--epochs 50", "--folds 5", "als_comprehensive_results"],
         )
     )
@@ -82,7 +96,15 @@ def main():
     tests.append(
         run_test(
             "Parallel mode with 6 workers",
-            "python run_all_training.py --dry-run --parallel --max-workers 6 --no-auto-discover",
+            [
+                sys.executable,
+                "run_all_training.py",
+                "--dry-run",
+                "--parallel",
+                "--max-workers",
+                "6",
+                "--no-auto-discover",
+            ],
             check_output=["Parallel mode enabled", "als", "alzheimers", "parkinsons"],
         )
     )
@@ -91,7 +113,15 @@ def main():
     tests.append(
         run_test(
             "Filter to specific models only",
-            "python run_all_training.py --dry-run --only als alzheimers --no-auto-discover",
+            [
+                sys.executable,
+                "run_all_training.py",
+                "--dry-run",
+                "--only",
+                "als",
+                "alzheimers",
+                "--no-auto-discover",
+            ],
             check_output=["Selected jobs: 2", "als", "alzheimers"],
         )
     )

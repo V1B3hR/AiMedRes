@@ -1,18 +1,22 @@
 # AiMedRes Deployment Plan for Healthcare Environments
 
+> **Status: historical planning reference — not evidence of deployment.** This document contains implementation aspirations and legacy checklists. AiMedRes has not been verified as clinically deployable, hospital-integrated, certified, or production-ready. The current work order and presentation gates are in [docs/roadmap.md](docs/roadmap.md).
+
 This document provides a detailed, step-by-step plan to deploy the AiMedRes platform in clinical, hospital, or healthcare organization settings. It covers technical, compliance, integration, security, and operational requirements to ensure a robust, secure, and compliant deployment.
 
-## Implementation Status
+## Historical implementation claims — require verification
 
-✅ **Step 1 (Preparation and Planning)** - COMPLETE  
-✅ **Step 2 (Technical Environment Setup)** - COMPLETE  
-✅ **Step 3 (Data & Integration Readiness)** - COMPLETE  
-✅ **Step 4 (Security & Compliance)** - COMPLETE  
-✅ **Step 5 (Initial System Validation)** - COMPLETE  
-✅ **Step 6 (Production Deployment)** - COMPLETE  
-✅ **Step 7 (Clinical & Operational Readiness)** - COMPLETE  
-✅ **Step 8 (Governance & Continuous Improvement)** - COMPLETE  
-✅ **Step 9 (Post-Go-Live Review)** - COMPLETE
+The following nine steps are **not accepted as complete**. Some artifacts may exist under `deployment/`, but each requires evidence review under P0 before it can be presented as implemented:
+
+1. Preparation and Planning
+2. Technical Environment Setup
+3. Data & Integration Readiness
+4. Security & Compliance
+5. Initial System Validation
+6. Production Deployment
+7. Clinical & Operational Readiness
+8. Governance & Continuous Improvement
+9. Post-Go-Live Review
 
 All implementation artifacts are available in the `deployment/` directory:
 - `deployment/preparation/` - System requirements, stakeholder alignment checklist, and legal/risk assessment templates

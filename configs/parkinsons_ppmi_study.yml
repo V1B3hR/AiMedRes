@@ -1,0 +1,27 @@
+# AiMedRes PPMI Parkinson's reproducibility benchmark.
+#
+# Research use only: this configuration runs against a synthetic fixture and
+# cannot establish clinical performance, regulatory clearance, or external
+# validation. Controlled PPMI data requires the applicable DUA and an explicit
+# command-line --data-path override.
+version: 1
+
+study:
+  name: ppmi-parkinsons-synthetic-reproducibility
+  intended_use: Retrospective research reproducibility verification only; not for clinical use.
+
+data:
+  path: ParkinsonDatasets/synthetic_pet_sbr_fixture.csv
+
+pipeline:
+  target_column: motor_progression_label
+  n_folds: 5
+  epochs: 25
+  random_state: 42
+  n_bootstraps: 1000
+  alpha: 0.05
+  batch_size: 16
+  learning_rate: 0.001
+
+output:
+  directory: results/ppmi_reproducibility_benchmark

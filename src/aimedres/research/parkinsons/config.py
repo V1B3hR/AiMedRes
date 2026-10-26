@@ -38,7 +38,7 @@ class ParkinsonsPipelineConfig(BaseModel):
     )
     random_state: int = Field(
         default=42,
-        description="Deterministic pseudo-random seed across NumPy, PyTorch, and scikit-learn",
+        description="Pseudo-random seed across NumPy, PyTorch, and scikit-learn; hardware-level reproducibility requires separate verification",
     )
     n_bootstraps: int = Field(
         default=1000,

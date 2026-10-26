@@ -1,8 +1,8 @@
-# 🧭 AiMedRes: Consolidated Production-Ready AI/ML Roadmap (2026–2027)
+# 🧭 AiMedRes: roadmapa gotowości badawczej (2026–2027)
 
-> **Document Status**: Living Master Roadmap (Single Source of Truth)  
-> **Supersedes**: All prior fragmentary roadmaps (`docs/roadmapfuture.md`, `docs/roadmapsecurity.md`, and unverified legacy milestone claims).  
-> **Orientation**: Scientific Rigor, Honest Capability Classification, Leakage-Proof Validation, and Responsible Clinical AI Translation.
+> **Status dokumentu:** żywa, nadrzędna roadmapa i jedyne źródło prawdy o kolejności prac.
+> **Aktualizacja:** 25 października 2026.
+> **Pozycjonowanie:** AiMedRes jest prototypem badawczym. Nie jest certyfikowanym wyrobem medycznym, narzędziem diagnostycznym ani systemem gotowym do użycia klinicznego.
 
 ---
 
@@ -31,19 +31,98 @@ The table below establishes an unvarnished audit of the repository, categorizing
 | Area | Tier | What is Genuinely Present | What is Missing, Inconsistent, or Flawed |
 |---|:---:|---|---|
 | **Training Infrastructure** | Tier 1 | 7 default jobs in `src/aimedres/cli/train.py`; orchestrator records Git SHA, GPU details, logs, JSON summaries. Classical ML and PyTorch. | DVC has no configured cloud remote; long-running distributed GPU training requires local setup. |
-| **Parkinson's / PPMI Work** | Tier 1 | Research-grade decoupled module in `src/aimedres/research/parkinsons/`, synthetic fixture, leakage-free `StratifiedGroupKFold` on `PATNO`, independent target, 95% bootstrap CIs, Brier score calibration, and `provenance_manifest.json`. | External multi-site cohort validation (BioFIND/DATATOP) pending in Phase 4. |
+| **Parkinson's / PPMI Work** | Tier 1 | Decoupled research module in `src/aimedres/research/parkinsons/`, synthetic fixture, participant-grouped `StratifiedGroupKFold` on `PATNO`, independent target, bootstrap-CI and provenance-manifest tooling. | The current evidence is synthetic-fixture only. Controlled PPMI access, external cohorts and independent methodological review have not yet occurred. |
 | **Adaptive NN & Agents** | Tier 2 | `AdaptiveNeuralNetwork`, `DuetMindAgent`, specialist agent roles, state handling, memory store, and safety heuristics in `src/aimedres/core/` and `src/aimedres/agents/`. Quarantined in `src/aimedres/simulation/` with runtime isolation gates (`assert_simulation_allowed()`). | Experimental simulation code only. `specialized_medical_agents.py` generates heuristic diagnoses, simulated peer review, and synthetic outcome accuracy. Not validated clinical reasoning. |
 | **Clinical Decision Support (CDS)** | Tier 2 | Risk scoring logic, intervention recommendation structures, FHIR/HL7 conversion helpers, human-in-the-loop audit stubs in `src/aimedres/clinical/`. | Risk engine is hand-authored static heuristic rules. EHR "sync" methods are explicitly simulated mocks. Not connected to live partner hospital EHRs. |
-| **API & Applications** | Tier 1 | Flask API in `src/aimedres/api/server.py` and decoupled `src/aimedres/service/server.py`, rate limiting, security headers, DICOM routes, registered model serving via `/api/v1/model/infer` and `/api/v1/predict` (PPMI trained pipeline), FHIR R4 sandbox (`/api/v1/fhir`), and CDS review (`/api/v1/cases`). | Web UI connects to prototype mocks; mobile companion UI is exploratory. |
+| **API & Applications** | Tier 1 | Flask research API in `src/aimedres/api/server.py` and decoupled `src/aimedres/service/server.py`, technical controls, health endpoint and research-model metadata. | Online inference and heuristic-agent output return unavailable. FHIR, case review, explainability, DICOM and P3 modules are deliberately not registered by the maintained API; UI/mobile work is exploratory. |
 | **Privacy & Security** | Tier 1 | Regex-based PHI scrubbing, DICOM tag clearing, encryption helpers (AES-256 / Kyber-768 hybrid prototype), database-backed `AuthDatabaseStore` (SQLite), instant token & key revocation, PBKDF2 hashing with salt, security audit logging, and fail-closed production secret validation. | Pattern scrubbing is not a formal HIPAA de-identification certification or data-use authorization system. DICOM stripper clears limited fields. No third-party penetration testing or external SOC audit completed. |
-| **Deployment & MLOps** | Tier 1 | Dockerfiles, Docker Compose, validated Kubernetes manifests (`k8s/`), validated Helm chart (`helm/aimedres/`), Prometheus/Alertmanager configs (`monitoring/`), local SQLite/JSON experiment tracking (`src/aimedres/research/tracking.py`), GitHub Actions CI workflow (`.github/workflows/ci.yml`), CycloneDX 1.5 SBOM generator, and local CI runner (`scripts/run_ci_checks.py`). | Image publishing to public registry and multi-cluster cloud federation remain unfinished. |
+| **Deployment & MLOps** | Tier 1 | Dockerfiles, Docker Compose, Kubernetes/Helm/monitoring configuration assets, local experiment tracking, a CI workflow, SBOM generator and local CI runner. | No container-image build, deployment, TLS, production WSGI, public registry or cloud environment was verified in this P0 pass. |
 | **Documentation & Compliance** | Tier 3 | Extensive documentation: training guides, security policies, model cards, FDA Q-Sub generator (`src/aimedres/compliance/`). | Claims overstate maturity. Generates draft FDA/QMS skeletons, but no formal FDA submission has been made, no clinical pilot has run with live patients, and no certified QMS exists. |
-| **Packaging & Governance** | Tier 1 | `pyproject.toml`, `setup.py`, requirements files, MIT `LICENSE`, `ParkinsonDatasets/DATA_GOVERNANCE.md`. | Fully reconciled under MIT license with clear DUA governance controls. |
-| **Testing & CI** | Tier 1 | 56 automated unit tests across research configuration, live experiment tracking, PPMI participant-leakage isolation, open-access datasets, security hardening, domain decoupling, CycloneDX SBOM, and sandbox deployment validation; Vitest frontend tests; performance benchmarks (k6, Lighthouse CI). | Optional medical packages (`pydicom`, `torchvision`) are guarded with runtime fallbacks for lightweight CI runner execution. |
+| **Packaging & Governance** | Tier 1 | `pyproject.toml`, `setup.py`, requirements files, MIT `LICENSE`, `ParkinsonDatasets/DATA_GOVERNANCE.md`. | Licensing, data-access and DUA implications need owner review before any controlled-data or institutional use. |
+| **Testing & CI** | Tier 1 | Focused P0 unit tests cover research configuration, provenance, route isolation, authentication controls and the supported launch path. | This pass did not execute the full repository suite, frontend/e2e tests, deployment validation, CVE scan or any test using real clinical data. |
 
 ---
 
-## 3. The 5-Phase Production-Ready AI/ML Roadmap
+## 3. P0 — gotowość do przedstawienia i audyt
+
+**Status: w toku.** P0 jest warunkiem rozmów o finansowaniu badań. Nie przechodzimy dalej, dopóki jego kryteria wyjścia nie zostaną udokumentowane.
+
+| Priorytet | Działanie | Dowód ukończenia |
+|---|---|---|
+| P0.1 | **Jedna wersja prawdy.** Uzgodnić README, roadmapę, model card, katalog danych, ograniczenia i materiały wdrożeniowe. Historyczne/planujące treści oznaczyć zamiast przedstawiać je jako wdrożone. | Rejestr claimów: każde twierdzenie o funkcji, metryce lub zgodności ma źródło, status i właściciela. |
+| P0.2 | **Zamrożony baseline techniczny.** Dokończyć bieżącą konfigurację PPMI, manifest i runner; uruchomić właściwe testy oraz benchmark ze śledzonym commitem i środowiskiem. | Powtarzalny raport techniczny; wynik pozytywny, negatywny lub niejednoznaczny zapisany bez selekcji. |
+| P0.3 | **Audyt bezpieczeństwa i jakości.** Przejrzeć utrzymywany API/service/auth/config/data flow; zweryfikować sekrety, debug, CORS, autoryzację, logowanie, zależności, deserializację i wywołania powłoki. Ryzyka klasyfikować jako P0/P1/P2. | Rejestr ryzyk, zakres wspieranego kodu, dowody testowe i plan remediacji. Ryzyko P0 blokuje prezentację. |
+| P0.4 | **Audyt naukowy.** Sprawdzić endpoint, definicję kohorty, podział po uczestnikach/czasie, przetwarzanie w foldach, kalibrację, bootstrap i ograniczenia podgrup. | Checklist niezależnego biostatystyka lub metodologa oraz zaktualizowany model card. |
+| P0.5 | **Evidence Pack.** Złożyć pytanie badawcze, manifest danych, protokół, komendę odtworzenia, wyniki, ograniczenia i demonstrację syntetyczną. | Pakiet może zostać odtworzony przez inną osobę bez dostępu do danych pacjentów. |
+
+### Stan bieżącej iteracji
+
+- **P0.1 — częściowo wykonane:** roadmapa przejęła plan gotowości; zduplikowany dokument został usunięty. README, model card, katalog danych, OpenAPI i kluczowe materiały kliniczne/bezpieczeństwa mają jawne granice statusu; pozostałe historyczne materiały nadal wymagają claim review.
+- **P0.2 — częściowo wykonane:** 25 października ukierunkowane testy konfiguracji i pipeline'u przeszły lokalnie. Dwa pełne reruny synthetic fixture z identyczną konfiguracją dały identyczne metryki klasyczne i neuronowe w tym samym środowisku Windows. Trzeci kontrolny rerun jest zapisany w wersjonowanym [Evidence Pack](../evidence/ppmi_synthetic_fixture/2026-10-25/EVIDENCE_PACK.md) wraz z hashami danych, konfiguracji i plików źródłowych. Git worktree był celowo oznaczony jako dirty, dlatego ten pakiet nie zastępuje commitu/release ani niezależnego rerunu.
+- **P0.3 — częściowo wykonane:** pierwszy statyczny audyt naprawił ekspozycję klucza API w query string i niespójną ścieżkę uruchamiania. Historyczne karty modeli, fallback heurystycznej predykcji i mock/prototype routes zostały wycofane z utrzymywanego API; online inference pozostaje zablokowane do czasu zatwierdzenia artefaktu badawczego. Po advisory Render z 25 października dodano pin Node 24.22.1, wymaganie `certifi>=2026.10.19`, odświeżanie CA w Dockerfile i usunięto opcjonalną usługę PHP Adminer z domyślnego MLOps compose. Nadal brakuje potwierdzenia build/redeploy oraz testu z działającej usługi Render. Otwarte obserwacje oraz granice audytu są w [Known Limitations](KNOWN_LIMITATIONS.md).
+- **P0.4 — rozpoczęte:** 20 testów PPMI/research lokalnie przeszło 25 października, w tym kontrolę leakage po `PATNO`, izolację preprocessingu, niezależność etykiety i wykonanie end-to-end. Lokalna kontrola potwierdza grouping po `PATNO`, fold-isolated preprocessing, bootstrap i Brier score wyłącznie na fixture syntetycznym. Brakuje zatwierdzonego endpointu/kohorty, planu podgrup i niezależnej oceny metodologicznej.
+- **P0.5 — częściowo wykonane:** minimalny, bezpieczny do wersjonowania Evidence Pack istnieje dla fixture syntetycznego; nie zawiera danych pacjentów ani artefaktów modeli.
+
+### Rejestr kluczowych claimów
+
+| Claim | Dowód w repozytorium | Dopuszczalny opis zewnętrzny | Niedopuszczalny skrót |
+|---|---|---|---|
+| Pipeline Parkinsona stosuje kontrolę leakage po uczestniku. | [`configs/parkinsons_ppmi_study.yml`](../configs/parkinsons_ppmi_study.yml), runner i testy PPMI. | „Lokalnie odtwarzalny benchmark na synthetic fixture z `StratifiedGroupKFold` po `PATNO`.” | „Zweryfikowany model PPMI” lub „zero leakage na kohorcie klinicznej”. |
+| Benchmark osiąga ROC-AUC 0,907. | Lokalne artefakty synthetic fixture oraz [model card](MODEL_CARD_PPMI_PARKINSONS.md). | „Wynik kontrolny na synthetic fixture; nie jest metryką pacjentów.” | „AUC modelu klinicznego” lub „wynik PPMI”. |
+| API, modele i agenci są dostępne. | [`src/aimedres/service/`](../src/aimedres/service/) oraz testy bezpieczeństwa. | „API jest prototypową powierzchnią badawczą; online inference i heuristic agent output są zablokowane.” | „Działająca usługa predykcyjna” lub „clinical decision support”. |
+| Mechanizmy auth/secrets istnieją. | [`src/aimedres/security/auth.py`](../src/aimedres/security/auth.py) i testy fail-closed. | „Lokalnie przetestowane kontrolki techniczne; bez zewnętrznego pentestu lub certyfikacji.” | „HIPAA/GDPR compliant”, „secure by certification” lub „production hardened”. |
+| Docker, K8s, Helm i monitoring są w repozytorium. | `Dockerfile`, `k8s/`, `helm/`, `monitoring/`. | „Aktywa konfiguracyjne wymagające środowiskowej walidacji.” | „Wdrożona platforma”, „operacyjny monitoring” lub „gotowe dla NHS”. |
+| Materiały QMS, SaMD i kliniczne są dostępne. | `docs/compliance/`, `docs/clinical/`. | „Szablony i materiały planistyczne do adaptacji instytucjonalnej.” | „Certyfikowany QMS”, „IRB/HRA approval” lub „regulatory clearance”. |
+
+### Kryteria wyjścia z P0
+
+1. Nie ma sprzecznych twierdzeń o gotowości klinicznej, bezpieczeństwie ani wdrożeniu.
+2. Wersjonowany pipeline uruchamia się na syntetycznym fixture z udokumentowaną komendą i wynikami.
+3. Ryzyka P0 są usunięte albo jednoznacznie blokują użycie poza lokalnym środowiskiem badawczym.
+4. Istnieje rozdział między utrzymywanym kodem a komponentami eksperymentalnymi/legacy.
+5. Materiał zewnętrzny mówi wyłącznie „funding-ready for research”, nigdy „clinical-ready”, „market-ready” lub „SaMD-ready”.
+
+### Kolejne bramki
+
+- **P1 — niezależna replikacja i partnerstwo:** prerejestrowane pytanie, rerun na danych z uprawnionego źródła, niezależna ocena metodyczna, clinical PI, biostatystyk, właściciel danych i PPI.
+- **P2 — wniosek o finansowanie:** concept note, budżet oparty na work packages, demonstracja syntetyczna oraz uzgodnione role, IP i governance danych. Szczegóły konkursów są w [strategii finansowania UK i Polski](FUNDING_STRATEGY_UK_AND_POLAND.md).
+- **P3 — walidacja instytucjonalna i decyzja regulacyjna:** intended purpose, wymagania HRA/REC/NHS/MHRA oraz QMS proporcjonalny do rzeczywistego celu użycia — wyłącznie po finansowaniu i wynikach walidacji.
+
+### Standard Evidence Pack
+
+Pakiet musi zawierać pytanie i endpoint ustalone przed analizą; manifest danych (źródło, wersja, podstawa dostępu, SHA-256 i DUA); commit/release, środowisko i komendę odtworzenia; metryki z przedziałami ufności; wyniki podgrup, wykluczenia i znane porażki; raport niezależnego rerunu oraz demonstrację syntetyczną.
+
+**Kontrolny pakiet syntetyczny (25 października 2026):** [EVIDENCE_PACK.md](../evidence/ppmi_synthetic_fixture/2026-10-25/EVIDENCE_PACK.md) i [machine-readable manifest](../evidence/ppmi_synthetic_fixture/2026-10-25/evidence_manifest.json). To kontrola odtwarzalności, nie dowód kliniczny. Generator przyjmie do wersjonowanego pakietu wyłącznie committed synthetic fixture i kanoniczną konfigurację study; odmówi użycia danych kontrolowanych/pacjenckich oraz override'ów parametrów.
+
+Aktualna komenda kontrolna dla synthetic fixture:
+
+```powershell
+python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml
+```
+
+Aby utworzyć nowy, pusty katalog pakietu po własnym rerunie:
+
+```powershell
+python scripts/reproduce_ppmi_benchmark.py --config configs/parkinsons_ppmi_study.yml --evidence-dir evidence/ppmi_synthetic_fixture/<nowy-pusty-katalog>
+```
+
+Niepotwierdzony wynik jest wynikiem projektu: raportujemy rozbieżność i zawężamy hipotezę, zamiast zmieniać claimy po fakcie.
+
+### P0.4 — checklista metodologiczna przed niezależnym rerunem
+
+| Kontrola | Obecny stan | Co blokuje zamknięcie |
+|---|---|---|
+| Pytanie, endpoint i horyzont czasu | `motor_progression_label` jest wyłącznie etykietą synthetic fixture. | Właściciel danych i clinical PI muszą zatwierdzić definicję realnego endpointu, indeks czasu i wykluczenia przed analizą. |
+| Kohorta i governance | Fixture ma 170 obserwacji/60 syntetycznych uczestników; hash i konfiguracja są w Evidence Pack. | DUA, data dictionary, kryteria kohorty oraz manifest uprawnionych danych PPMI lub innej kohorty. |
+| Leakage i preprocessing | Testy i kontrolny rerun stosują `StratifiedGroupKFold` po `PATNO`; imputation/scaling są fitowane w foldzie treningowym. | Niezależny przegląd kodu i plan rozdziału czasowego/zewnętrznego dla realnej kohorty. |
+| Metryki i niepewność | ROC-AUC, PR-AUC, Brier oraz 95% bootstrap CI są raportowane dla synthetic fixture. | Prerejestrowane primary metric, plan missing data, kalibracji, podgrup i reguła interpretacji CI. |
+| Reprodukcja | Dwa lokalne deterministyczne reruny oraz wersjonowany control run. | Rerun przez niezależną osobę, na osobnym środowisku, z zapisanym wynikiem pozytywnym lub negatywnym. |
+
+## 4. Archiwalny plan docelowy i inwentarz implementacji
+
+Poniższe sekcje zachowują historyczny plan i wskazują artefakty obecne w repozytorium. **Nie są potwierdzeniem ukończenia ani niezależnej walidacji.** Oznaczenia `[x]` pochodzą z wcześniejszej wersji dokumentu i do zakończenia P0 oznaczają wyłącznie deklarowane/istniejące artefakty wymagające weryfikacji.
+
+## 4. The 5-Phase Production-Ready AI/ML Roadmap
 
 ```mermaid
 flowchart TD
@@ -223,7 +302,7 @@ flowchart TD
 
 ---
 
-## 4. First Major Milestone: The PPMI Parkinson's Research Reproducibility Pack
+## 5. First Major Milestone: The PPMI Parkinson's Research Reproducibility Pack
 
 The single most credible deliverable to present to an institutional partner, IRB, or scientific review committee is the **PPMI Parkinson's Research Reproducibility Pack**. Rather than adding speculative features, all immediate engineering converges on completing this pack:
 
@@ -241,7 +320,7 @@ The single most credible deliverable to present to an institutional partner, IRB
 │    (GroupKFold on PATNO, fold-internal scaling, holdout test isolation)     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 4. Single Deterministic Execution Command                                   │
-│    (aimedres train parkinsons --config configs/parkinsons_ppmi_study.yml)   │
+│    (python scripts/reproduce_ppmi_benchmark.py --config ...study.yml)      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 5. Machine-Readable Experiment Manifest & Evaluation Report                 │
 │    (Data checksums, cohort counts, bootstrap CIs, calibration metrics)      │
@@ -259,7 +338,7 @@ The single most credible deliverable to present to an institutional partner, IRB
 
 ---
 
-## 5. Development & Execution Instructions
+## 6. Development & Execution Instructions
 
 ### 5.1 Local Development Setup
 
@@ -287,11 +366,10 @@ pytest tests/
 # Preview discovered training jobs without execution
 python run_all_training.py --only parkinsons --dry-run
 
-# Run leakage-safe training on the synthetic PPMI benchmark fixture
-python src/aimedres/training/train_parkinsons.py \
-  --data-path ParkinsonDatasets/synthetic_pet_sbr_fixture.csv \
-  --output-dir results/parkinsons_synthetic_run \
-  --folds 5
+# Run the committed, leakage-safe synthetic PPMI benchmark configuration.
+# This checks reproducibility controls only; it is not clinical validation.
+python scripts/reproduce_ppmi_benchmark.py \
+  --config configs/parkinsons_ppmi_study.yml
 
 # When operating in an institution-approved restricted environment with registered PPMI access:
 # python src/aimedres/training/train_parkinsons.py \
@@ -316,7 +394,7 @@ npm start
 
 ---
 
-## 6. Governance & Review Cadence
+## 7. Governance & Review Cadence
 
 - **Bi-Weekly Technical Review**: Verification of zero-leakage test runs, data governance audits, and model metric deltas.
 - **Monthly Protocol Review**: Alignment with external clinical advisory members (neurology/biostatistics) regarding endpoints, covariates, and subgroup balance.

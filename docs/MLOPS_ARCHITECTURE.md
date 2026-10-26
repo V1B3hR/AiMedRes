@@ -1,5 +1,7 @@
 # AiMedRes MLOps Architecture
 
+> **Status (25 October 2026): architecture proposal and prototype inventory, not evidence of an operational or production-ready MLOps system.** The active, verified research path is limited to the synthetic PPMI reproducibility runner described in [roadmap.md](roadmap.md).
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
 This document describes the hybrid MLOps architecture implemented for the AiMedRes project, providing reproducible machine learning pipelines with advanced agent memory capabilities.

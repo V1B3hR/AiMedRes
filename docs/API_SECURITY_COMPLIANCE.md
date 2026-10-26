@@ -1,5 +1,7 @@
 # API Security, PHI Compliance, and Audit Logging Documentation
 
+> **Status (25 October 2026): historical technical design reference, not a compliance attestation.** The maintained API exposes research metadata only; its controls have not undergone an external penetration test, HIPAA/GDPR audit, or deployment validation. See [Known Limitations](KNOWN_LIMITATIONS.md) and the [research-readiness roadmap](roadmap.md).
+
 This document provides comprehensive details on how all AiMedRes API endpoints are secured with authentication, PHI compliance, and audit logging.
 
 ## Table of Contents

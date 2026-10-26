@@ -1,5 +1,7 @@
 # Medical AI Training Pipeline Usage Guide
 
+> **Status (25 October 2026): historical training reference.** Commands and model mentions require rerun and dataset-governance review before use. They do not demonstrate validated disease prediction, clinical performance, or deployable models. The maintained reproducibility path is the synthetic PPMI benchmark in [roadmap.md](roadmap.md).
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
 This guide explains how to use the comprehensive training pipeline for all disease prediction models in AiMedRes.

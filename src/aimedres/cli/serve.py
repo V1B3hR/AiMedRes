@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 """
-Secure Remote Training API Server for DuetMind Adaptive System
+Legacy remote-training server retained for compatibility only.
 
-Provides a production-ready Flask API server with:
-- Comprehensive security and authentication
-- Remote model training endpoints
-- Real-time training monitoring
-- Encrypted model parameter exchange
-- System health monitoring
+Do not expose this module publicly. Supported launches use
+``aimedres serve`` / ``aimedres-serve``, which route to
+``aimedres.cli.secure_serve`` and the maintained research API.
 """
 
 import argparse
@@ -133,7 +130,7 @@ def create_app(config=None):
     return app
 
 
-def main(argv=None):
+def _legacy_main(argv=None):
     """Main entry point for the API server."""
     _ensure_imports()
     parser = argparse.ArgumentParser(description="DuetMind Remote Training API Server")
@@ -213,7 +210,22 @@ def main(argv=None):
         return 0
     except Exception as e:
         logger.error(f"Server startup failed: {e}")
-        return 1
+    return 1
+
+
+def main(argv=None):
+    """Route legacy imports to the maintained, fail-closed service command."""
+    try:
+        from .secure_serve import main as secure_main
+    except ImportError:
+        # Support direct execution from a source checkout while preserving the
+        # same maintained command path as installed entry points.
+        source_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if source_root not in sys.path:
+            sys.path.insert(0, source_root)
+        from aimedres.cli.secure_serve import main as secure_main
+
+    return secure_main(argv)
 
 
 if __name__ == "__main__":

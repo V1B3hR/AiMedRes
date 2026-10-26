@@ -1,10 +1,12 @@
 # Clinical Decision Support System (CDSS)
 
+> **Status (25 October 2026): prototype design reference, not a clinical decision-support product.** Heuristic risk scoring, EHR integration and compliance statements in this document are not clinically validated, institutionally approved, or exposed by the maintained API.
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
 ## Overview
 
-The Clinical Decision Support System transforms the AiMedRes research pipeline into a practical medical tool for clinical decision-making. It provides comprehensive AI-powered risk assessment, explainable predictions, EHR integration, and regulatory compliance features.
+This document describes a prototype CDSS design. It does not transform AiMedRes into a clinical decision-making tool and does not establish AI performance, EHR integration, or regulatory compliance.
 
 ## Key Features
 

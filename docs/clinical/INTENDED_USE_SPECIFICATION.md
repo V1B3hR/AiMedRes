@@ -3,14 +3,14 @@
 > **Document ID**: AIMEDRES-CLIN-IFU-001  
 > **Version**: 1.0.0  
 > **Effective Date**: October 2026  
-> **Status**: Approved Institutional Research & Regulatory Specification  
+> **Status**: Draft planning specification — not approved by an institution or regulator
 > **Regulatory Basis**: FDA 21st Century Cures Act § 3060 / FD&C Act § 520(o)(1)(E) & EU MDR 2017/745 Annex VIII Rule 11
 
 ---
 
 ## 1. Executive Summary & Regulatory Purpose
 
-The purpose of this document is to establish the formal **Intended Use (IU)**, **Indications for Use (IFU)**, and **Regulatory Classification** for the AiMedRes Clinical Decision Support (CDS) platform. 
+The purpose of this draft is to support future discussion of a possible **Intended Use (IU)**, **Indications for Use (IFU)**, and regulatory classification. It does not establish an approved intended use, regulatory status, or clinical-decision-support capability for AiMedRes.
 
 In healthcare software development, premature marketing claims or ambiguous clinical scope can introduce patient safety hazards, regulatory enforcement actions (e.g., FDA Warning Letters, MDR non-compliance), and institutional liability. This specification establishes an uncompromised, legally and clinically defensible perimeter for AiMedRes as a **Non-Device Clinical Decision Support (CDS)** research software platform and prepares the foundation for prospective Software as a Medical Device (SaMD) clearance.
 

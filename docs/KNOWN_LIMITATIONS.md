@@ -1,5 +1,36 @@
 # Known Limitations and Future Improvements
 
+## P0 Audit Status — 25 October 2026
+
+**Scope of this initial pass:** maintained research API launch path, authentication decorator, public-bind safety gates, PPMI reproducibility runner, and their focused regression tests. This is a local code review and test run; it is **not** a penetration test, external security assessment, clinical validation, or dependency vulnerability scan.
+
+### Resolved in this pass
+
+- API keys are accepted only through `X-API-Key`; query-string credentials are rejected to avoid retention in URL histories, referrer headers, and proxy/access logs. The behaviour has a regression test.
+- Direct execution of `src/aimedres/api/server.py` no longer enables Flask debug mode.
+- `aimedres serve`, `aimedres-serve`, the root compatibility wrapper, and Docker now route to `aimedres.cli.secure_serve`, which starts the maintained `SecureAPIServer` path. A non-loopback bind requires production/strict-security mode; debug is rejected there.
+- The Docker image now declares production mode and intentionally fails closed until a runtime `FLASK_SECRET_KEY` and `JWT_SECRET` are supplied.
+- The PPMI runner now forwards its versioned seed, bootstrap, batch-size, and learning-rate parameters through the research wrapper. Two local runs of the synthetic fixture with the same configuration produced identical classical and neural summary metrics on the same Windows environment.
+- Historical Alzheimer/ALS/Parkinson cards and heuristic fallback predictions have been removed from the maintained model API. The remaining synthetic-fixture card is metadata only; API inference is deliberately disabled.
+- The maintained API now also rejects heuristic agent output; `src/aimedres/api/mock_server.py` is local-only and runs without Flask debug mode.
+- The maintained API exposes model metadata only. FHIR, case-review, explainability, DICOM, and P3 route modules are not registered because they are still mock or prototype scaffolding.
+- Legacy `SecureMedicalDataProcessor` inference paths now refuse to deserialize encrypted Python pickles. Encryption is not treated as a trust boundary for executable serialization.
+- The 25 October Render/eMudhra response pins Node.js `24.22.1` for Render discovery and the frontend CI workflow, requires `certifi>=2026.10.19` for Python environments, and refreshes `ca-certificates` in all project Dockerfiles during a fresh rebuild. The optional PHP-based Adminer service was removed from the MLOps compose file; an already running container still needs an operator-led patch/redeploy.
+
+### Open risks and required follow-up
+
+1. **P1 — trusted model artifacts:** model serving is disabled in the maintained API. Legacy `pickle` deserialization remains in `src/aimedres/core/production_agent.py`, `src/aimedres/training/automl.py`, and `src/aimedres/training/train_als.py`; none may receive untrusted artifacts. Before enabling any artifact, restrict its write path, verify a signed digest against a reviewed manifest, and migrate where feasible to a safer interchange format.
+2. **P1 — legacy surface:** `src/aimedres/core/production_agent.py` remains importable for compatibility and contains a permissive CORS fallback plus legacy cache deserialization. It is not the supported API launch path. Quarantine, remove, or harden it before exposing any service; do not cite it as production capability.
+3. **P2 — legacy command execution:** the known `shell=True` usage in `src/aimedres/core/verify_training.py` was converted to explicit argument lists and covered by a regression test. Other legacy/example scripts remain outside the maintained API scope and need review before reuse with untrusted input.
+4. **P1 — deployment evidence:** the new Docker command was statically and CLI-tested, but no container image build, TLS termination test, or deployed-environment test has been performed in this pass. The built-in Flask server remains a research/development runtime, not a substitute for a reviewed production WSGI and network deployment.
+5. **P1 — independent assurance:** no external penetration test, formal privacy assessment, SBOM/CVE audit, or review of real patient-data handling has been performed. These remain prerequisites for any institutional or clinical use.
+6. **P1 — reproducibility scope:** local repeatability on one synthetic fixture does not establish reproducibility across hardware, Python/PyTorch versions, datasets, or independent teams. Those checks belong to the Evidence Pack and partner-led validation.
+7. **P2 — dependency forward compatibility:** the local PPMI test run emits scikit-learn's deprecation warning for `SVC(probability=True)`. Before upgrading to the announced removal version, replace it with an explicitly validated calibration design that preserves participant-group isolation; do not change it only to silence the warning.
+8. **P1 — local training artifacts:** the Parkinson's runner writes `.pkl` model artifacts into its ignored local output directory. They are excluded from the public Evidence Pack and must not be loaded from an untrusted location. Any future supported serving workflow needs signed provenance and a reviewed interchange format.
+9. **P0 — deployment confirmation after eMudhra advisory:** no Render service, deployed image digest, runtime Node version, fresh build, redeploy, or in-service certificate-rejection check was available in this local workspace. The source changes reduce the risk for the next build but do not prove that any existing deployment is patched.
+
+The P0 exit gate remains open until these items are dispositioned and the claims register, independent methodological review, and Evidence Pack are complete.
+
 ## Current Limitations
 
 ### 1. Cornerstone.js Version

@@ -1,5 +1,7 @@
 # Brain MRI Training Implementation Summary
 
+> **Status (25 October 2026): historical prototype reference.** Dataset, execution and performance statements below have not been re-verified in this P0 pass and must not be used as evidence of a validated or production-ready medical-imaging model.
+
 **Version**: 1.0.0 | **Last Updated**: November 2025
 
 ## Overview
@@ -102,4 +104,4 @@ metrics = pipeline.train_model(epochs=20, batch_size=32)
 print(f"Best validation accuracy: {metrics['best_validation_accuracy']:.2f}%")
 ```
 
-The implementation is production-ready and follows machine learning best practices with proper experiment tracking, model versioning, and reproducible results.
+The implementation is a training prototype. It requires fresh, documented verification and clinical-methodological evaluation before any deployment claim.
