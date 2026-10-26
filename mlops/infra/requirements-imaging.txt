@@ -13,7 +13,7 @@ nipype>=1.8.0           # Neuroimaging workflow engine
 niworkflows>=1.7.0      # Common workflows for neuroimaging
 
 # BIDS (Brain Imaging Data Structure) support
-bids-validator>=1.13.0   # BIDS dataset validation
+bids-validator>=1.14.7.post0   # BIDS dataset validation
 pybids>=0.15.0          # BIDS dataset management and querying
 
 # Radiomics and feature extraction
