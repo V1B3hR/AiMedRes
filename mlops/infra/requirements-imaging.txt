@@ -2,7 +2,7 @@
 # Core medical imaging libraries
 
 # Medical image formats and I/O
-nibabel>=5.0.0           # NIfTI, ANALYZE, and other neuroimaging formats
+nibabel>=5.4.2           # NIfTI, ANALYZE, and other neuroimaging formats
 pydicom>=2.4.0          # DICOM file format support
 pydicom-data>=1.1.0     # Sample DICOM data for testing
 simpleitk>=2.3.0        # ITK-based medical image processing
